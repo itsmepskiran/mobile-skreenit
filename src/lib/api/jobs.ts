@@ -53,5 +53,7 @@ export function listJobs(params: { search?: string; page?: number; pageSize?: nu
 }
 
 export function getJob(id: string) {
-  return apiGet<{ ok: boolean; data: JobDetail }>(`/dashboard/jobs/${id}`, { auth: false });
+  // Public endpoint (see middleware/auth_middleware.py), but send the token anyway when
+  // available — belt-and-suspenders in case that ever changes, and harmless either way.
+  return apiGet<{ ok: boolean; data: JobDetail }>(`/dashboard/jobs/${id}`);
 }

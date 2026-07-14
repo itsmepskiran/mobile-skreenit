@@ -73,10 +73,16 @@ async function parseResponse<T>(res: Response): Promise<T> {
   const body = isJson ? await res.json().catch(() => null) : await res.text();
 
   if (!res.ok) {
-    // Every error response is wrapped by utils_others/error_handler.py's global handlers
-    // as {ok, error, message, request_id} — never FastAPI's default {"detail": ...}.
+    // Route-level errors are wrapped by utils_others/error_handler.py's global handlers
+    // as {ok, error, message, request_id} — but middleware/auth_middleware.py's own 401s
+    // (missing/invalid Authorization header) short-circuit before that and use FastAPI's
+    // plain {"detail": ...} instead. Handle whichever shape is actually present.
     // `message` is usually a string, but is an array of validation errors for 422s.
-    const detail = isJson && body && typeof body === 'object' && 'message' in body ? body.message : body;
+    let detail: unknown = body;
+    if (isJson && body && typeof body === 'object') {
+      if ('message' in body) detail = body.message;
+      else if ('detail' in body) detail = body.detail;
+    }
     throw new ApiError(res.status, detail);
   }
 
