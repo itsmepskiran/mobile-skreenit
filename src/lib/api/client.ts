@@ -98,8 +98,16 @@ export async function apiGet<T>(path: string, opts: RequestOpts = {}): Promise<T
   return parseResponse<T>(res);
 }
 
-export async function apiPut<T>(path: string, opts: RequestOpts = {}): Promise<T> {
-  const res = await rawRequest(path, { method: 'PUT' }, opts.auth ?? true);
+// `body` is JSON-encoded when present (e.g. PUT /recruiter/jobs/{id}); omit it
+// for the bodyless PUTs elsewhere in the app (e.g. /notifications/{id}/read).
+export async function apiPut<T>(path: string, opts: RequestOpts & { body?: unknown } = {}): Promise<T> {
+  const { body, auth, ...rest } = opts;
+  const init: RequestInit = { method: 'PUT', ...rest };
+  if (body !== undefined) {
+    init.headers = { 'Content-Type': 'application/json' };
+    init.body = JSON.stringify(body);
+  }
+  const res = await rawRequest(path, init, auth ?? true);
   return parseResponse<T>(res);
 }
 
