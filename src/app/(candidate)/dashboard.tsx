@@ -88,7 +88,11 @@ export default function CandidateDashboardScreen() {
             <ThemedText themeColor="textSecondary">You haven&apos;t applied to any jobs yet.</ThemedText>
           ) : (
             applications.map((app) => (
-              <ThemedView key={app.id} style={[styles.row, { borderColor: theme.border }]}>
+              <Pressable
+                key={app.id}
+                style={[styles.row, { borderColor: theme.border }]}
+                onPress={() => router.push(`/(candidate)/jobs/${app.job_id}`)}
+              >
                 <View style={styles.rowText}>
                   <ThemedText type="smallBold" numberOfLines={1}>
                     {app.job_title ?? 'Job'}
@@ -96,9 +100,12 @@ export default function CandidateDashboardScreen() {
                   <ThemedText type="small" themeColor="textSecondary">
                     Applied {formatRelativeTime(app.applied_at)}
                   </ThemedText>
+                  <ThemedText type="small" themeColor="primary">
+                    View Job Details
+                  </ThemedText>
                 </View>
                 <StatusBadge status={app.status as ApplicationStatus} />
-              </ThemedView>
+              </Pressable>
             ))
           )}
         </ThemedView>

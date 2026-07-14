@@ -1,7 +1,32 @@
 import { apiGet, apiPostJson, apiUpload, type UploadFile } from '@/lib/api/client';
 
+// Previous-experience entries beyond the current/latest role — freeform JSON
+// stored as-is (candidate_profiles.experience), shape matches what the real
+// web wizard (application-form.js) already writes so data stays compatible
+// across platforms.
+export interface ExperienceEntry {
+  job_title: string;
+  company: string;
+  start_date: string;
+  end_date?: string;
+  description?: string;
+}
+
+// Additional degrees/certifications beyond the fixed schooling/PUC/graduation/
+// post-graduation fields — same freeform-JSON pattern as ExperienceEntry.
+export interface EducationEntry {
+  degree: string;
+  institution: string;
+  completion_year: string;
+}
+
+export interface CertificationEntry {
+  name: string;
+  issuer: string;
+  year: string;
+}
+
 // GET /profile returns a large merged object (users + candidate_profiles).
-// Only a subset is listed here — the fields Phase 1 actually reads/edits.
 // PUT/POST /profile only ever returns {id, action, avatar_url?}, never the
 // full profile, so callers should refetch getProfile() after a successful update.
 export interface CandidateProfile {
@@ -14,19 +39,67 @@ export interface CandidateProfile {
   summary: string | null;
   avatar_url: string | null;
   resume_url: string | null;
+  intro_video_url: string | null;
   linkedin_url: string | null;
   portfolio_url: string | null;
   skills: string[] | null;
   experience_years: number | null;
-  experience: unknown[] | null;
-  education: unknown[] | null;
+  experience: ExperienceEntry[] | null;
+  education: EducationEntry[] | null;
   onboarded: boolean;
+  candidate_display_id: string | null;
+  // Personal details
+  date_of_birth: string | null;
+  gender: string | null;
+  marital_status: string | null;
+  // Current address
+  current_address: string | null;
+  current_city: string | null;
+  current_state: string | null;
+  current_country: string | null;
+  // Permanent address
+  permanent_address: string | null;
+  permanent_city: string | null;
+  permanent_state: string | null;
+  permanent_country: string | null;
+  // Professional details
+  current_salary: number | null;
+  expected_salary: number | null;
+  notice_period_days: number | null;
+  highest_qualification: string | null;
+  // Social/Projects
+  personal_projects: string | null;
+  personal_blogs: string | null;
+  // Education details (fixed levels, separate from the `education` array above)
+  schooling: string | null;
+  schooling_year: number | null;
+  schooling_percentage: string | null;
+  pre_university: string | null;
+  pre_university_year: number | null;
+  pre_university_percentage: string | null;
+  graduation: string | null;
+  graduation_year: number | null;
+  graduation_percentage: string | null;
+  post_graduation: string | null;
+  post_graduation_year: number | null;
+  post_graduation_percentage: string | null;
+  // Skills & Languages
+  spoken_languages: string[] | null;
+  certifications: CertificationEntry[] | null;
+  // Current/latest experience
+  current_company: string | null;
+  current_designation: string | null;
+  current_doj: string | null;
+  current_dol: string | null;
 }
 
 export function getProfile() {
   return apiGet<{ ok: boolean; data: CandidateProfile }>('/applicant/profile');
 }
 
+// Mirrors candidate_service.upsert_profile's accepted field set exactly —
+// sent as plain JSON via POST /applicant/profile (no multipart/FormData
+// juggling needed; that's only required by the web's combined file+field PUT).
 export interface ProfileUpdateInput {
   full_name?: string;
   phone?: string;
@@ -36,10 +109,58 @@ export interface ProfileUpdateInput {
   experience_years?: number;
   linkedin_url?: string;
   portfolio_url?: string;
+  date_of_birth?: string;
+  gender?: string;
+  marital_status?: string;
+  current_address?: string;
+  current_city?: string;
+  current_state?: string;
+  current_country?: string;
+  permanent_address?: string;
+  permanent_city?: string;
+  permanent_state?: string;
+  permanent_country?: string;
+  current_salary?: number;
+  expected_salary?: number;
+  notice_period_days?: number;
+  highest_qualification?: string;
+  personal_projects?: string;
+  personal_blogs?: string;
+  schooling?: string;
+  schooling_year?: number;
+  schooling_percentage?: string;
+  pre_university?: string;
+  pre_university_year?: number;
+  pre_university_percentage?: string;
+  graduation?: string;
+  graduation_year?: number;
+  graduation_percentage?: string;
+  post_graduation?: string;
+  post_graduation_year?: number;
+  post_graduation_percentage?: string;
+  spoken_languages?: string[];
+  certifications?: CertificationEntry[];
+  current_company?: string;
+  current_designation?: string;
+  current_doj?: string;
+  current_dol?: string;
+  experience?: ExperienceEntry[];
+  education?: EducationEntry[];
 }
 
 export function updateProfile(data: ProfileUpdateInput) {
   return apiPostJson<{ ok: boolean; data: { id: string; action: string } }>('/applicant/profile', data);
+}
+
+export interface CollegeOption {
+  id: number;
+  name: string;
+  city_name: string | null;
+  state_name: string | null;
+}
+
+export function searchColleges(query: string) {
+  return apiGet<CollegeOption[]>(`/locations/colleges?search=${encodeURIComponent(query)}&limit=20`, { auth: false });
 }
 
 export function uploadAvatar(file: UploadFile) {

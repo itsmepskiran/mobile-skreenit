@@ -26,11 +26,21 @@ function useProtectedRoute() {
 
     const group = segments[0];
     const inAuthGroup = group === '(auth)';
+    const roleHome = role === 'recruiter' ? '/(recruiter)/dashboard' : '/(candidate)/jobs';
 
     if (status === 'signedOut' && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (status === 'signedIn' && inAuthGroup) {
-      router.replace(role === 'recruiter' ? '/(recruiter)/dashboard' : '/(candidate)/jobs');
+      router.replace(roleHome);
+    } else if (status === 'signedIn' && !inAuthGroup) {
+      // Guard against a stale route group left over from role-switching, a
+      // deep link, or navigation state surviving a fast-refresh — the active
+      // tab group must always match the signed-in user's current role.
+      const inRecruiterGroup = group === '(recruiter)';
+      const inCandidateGroup = group === '(candidate)';
+      if ((role === 'recruiter' && inCandidateGroup) || (role !== 'recruiter' && inRecruiterGroup)) {
+        router.replace(roleHome);
+      }
     }
   }, [status, role, segments, router]);
 }
