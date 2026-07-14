@@ -1,18 +1,70 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { Poppins_600SemiBold } from '@expo-google-fonts/poppins';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
+import { DarkTheme, DefaultTheme, Slot, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { useAuthStore } from '@/lib/auth/store';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1 } },
+});
+
+function useProtectedRoute() {
+  const segments = useSegments();
+  const router = useRouter();
+  const status = useAuthStore((state) => state.status);
+  const role = useAuthStore((state) => state.user?.role);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const group = segments[0];
+    const inAuthGroup = group === '(auth)';
+
+    if (status === 'signedOut' && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (status === 'signedIn' && inAuthGroup) {
+      router.replace(role === 'recruiter' ? '/(recruiter)/dashboard' : '/(candidate)/jobs');
+    }
+  }, [status, role, segments, router]);
+}
+
+export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Poppins_600SemiBold,
+  });
+
+  useEffect(() => {
+    useAuthStore.getState().hydrate().finally(() => setIsHydrated(true));
+  }, []);
+
+  const isReady = isHydrated && fontsLoaded;
+
+  useEffect(() => {
+    if (isReady) SplashScreen.hideAsync();
+  }, [isReady]);
+
+  useProtectedRoute();
+
+  if (!isReady) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Slot />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
