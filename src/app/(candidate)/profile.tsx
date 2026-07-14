@@ -178,29 +178,6 @@ export default function ProfileScreen() {
         <RoleSwitcher />
 
         <ThemedView style={styles.section}>
-          <ThemedText type="smallBold">Resume</ThemedText>
-          {profile?.resume_url ? (
-            <Pressable onPress={() => Linking.openURL(profile.resume_url as string)}>
-              <ThemedView style={styles.resumeRow}>
-                <FontAwesome6 name="file-lines" size={16} color={theme.primary} />
-                <ThemedText type="link" themeColor="primary">
-                  View current resume
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-          ) : (
-            <ThemedText themeColor="textSecondary">No resume uploaded yet.</ThemedText>
-          )}
-          <Button
-            title={profile?.resume_url ? 'Replace resume' : 'Upload resume'}
-            variant="secondary"
-            icon="file-lines"
-            loading={resumeMutation.isPending}
-            onPress={onPickResume}
-          />
-        </ThemedView>
-
-        <ThemedView style={styles.section}>
           <ThemedText type="smallBold">About you</ThemedText>
 
           <Controller
@@ -300,14 +277,51 @@ export default function ProfileScreen() {
           />
         </ThemedView>
 
-        {profile?.education?.length || profile?.experience?.length ? (
-          <ThemedView style={styles.section}>
-            <ThemedText type="smallBold">Education &amp; experience</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Editing this section is coming soon — for now it mirrors what&apos;s on file.
-            </ThemedText>
+        <ThemedView style={styles.section}>
+          <ThemedView style={styles.sectionHeading}>
+            <FontAwesome6 name="briefcase" size={14} color={theme.text} />
+            <ThemedText type="smallBold">Experience</ThemedText>
           </ThemedView>
-        ) : null}
+          <ThemedText themeColor="textSecondary">
+            {profile?.experience?.length ? 'Editing this section is coming soon.' : 'No experience listed.'}
+          </ThemedText>
+        </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedView style={styles.sectionHeading}>
+            <FontAwesome6 name="graduation-cap" size={14} color={theme.text} />
+            <ThemedText type="smallBold">Education</ThemedText>
+          </ThemedView>
+          <ThemedText themeColor="textSecondary">
+            {profile?.education?.length ? 'Editing this section is coming soon.' : 'No education details added.'}
+          </ThemedText>
+        </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedView style={styles.sectionHeading}>
+            <FontAwesome6 name="file-pdf" size={14} color={theme.text} />
+            <ThemedText type="smallBold">My Resume</ThemedText>
+          </ThemedView>
+          {profile?.resume_url ? (
+            <Pressable onPress={() => Linking.openURL(profile.resume_url as string)}>
+              <ThemedView style={styles.resumeRow}>
+                <FontAwesome6 name="file-lines" size={16} color={theme.primary} />
+                <ThemedText type="link" themeColor="primary">
+                  View current resume
+                </ThemedText>
+              </ThemedView>
+            </Pressable>
+          ) : (
+            <ThemedText themeColor="textSecondary">No resume uploaded yet.</ThemedText>
+          )}
+          <Button
+            title={profile?.resume_url ? 'Replace resume' : 'Upload resume'}
+            variant="secondary"
+            icon="file-lines"
+            loading={resumeMutation.isPending}
+            onPress={onPickResume}
+          />
+        </ThemedView>
 
         <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
       </ScrollView>
@@ -336,6 +350,7 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   section: { gap: 12 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   resumeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
 });
