@@ -30,6 +30,7 @@ import { StepSkills } from '@/components/profile-wizard/step-skills';
 import { StepExperience } from '@/components/profile-wizard/step-experience';
 import { StepReview } from '@/components/profile-wizard/step-review';
 import { StepVideoIntro } from '@/components/profile-wizard/step-video-intro';
+import { ProfileView } from '@/components/profile-wizard/profile-view';
 
 const STEPS: StepDefinition[] = [
   { label: 'Personal', icon: 'user' },
@@ -116,6 +117,10 @@ export default function ProfileScreen() {
   const signOut = useAuthStore((state) => state.signOut);
   const queryClient = useQueryClient();
 
+  // Mirrors the real web app: landing on Profile shows a read-only view
+  // (candidate-profile.html) with an "Edit Profile" button — the multi-step
+  // wizard below only opens once that's tapped, not by default.
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [stepIndex, setStepIndex] = useState(0);
   const [values, setValues] = useState<WizardValues>(EMPTY_WIZARD_VALUES);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -139,6 +144,7 @@ export default function ProfileScreen() {
     onSuccess: async () => {
       await invalidateProfile();
       setSaved(true);
+      setMode('view');
       setTimeout(() => setSaved(false), 2000);
     },
     onError: (err) => {
@@ -234,6 +240,28 @@ export default function ProfileScreen() {
     );
   }
 
+  // A brand-new candidate has no profile yet — nothing to show read-only, so
+  // go straight to the wizard regardless of `mode`.
+  if (mode === 'view' && profile) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <ProfileView
+            profile={profile}
+            fullName={authUser?.full_name ?? ''}
+            email={authUser?.email ?? ''}
+            onEdit={() => {
+              setStepIndex(0);
+              setMode('edit');
+            }}
+          />
+          <RoleSwitcher />
+          <Button title="Sign out" variant="secondary" onPress={() => signOut()} style={styles.signOutButton} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   const isLastStep = stepIndex === STEPS.length - 1;
   const isFirstStep = stepIndex === 0;
 
@@ -241,6 +269,19 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ThemedView style={[styles.editHeader, { borderColor: theme.border }]}>
+        <Pressable
+          onPress={() => {
+            if (profile) setValues(fromProfile(profile));
+            setMode('view');
+          }}
+          style={styles.navButton}
+          hitSlop={8}
+        >
+          <FontAwesome6 name="xmark" size={16} color={theme.text} />
+          <ThemedText>Cancel</ThemedText>
+        </Pressable>
+      </ThemedView>
       <Stepper steps={STEPS} activeIndex={stepIndex} />
       <ScrollView contentContainerStyle={styles.content}>
         {stepIndex === 0 ? (
@@ -269,8 +310,6 @@ export default function ProfileScreen() {
               loading={saveMutation.isPending}
               onPress={onSave}
             />
-            <RoleSwitcher />
-            <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
           </>
         ) : null}
         {stepIndex === VIDEO_STEP ? (
@@ -313,6 +352,14 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   loader: { marginTop: 40 },
   content: { padding: 20, gap: 20, paddingBottom: 40 },
+  signOutButton: { marginTop: -6 },
+  editHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

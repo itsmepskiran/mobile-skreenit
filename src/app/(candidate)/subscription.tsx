@@ -1,6 +1,6 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/lib/auth/store';
 import { getProfile } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
+import { INDUSTRIES } from '@/lib/assessment-catalog';
 import {
   confirmSubscription,
   createRazorpayOrder,
@@ -37,6 +38,7 @@ function parseFeatures(features: PricingPlan['features']): string[] {
 
 export default function SubscriptionScreen() {
   const theme = useTheme();
+  const { serviceType, industryKey } = useLocalSearchParams<{ serviceType?: string; industryKey?: string }>();
   const authUser = useAuthStore((state) => state.user);
   const [checkoutPlan, setCheckoutPlan] = useState<PricingPlan | null>(null);
   const [checkoutOrder, setCheckoutOrder] = useState<{
@@ -49,10 +51,23 @@ export default function SubscriptionScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmedPlanId, setConfirmedPlanId] = useState<string | null>(null);
 
-  const plansQuery = useQuery({ queryKey: ['subscription', 'plans'], queryFn: () => listPricingPlans('applicant_plan') });
+  const resolvedServiceType = serviceType ?? 'applicant_plan';
+  const plansQuery = useQuery({
+    queryKey: ['subscription', 'plans', resolvedServiceType],
+    queryFn: () => listPricingPlans(resolvedServiceType),
+  });
   const profileQuery = useQuery({ queryKey: ['profile'], queryFn: getProfile });
-  const plans = plansQuery.data?.data ?? [];
   const profile = profileQuery.data?.data;
+
+  const industryPack = industryKey ? INDUSTRIES.find((i) => i.value === industryKey) : undefined;
+  const plans = (plansQuery.data?.data ?? []).filter((plan) => (industryPack ? plan.id === industryPack.planId : true));
+
+  const screenTitle =
+    resolvedServiceType === 'assessment_bundle'
+      ? industryPack
+        ? `${industryPack.label} Access`
+        : 'Industry Assessment Packs'
+      : 'Upgrade to Premium';
 
   const startCheckoutMutation = useMutation({
     mutationFn: async (plan: PricingPlan) => {
@@ -103,12 +118,22 @@ export default function SubscriptionScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <SafeAreaView style={styles.safeArea}>
       <ThemedView style={[styles.header, { borderColor: theme.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          onPress={() => {
+            // router.back() doesn't work here: this screen is a hidden sibling
+            // Tabs.Screen (href: null), not nested in a Stack under the tab
+            // that pushed to it — Expo Router's Tabs navigator has no cross-tab
+            // back history, so back() falls through to the tab bar's first
+            // screen instead of returning to Assessments. Navigate explicitly.
+            router.replace('/(candidate)/assessments');
+          }}
+          hitSlop={12}
+        >
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
-        <ThemedText type="subtitle">Upgrade to Premium</ThemedText>
+        <ThemedText type="subtitle">{screenTitle}</ThemedText>
       </ThemedView>
 
       {plansQuery.isLoading ? (

@@ -2,15 +2,21 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import QRCode from 'react-native-qrcode-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { JOB_DETAILS_URL } from '@/lib/config';
 import { formatSalaryRange } from '@/lib/format';
 import { deleteJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
+
+function jobUrl(jobId: string) {
+  return `${JOB_DETAILS_URL}?job_id=${jobId}`;
+}
 
 type StatusFilter = 'all' | 'active' | 'closed' | 'draft';
 
@@ -32,6 +38,7 @@ export default function MyJobsScreen() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
+  const [qrJob, setQrJob] = useState<RecruiterJobListItem | null>(null);
 
   const jobsQuery = useQuery({
     queryKey: ['recruiter', 'jobs'],
@@ -123,6 +130,13 @@ export default function MyJobsScreen() {
                       {statusStyle.label}
                     </ThemedText>
                   </View>
+                  <Pressable
+                    onPress={() => setQrJob(job)}
+                    style={[styles.qrThumb, { borderColor: theme.border }]}
+                    hitSlop={6}
+                  >
+                    <QRCode value={jobUrl(job.id)} size={44} />
+                  </Pressable>
                 </ThemedView>
 
                 <View style={styles.metaGrid}>
@@ -193,6 +207,40 @@ export default function MyJobsScreen() {
           })
         )}
       </ScrollView>
+
+      <Modal visible={qrJob != null} transparent animationType="fade" onRequestClose={() => setQrJob(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setQrJob(null)}>
+          <Pressable style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
+            {qrJob ? (
+              <>
+                <ThemedText type="smallBold" style={styles.modalTitle} numberOfLines={2}>
+                  {qrJob.job_title}
+                </ThemedText>
+                <View style={styles.modalQrBox}>
+                  <QRCode value={jobUrl(qrJob.id)} size={220} />
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.modalHint}>
+                  Scan to view or apply to this job
+                </ThemedText>
+                <View style={styles.modalActions}>
+                  <Pressable
+                    style={[styles.actionButton, { borderColor: theme.border }]}
+                    onPress={() => Share.share({ message: jobUrl(qrJob.id), url: jobUrl(qrJob.id) })}
+                  >
+                    <FontAwesome6 name="share-nodes" size={13} color={theme.primary} />
+                    <ThemedText type="small" themeColor="primary">
+                      Share link
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable style={[styles.actionButton, { borderColor: theme.border }]} onPress={() => setQrJob(null)}>
+                    <ThemedText type="small">Close</ThemedText>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -230,6 +278,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   cardTitle: { flex: 1 },
   statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  qrThumb: { borderWidth: 1, borderRadius: Radius.sm, padding: 4 },
   metaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -250,4 +299,23 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingVertical: 9,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: Radius.lg,
+    padding: 20,
+    gap: 14,
+    alignItems: 'center',
+  },
+  modalTitle: { textAlign: 'center' },
+  modalQrBox: { padding: 12, backgroundColor: '#fff', borderRadius: Radius.md },
+  modalHint: { textAlign: 'center' },
+  modalActions: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
 });
