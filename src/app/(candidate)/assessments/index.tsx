@@ -78,7 +78,11 @@ export default function AssessmentsScreen() {
             </ThemedText>
           ) : (
             freePlans.map((plan) => (
-              <ThemedView key={plan.id} style={[styles.freeCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <Pressable
+                key={plan.id}
+                style={[styles.freeCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+                onPress={() => router.push(`/(candidate)/assessments/take/${plan.service_key}`)}
+              >
                 <View style={styles.cardHeader}>
                   <ThemedText type="smallBold" style={styles.cardTitle}>
                     {plan.name}
@@ -94,7 +98,13 @@ export default function AssessmentsScreen() {
                     {plan.description}
                   </ThemedText>
                 ) : null}
-              </ThemedView>
+                <View style={styles.startRow}>
+                  <ThemedText type="small" themeColor="primary">
+                    Start assessment
+                  </ThemedText>
+                  <FontAwesome6 name="arrow-right" size={11} color={theme.primary} />
+                </View>
+              </Pressable>
             ))
           )}
 
@@ -383,6 +393,7 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', marginTop: 40 },
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 16, gap: 8 },
   freeCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 6 },
+  startRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   catalogCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 6 },
   catalogCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   unlockButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
