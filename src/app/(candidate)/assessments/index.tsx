@@ -46,6 +46,14 @@ export default function AssessmentsScreen() {
     router.push(`/(candidate)/subscription?serviceType=assessment_bundle&industryKey=${industryValue}`);
   };
 
+  // Matches web's individual-assessment "Unlock" flow (premium-features.js
+  // handleAssessmentSelection -> btnUnlockConfirm): this buys just the one
+  // test via its own applicant_plan pricing_plans row (item.dbId), not the
+  // industry bundle.
+  const goToIndividualCheckout = (item: CatalogItem) => {
+    router.push(`/(candidate)/subscription?serviceType=applicant_plan&planId=${item.dbId}`);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView style={styles.headerRow}>
@@ -185,17 +193,11 @@ export default function AssessmentsScreen() {
                 </ThemedText>
                 <View style={styles.catalogCardFooter}>
                   <ThemedText type="small" themeColor="primary">
-                    ₹{item.price.toLocaleString('en-IN')} value
+                    ₹{item.price.toLocaleString('en-IN')}
                   </ThemedText>
-                  <Pressable
-                    style={[styles.unlockButton, { backgroundColor: theme.primary }]}
-                    onPress={() => goToBundleCheckout(item.industry)}
-                  >
-                    <FontAwesome6 name="unlock" size={11} color="#fff" />
-                    <ThemedText type="small" style={{ color: '#fff' }}>
-                      Unlock
-                    </ThemedText>
-                  </Pressable>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Tap for details
+                  </ThemedText>
                 </View>
               </Pressable>
               ))}
@@ -291,26 +293,34 @@ export default function AssessmentsScreen() {
                   {detailItem.skills}
                 </ThemedText>
                 <ThemedText type="smallBold" themeColor="primary">
-                  ₹{detailItem.price.toLocaleString('en-IN')} value · included in the {detailItem.industryLabel} pack
+                  One-time price: ₹{detailItem.price.toLocaleString('en-IN')}
                 </ThemedText>
                 <View style={styles.modalActions}>
                   <Pressable
-                    style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                    style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1, flex: 1 }]}
+                    onPress={() => setDetailItem(null)}
+                  >
+                    <ThemedText type="small">Maybe Later</ThemedText>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.actionButton, { backgroundColor: theme.primary, flex: 1 }]}
                     onPress={() => {
                       const target = detailItem;
                       setDetailItem(null);
-                      goToBundleCheckout(target.industry);
+                      goToIndividualCheckout(target);
                     }}
                   >
-                    <FontAwesome6 name="crown" size={12} color="#fff" />
+                    <FontAwesome6 name="unlock" size={12} color="#fff" />
                     <ThemedText type="small" style={{ color: '#fff' }}>
-                      Unlock via {detailItem.industryLabel} pack
+                      Unlock to Take Test
                     </ThemedText>
                   </Pressable>
-                  <Pressable style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1 }]} onPress={() => setDetailItem(null)}>
-                    <ThemedText type="small">Close</ThemedText>
-                  </Pressable>
                 </View>
+                <Pressable onPress={() => goToBundleCheckout(detailItem.industry)}>
+                  <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 2 }}>
+                    Or get the full {detailItem.industryLabel} pack instead
+                  </ThemedText>
+                </Pressable>
               </>
             ) : null}
           </Pressable>
@@ -396,7 +406,6 @@ const styles = StyleSheet.create({
   startRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   catalogCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 6 },
   catalogCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  unlockButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   selectedIndustryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   cardTitle: { flex: 1 },

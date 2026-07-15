@@ -2,7 +2,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
@@ -13,7 +13,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/lib/auth/store';
 import { getProfile } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
-import { INDUSTRIES } from '@/lib/assessment-catalog';
+import { CATALOG, INDUSTRIES } from '@/lib/assessment-catalog';
 import {
   confirmSubscription,
   createRazorpayOrder,
@@ -38,7 +38,11 @@ function parseFeatures(features: PricingPlan['features']): string[] {
 
 export default function SubscriptionScreen() {
   const theme = useTheme();
-  const { serviceType, industryKey } = useLocalSearchParams<{ serviceType?: string; industryKey?: string }>();
+  const { serviceType, industryKey, planId } = useLocalSearchParams<{
+    serviceType?: string;
+    industryKey?: string;
+    planId?: string;
+  }>();
   const authUser = useAuthStore((state) => state.user);
   const [checkoutPlan, setCheckoutPlan] = useState<PricingPlan | null>(null);
   const [checkoutOrder, setCheckoutOrder] = useState<{
@@ -60,14 +64,21 @@ export default function SubscriptionScreen() {
   const profile = profileQuery.data?.data;
 
   const industryPack = industryKey ? INDUSTRIES.find((i) => i.value === industryKey) : undefined;
-  const plans = (plansQuery.data?.data ?? []).filter((plan) => (industryPack ? plan.id === industryPack.planId : true));
+  const catalogItem = planId ? CATALOG.find((item) => item.dbId === planId) : undefined;
+  const plans = (plansQuery.data?.data ?? []).filter((plan) => {
+    if (industryPack) return plan.id === industryPack.planId;
+    if (planId) return plan.id === planId;
+    return true;
+  });
 
   const screenTitle =
     resolvedServiceType === 'assessment_bundle'
       ? industryPack
         ? `${industryPack.label} Access`
         : 'Industry Assessment Packs'
-      : 'Upgrade to Premium';
+      : catalogItem
+        ? catalogItem.name
+        : 'Upgrade to Premium';
 
   const startCheckoutMutation = useMutation({
     mutationFn: async (plan: PricingPlan) => {
@@ -138,6 +149,18 @@ export default function SubscriptionScreen() {
 
       {plansQuery.isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />
+      ) : plansQuery.isError ? (
+        <View style={styles.emptyState}>
+          <ThemedText type="small" style={{ color: theme.danger, textAlign: 'center' }}>
+            {plansQuery.error instanceof ApiError ? plansQuery.error.message : 'Could not load this plan. Please try again.'}
+          </ThemedText>
+        </View>
+      ) : plans.length === 0 ? (
+        <View style={styles.emptyState}>
+          <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
+            This plan is no longer available.
+          </ThemedText>
+        </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           {confirmedPlanId ? (
@@ -237,6 +260,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   loader: { marginTop: 40 },
+  emptyState: { padding: 30, alignItems: 'center', marginTop: 40 },
   content: { padding: 20, gap: 16, paddingBottom: 60 },
   successBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: Radius.md, padding: 12 },
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 16, gap: 8 },
