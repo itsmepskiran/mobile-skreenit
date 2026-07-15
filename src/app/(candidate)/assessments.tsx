@@ -1,6 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -32,7 +33,18 @@ export default function AssessmentsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText type="title">My Assessments</ThemedText>
+        <ThemedView style={styles.headerRow}>
+          <ThemedText type="title">My Assessments</ThemedText>
+          <Pressable
+            style={[styles.upgradeButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.push('/(candidate)/subscription')}
+          >
+            <FontAwesome6 name="crown" size={11} color="#fff" />
+            <ThemedText type="small" style={{ color: '#fff' }}>
+              Upgrade
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
 
         {assessments.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.empty}>
@@ -108,6 +120,15 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   loader: { marginTop: 40 },
   content: { padding: 20, gap: 14 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
   empty: { textAlign: 'center', marginTop: 40 },
   card: {
     borderWidth: 1,

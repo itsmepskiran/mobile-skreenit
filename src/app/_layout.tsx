@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { useAuthStore } from '@/lib/auth/store';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -67,6 +68,7 @@ export default function RootLayout() {
   }, [isReady]);
 
   useProtectedRoute();
+  usePushNotifications();
 
   if (!isReady) return null;
 

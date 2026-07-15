@@ -75,6 +75,11 @@ export default function LoginScreen() {
 
     setSwitchingRole(role);
     try {
+      // switchRole is an authenticated call — the session controller has no
+      // token to attach until setSession runs, so seed it with the just-issued
+      // login tokens first (still correct even though the active role is about
+      // to change) before calling it.
+      await setSession(pendingSession.tokens, pendingSession.user);
       const switched = await switchRole(role);
       await setSession({ accessToken: switched.access_token, refreshToken: switched.refresh_token }, switched.user);
       setPendingSession(null);

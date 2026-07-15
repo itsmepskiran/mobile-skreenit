@@ -47,6 +47,7 @@ export default function CandidateLayout() {
         options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <FontAwesome6 name="user" size={size * 0.8} color={color} /> }}
       />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="subscription" options={{ href: null }} />
     </Tabs>
   );
 }

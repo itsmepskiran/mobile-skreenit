@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPut } from '@/lib/api/client';
+import { apiDelete, apiGet, apiPostJson, apiPut } from '@/lib/api/client';
 
 export interface Notification {
   id: string;
@@ -41,4 +41,14 @@ export function deleteNotification(id: string) {
 
 export function clearAllNotifications() {
   return apiDelete<{ ok: boolean; data: { cleared_count: number }; message: string }>('/notifications/');
+}
+
+// Backend has no FCM/APNs infra of its own — it forwards to Expo's push API
+// (https://exp.host/--/api/v2/push/send) using tokens registered here.
+export function registerDeviceToken(pushToken: string, platform: 'ios' | 'android') {
+  return apiPostJson<{ ok: boolean }>('/notifications/register-device', { push_token: pushToken, platform });
+}
+
+export function unregisterDeviceToken(pushToken: string) {
+  return apiPostJson<{ ok: boolean }>('/notifications/unregister-device', { push_token: pushToken });
 }

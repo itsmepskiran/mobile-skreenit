@@ -1,3 +1,5 @@
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { getSessionController } from '@/lib/auth/session-controller';
 import { API_V1 } from '@/lib/config';
 
@@ -163,4 +165,42 @@ export async function apiUpload<T>(
 
   const res = await rawRequest(path, { method: 'POST', body: formData }, opts.auth ?? true);
   return parseResponse<T>(res);
+}
+
+// Uploads via expo-file-system's native upload task instead of fetch+FormData.
+// The RN/Hermes FormData polyfill under Expo Router on Android throws
+// "Unsupported FormDataPart implementation" for the {uri,name,type} shorthand
+// in this SDK — a native task hands the file straight to platform code and
+// sidesteps that layer entirely. Only supports a single file field, which
+// covers /generate-interview-questions and /upload-video-response.
+export async function apiUploadNative<T>(
+  path: string,
+  file: UploadFile,
+  fieldName: string,
+  fields: Record<string, string | number> = {},
+  opts: RequestOpts = {},
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (opts.auth ?? true) {
+    const tokens = getSessionController().getTokens();
+    if (tokens?.accessToken) headers.Authorization = `Bearer ${tokens.accessToken}`;
+  }
+
+  const result = await FileSystem.uploadAsync(`${API_V1}${path}`, file.uri, {
+    httpMethod: 'POST',
+    uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+    fieldName,
+    mimeType: file.type,
+    parameters: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, String(v)])),
+    headers,
+  });
+
+  const isJson = result.headers['content-type']?.includes('application/json') ?? true;
+  const body = isJson ? JSON.parse(result.body) : result.body;
+
+  if (result.status < 200 || result.status >= 300) {
+    const detail = body && typeof body === 'object' && 'message' in body ? body.message : body;
+    throw new ApiError(result.status, detail);
+  }
+  return body as T;
 }

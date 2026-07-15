@@ -1,4 +1,6 @@
-import { apiGet, apiPostJson, apiUpload, type UploadFile } from '@/lib/api/client';
+import * as FileSystem from 'expo-file-system/legacy';
+
+import { apiGet, apiPostJson, apiUpload, apiUploadNative, type UploadFile } from '@/lib/api/client';
 
 // Previous-experience entries beyond the current/latest role — freeform JSON
 // stored as-is (candidate_profiles.experience), shape matches what the real
@@ -228,4 +230,87 @@ export interface ApplicationListItem {
 
 export function listApplications() {
   return apiGet<{ ok: boolean; data: ApplicationListItem[] }>('/applicant/applications');
+}
+
+// --- Video introduction (profile wizard step 7) ---
+// Mirrors the web's applicant/detailed-application-form.html "Video Introduction"
+// step: 3 AI-generated questions (Q1 is always "introduce yourself"), one video
+// recorded per question, uploaded and saved individually. This is profile-level
+// (candidate_intro_responses/candidate_videos, keyed by user, not job_applications),
+// distinct from the per-job interview flow in applications/[id].
+
+export interface GeneratedQuestions {
+  questions: string[];
+  source: 'ai' | 'fallback';
+}
+
+function guessMimeType(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return 'application/pdf';
+  if (ext === 'doc') return 'application/msword';
+  if (ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  return 'application/octet-stream';
+}
+
+// Backend requires a resume file even for the fallback path — downloads the
+// candidate's already-uploaded resume (from profile.resume_url) to a local
+// cache file rather than asking them to re-pick it. Deliberately not
+// `fetch(resumeUrl).blob()` + FormData — React Native's Blob polyfill can't
+// reliably be re-attached to a new multipart request (throws "Creating blobs
+// from 'ArrayBuffer' and 'ArrayBufferView' are not supported" on Android);
+// routing through a local file uses the same {uri,name,type} upload path
+// that every other upload in this app already relies on.
+export async function generateInterviewQuestions(resumeUrl: string) {
+  const name = resumeUrl.split('/').pop() || 'resume.pdf';
+  const localUri = `${FileSystem.cacheDirectory}${name}`;
+  const downloaded = await FileSystem.downloadAsync(resumeUrl, localUri);
+
+  return apiUploadNative<{ ok: boolean; data: GeneratedQuestions }>(
+    '/applicant/generate-interview-questions',
+    { uri: downloaded.uri, name, type: guessMimeType(name) },
+    'resume',
+  );
+}
+
+export interface VideoUploadResult {
+  path: string;
+  url: string;
+}
+
+// `application_id` is a required Form field on the backend but unused for this
+// profile-level flow — sent empty, matching the web's onboarding-interview call.
+export function uploadIntroVideoResponse(file: UploadFile, questionIndex: number, question: string) {
+  return apiUploadNative<{ data: VideoUploadResult }>(
+    '/applicant/upload-video-response',
+    file,
+    'video_file',
+    { application_id: '', question_index: questionIndex, question },
+  );
+}
+
+export function saveIntroResponse(input: {
+  questionIndex: number;
+  question: string;
+  videoUrl: string;
+  videoPath: string;
+}) {
+  return apiPostJson<{ ok: boolean; data: { id: string } }>('/applicant/save-intro-response', {
+    question_index: input.questionIndex,
+    question: input.question,
+    video_url: input.videoUrl,
+    video_path: input.videoPath,
+  });
+}
+
+export interface CandidateVideo {
+  id: string;
+  candidate_id: string;
+  video_type: string;
+  video_url: string;
+  video_path: string | null;
+  created_at: string;
+}
+
+export function getCandidateVideos() {
+  return apiGet<{ ok: boolean; data: CandidateVideo[] }>('/applicant/videos');
 }

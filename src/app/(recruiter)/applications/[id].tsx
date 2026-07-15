@@ -2,11 +2,13 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { Radius } from '@/constants/theme';
 import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
 import { TextField } from '@/components/text-field';
@@ -15,7 +17,12 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime } from '@/lib/format';
 import { ApiError } from '@/lib/api/client';
-import { listRecruiterApplications, updateApplicationStatus, type RecruiterApplicationStatus } from '@/lib/api/recruiter';
+import {
+  listRecruiterApplications,
+  updateApplicationStatus,
+  type InterviewResponse,
+  type RecruiterApplicationStatus,
+} from '@/lib/api/recruiter';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 
 const STATUS_OPTIONS: { label: string; value: RecruiterApplicationStatus }[] = [
@@ -135,6 +142,25 @@ export default function ApplicationReviewScreen() {
           />
         ) : null}
 
+        {application.intro_video_url ? (
+          <ThemedView style={styles.section}>
+            <ThemedText type="smallBold">Video Introduction</ThemedText>
+            <VideoPlayerBox url={application.intro_video_url} />
+          </ThemedView>
+        ) : null}
+
+        {application.interview_responses && application.interview_responses.length > 0 ? (
+          <ThemedView style={styles.section}>
+            <ThemedText type="smallBold">Interview Responses</ThemedText>
+            {application.interview_responses
+              .slice()
+              .sort((a, b) => a.question_index - b.question_index)
+              .map((response) => (
+                <InterviewResponseCard key={response.question_index} response={response} />
+              ))}
+          </ThemedView>
+        ) : null}
+
         <ThemedView style={styles.section}>
           <ThemedText type="smallBold">Update Status</ThemedText>
           <SelectField
@@ -189,6 +215,29 @@ export default function ApplicationReviewScreen() {
   );
 }
 
+function VideoPlayerBox({ url }: { url: string }) {
+  const theme = useTheme();
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = false;
+  });
+  return (
+    <ThemedView style={[styles.videoBox, { borderColor: theme.border }]}>
+      <VideoView player={player} style={styles.video} nativeControls />
+    </ThemedView>
+  );
+}
+
+function InterviewResponseCard({ response }: { response: InterviewResponse }) {
+  return (
+    <ThemedView style={styles.responseCard}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {response.question}
+      </ThemedText>
+      <VideoPlayerBox url={response.video_url} />
+    </ThemedView>
+  );
+}
+
 function InfoRow({ icon, label }: { icon: React.ComponentProps<typeof FontAwesome6>['name']; label: string }) {
   const theme = useTheme();
   return (
@@ -218,4 +267,13 @@ const styles = StyleSheet.create({
   },
   section: { gap: 12 },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
+  videoBox: {
+    aspectRatio: 16 / 9,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  video: { flex: 1 },
+  responseCard: { gap: 8 },
 });

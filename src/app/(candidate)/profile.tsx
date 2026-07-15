@@ -29,6 +29,7 @@ import { StepEducation } from '@/components/profile-wizard/step-education';
 import { StepSkills } from '@/components/profile-wizard/step-skills';
 import { StepExperience } from '@/components/profile-wizard/step-experience';
 import { StepReview } from '@/components/profile-wizard/step-review';
+import { StepVideoIntro } from '@/components/profile-wizard/step-video-intro';
 
 const STEPS: StepDefinition[] = [
   { label: 'Personal', icon: 'user' },
@@ -37,7 +38,10 @@ const STEPS: StepDefinition[] = [
   { label: 'Skills', icon: 'code' },
   { label: 'Experience', icon: 'clock-rotate-left' },
   { label: 'Review', icon: 'check' },
+  { label: 'Video Intro', icon: 'video' },
 ];
+const REVIEW_STEP = 5;
+const VIDEO_STEP = 6;
 
 function toStr(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -256,12 +260,25 @@ export default function ProfileScreen() {
         {stepIndex === 2 ? <StepEducation {...stepProps} /> : null}
         {stepIndex === 3 ? <StepSkills {...stepProps} /> : null}
         {stepIndex === 4 ? <StepExperience {...stepProps} /> : null}
-        {stepIndex === 5 ? (
+        {stepIndex === REVIEW_STEP ? (
           <>
             <StepReview values={values} fullName={authUser?.full_name ?? ''} email={authUser?.email ?? ''} />
+            <Button
+              title={saved ? 'Saved' : 'Save Profile'}
+              icon={saved ? 'check' : undefined}
+              loading={saveMutation.isPending}
+              onPress={onSave}
+            />
             <RoleSwitcher />
             <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
           </>
+        ) : null}
+        {stepIndex === VIDEO_STEP ? (
+          <StepVideoIntro
+            resumeUrl={profile?.resume_url ?? null}
+            existingIntroVideoUrl={profile?.intro_video_url ?? null}
+            onRecorded={invalidateProfile}
+          />
         ) : null}
 
         {saveError ? (
@@ -281,15 +298,7 @@ export default function ProfileScreen() {
           <ThemedText style={isFirstStep ? { color: theme.border } : undefined}>Back</ThemedText>
         </Pressable>
 
-        {isLastStep ? (
-          <Button
-            title={saved ? 'Saved' : 'Save Profile'}
-            icon={saved ? 'check' : undefined}
-            loading={saveMutation.isPending}
-            onPress={onSave}
-            style={styles.saveButton}
-          />
-        ) : (
+        {isLastStep ? null : (
           <Pressable style={styles.navButton} onPress={() => setStepIndex((i) => Math.min(STEPS.length - 1, i + 1))}>
             <ThemedText themeColor="primary">Next</ThemedText>
             <FontAwesome6 name="chevron-right" size={13} color={theme.primary} />
@@ -314,5 +323,4 @@ const styles = StyleSheet.create({
   },
   navButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 4 },
   navButtonDisabled: { opacity: 0.4 },
-  saveButton: { minWidth: 160 },
 });

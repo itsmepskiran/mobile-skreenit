@@ -145,6 +145,18 @@ export function deleteJob(id: string) {
 // candidate-profile join doesn't resolve the way the router expects it to).
 // The list endpoint's items already carry reliable candidate_name/email/phone
 // plus everything else a review screen needs (status, resume, cover letter).
+// Per-job interview Q&A (video_responses table) — distinct from intro_video_url,
+// which is the one-time profile-level video shared across every application.
+export interface InterviewResponse {
+  question: string;
+  video_url: string;
+  video_path: string | null;
+  question_index: number;
+  duration: number | null;
+  transcript: string | null;
+  created_at: string;
+}
+
 export interface RecruiterApplicationItem {
   id: string;
   job_id: string;
@@ -162,6 +174,8 @@ export interface RecruiterApplicationItem {
   candidate_phone: string;
   job_title: string;
   skills?: string[] | string;
+  interview_responses?: InterviewResponse[];
+  interview_video_count?: number;
 }
 
 export function listRecruiterApplications(params: { jobId?: string } = {}) {

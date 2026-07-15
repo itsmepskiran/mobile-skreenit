@@ -47,6 +47,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         photosPermission: 'Allow Skreenit to access your photos to set a profile picture.',
       },
     ],
+    [
+      'expo-camera',
+      {
+        cameraPermission: 'Allow Skreenit to access your camera to record your video introduction.',
+        microphonePermission: 'Allow Skreenit to access your microphone to record your video introduction.',
+      },
+    ],
+    'expo-video',
+    [
+      'expo-notifications',
+      {
+        color: '#4F46E5',
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
