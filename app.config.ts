@@ -3,6 +3,14 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 // Set per-environment via eas.json build profiles, or a local .env when running `expo start`.
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:8080';
 
+// Apple's free "Personal Team" signing (no paid Developer Program membership)
+// cannot provision the Push Notifications capability at all — attempting to
+// build with it present fails signing outright. Push isn't functional yet
+// anyway (no EAS project ID configured), so skip it for local personal-team
+// iOS builds via SKIP_IOS_PUSH=1; Android and EAS/production builds are
+// unaffected since this only strips the plugin, not the capability itself.
+const skipIOSPush = process.env.SKIP_IOS_PUSH === '1';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'mobile-skreenit',
@@ -55,12 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-video',
-    [
-      'expo-notifications',
-      {
-        color: '#4F46E5',
-      },
-    ],
+    ...(skipIOSPush ? [] : [['expo-notifications', { color: '#4F46E5' }] as [string, object]]),
   ],
   experiments: {
     typedRoutes: true,
