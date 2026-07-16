@@ -7,7 +7,6 @@ import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { deleteJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
@@ -76,7 +75,7 @@ export default function MyJobsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ThemedView style={styles.searchRow}>
+      <View style={[styles.searchRow, { borderColor: theme.border }]}>
         <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
         <TextInput
           value={search}
@@ -85,7 +84,7 @@ export default function MyJobsScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[styles.searchInput, { color: theme.text }]}
         />
-      </ThemedView>
+      </View>
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -122,8 +121,8 @@ export default function MyJobsScreen() {
             const salary = formatSalaryRange(job.salary_min, job.salary_max, 'INR');
 
             return (
-              <ThemedView key={job.id} style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-                <ThemedView style={styles.cardHeader}>
+              <View key={job.id} style={[styles.card, { borderColor: theme.border }]}>
+                <View style={styles.cardHeader}>
                   <ThemedText type="smallBold" style={styles.cardTitle} numberOfLines={2}>
                     {job.job_title}
                   </ThemedText>
@@ -139,7 +138,7 @@ export default function MyJobsScreen() {
                   >
                     <QRCode value={jobUrl(job.id)} size={44} />
                   </Pressable>
-                </ThemedView>
+                </View>
 
                 <View style={styles.metaGrid}>
                   {job.location ? (
@@ -180,7 +179,7 @@ export default function MyJobsScreen() {
                   </View>
                 ) : null}
 
-                <ThemedView style={styles.actionsRow}>
+                <View style={styles.actionsRow}>
                   <Pressable
                     style={[styles.actionButton, { borderColor: theme.border }]}
                     onPress={() => router.push(`/(recruiter)/applications?jobId=${job.id}`)}
@@ -203,8 +202,8 @@ export default function MyJobsScreen() {
                       Delete
                     </ThemedText>
                   </Pressable>
-                </ThemedView>
-              </ThemedView>
+                </View>
+              </View>
             );
           })
         )}
@@ -260,7 +259,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: Radius.md,
-    backgroundColor: 'rgba(148,163,184,0.12)',
+    borderWidth: 1,
   },
   searchInput: { flex: 1, fontSize: 15 },
   filterContainer: { paddingTop: 0, paddingBottom: 8 },

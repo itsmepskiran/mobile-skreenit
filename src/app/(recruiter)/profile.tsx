@@ -31,6 +31,7 @@ export default function RecruiterProfileScreen() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const profileQuery = useQuery({ queryKey: ['recruiter', 'profile'], queryFn: getRecruiterProfile });
   const statsQuery = useQuery({ queryKey: ['recruiter', 'stats'], queryFn: getRecruiterStats });
@@ -64,6 +65,7 @@ export default function RecruiterProfileScreen() {
     mutationFn: (input: RecruiterProfileInput) => updateRecruiterProfile(input),
     onSuccess: () => {
       invalidate();
+      setIsEditing(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
@@ -101,6 +103,18 @@ export default function RecruiterProfileScreen() {
     });
   };
 
+  const onCancelEdit = () => {
+    if (!profile) return;
+    setContactName(profile.contact_name ?? '');
+    setContactEmail(profile.contact_email ?? '');
+    setLocation(profile.location ?? '');
+    setCompanyName(profile.company_name ?? '');
+    setCompanyWebsite(profile.company_website ?? '');
+    setCompanyDescription(profile.company_description ?? '');
+    setError(null);
+    setIsEditing(false);
+  };
+
   if (profileQuery.isLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -115,7 +129,11 @@ export default function RecruiterProfileScreen() {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <LinearGradient colors={['#4f46e5', '#7c3aed']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBanner}>
-          <Pressable onPress={() => pickImage((f) => avatarMutation.mutate(f))} style={styles.avatarWrap}>
+          <Pressable
+            onPress={isEditing ? () => pickImage((f) => avatarMutation.mutate(f)) : undefined}
+            disabled={!isEditing}
+            style={styles.avatarWrap}
+          >
             {profile?.avatar_url ? (
               <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
             ) : (
@@ -125,13 +143,15 @@ export default function RecruiterProfileScreen() {
                 </ThemedText>
               </View>
             )}
-            <View style={styles.avatarBadge}>
-              {avatarMutation.isPending ? (
-                <ActivityIndicator size="small" color="#4f46e5" />
-              ) : (
-                <FontAwesome6 name="camera" size={11} color="#4f46e5" />
-              )}
-            </View>
+            {isEditing ? (
+              <View style={styles.avatarBadge}>
+                {avatarMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#4f46e5" />
+                ) : (
+                  <FontAwesome6 name="camera" size={11} color="#4f46e5" />
+                )}
+              </View>
+            ) : null}
           </Pressable>
           <ThemedText type="subtitle" style={styles.headerName}>
             {authUser?.full_name}
@@ -161,11 +181,25 @@ export default function RecruiterProfileScreen() {
 
         <ThemedView style={styles.section}>
           <ThemedView style={styles.sectionHeading}>
-            <FontAwesome6 name="building" size={14} color={theme.text} />
-            <ThemedText type="smallBold">Company Information</ThemedText>
+            <View style={styles.sectionTitleRow}>
+              <FontAwesome6 name="building" size={14} color={theme.text} />
+              <ThemedText type="smallBold">Company Information</ThemedText>
+            </View>
+            {!isEditing ? (
+              <Pressable style={styles.inlineEditButton} onPress={() => setIsEditing(true)}>
+                <FontAwesome6 name="pen-to-square" size={12} color={theme.primary} />
+                <ThemedText type="small" themeColor="primary">
+                  Edit
+                </ThemedText>
+              </Pressable>
+            ) : null}
           </ThemedView>
 
-          <Pressable onPress={() => pickImage((f) => logoMutation.mutate(f))} style={styles.logoRow}>
+          <Pressable
+            onPress={isEditing ? () => pickImage((f) => logoMutation.mutate(f)) : undefined}
+            disabled={!isEditing}
+            style={styles.logoRow}
+          >
             {profile?.company_logo_url ? (
               <Image source={{ uri: profile.company_logo_url }} style={styles.logo} />
             ) : (
@@ -173,24 +207,49 @@ export default function RecruiterProfileScreen() {
                 <FontAwesome6 name="image" size={16} color={theme.textSecondary} />
               </View>
             )}
-            <ThemedText type="link" themeColor="primary">
-              {logoMutation.isPending ? 'Uploading...' : 'Change company logo'}
+            <ThemedText type="small" themeColor={isEditing ? 'primary' : 'textSecondary'}>
+              {isEditing ? (logoMutation.isPending ? 'Uploading...' : 'Change company logo') : 'Company logo'}
             </ThemedText>
           </Pressable>
 
-          <TextField label="Company Name" value={companyName} onChangeText={setCompanyName} />
-          <TextField label="Contact Name" value={contactName} onChangeText={setContactName} />
-          <TextField label="Contact Email" autoCapitalize="none" keyboardType="email-address" value={contactEmail} onChangeText={setContactEmail} />
-          <TextField label="Website" autoCapitalize="none" keyboardType="url" value={companyWebsite} onChangeText={setCompanyWebsite} />
-          <TextField label="Location" value={location} onChangeText={setLocation} />
-          <TextField
-            label="About Company"
-            multiline
-            numberOfLines={4}
-            style={styles.multiline}
-            value={companyDescription}
-            onChangeText={setCompanyDescription}
-          />
+          {isEditing ? (
+            <>
+              <TextField label="Company Name" value={companyName} onChangeText={setCompanyName} />
+              <TextField label="Contact Name" value={contactName} onChangeText={setContactName} />
+              <TextField
+                label="Contact Email"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={contactEmail}
+                onChangeText={setContactEmail}
+              />
+              <TextField
+                label="Website"
+                autoCapitalize="none"
+                keyboardType="url"
+                value={companyWebsite}
+                onChangeText={setCompanyWebsite}
+              />
+              <TextField label="Location" value={location} onChangeText={setLocation} />
+              <TextField
+                label="About Company"
+                multiline
+                numberOfLines={4}
+                style={styles.multiline}
+                value={companyDescription}
+                onChangeText={setCompanyDescription}
+              />
+            </>
+          ) : (
+            <>
+              <ReadonlyField label="Company Name" value={companyName} />
+              <ReadonlyField label="Contact Name" value={contactName} />
+              <ReadonlyField label="Contact Email" value={contactEmail} />
+              <ReadonlyField label="Website" value={companyWebsite} />
+              <ReadonlyField label="Location" value={location} />
+              <ReadonlyField label="About Company" value={companyDescription} />
+            </>
+          )}
 
           {error ? (
             <ThemedText type="small" style={{ color: theme.danger }}>
@@ -198,18 +257,36 @@ export default function RecruiterProfileScreen() {
             </ThemedText>
           ) : null}
 
-          <Button
-            title={saved ? 'Saved' : 'Save changes'}
-            icon={saved ? 'check' : undefined}
-            loading={saveMutation.isPending}
-            onPress={onSave}
-          />
+          {isEditing ? (
+            <View style={styles.editActions}>
+              <Button title="Cancel" variant="secondary" onPress={onCancelEdit} style={styles.editActionButton} />
+              <Button
+                title={saved ? 'Saved' : 'Save changes'}
+                icon={saved ? 'check' : undefined}
+                loading={saveMutation.isPending}
+                onPress={onSave}
+                style={styles.editActionButton}
+              />
+            </View>
+          ) : null}
         </ThemedView>
 
         <RoleSwitcher />
         <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function ReadonlyField({ label, value }: { label: string; value: string }) {
+  const theme = useTheme();
+  return (
+    <ThemedView style={[styles.readonlyField, { borderColor: theme.border }]}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+      <ThemedText type="smallBold">{value.trim() || '-'}</ThemedText>
+    </ThemedView>
   );
 }
 
@@ -260,9 +337,20 @@ const styles = StyleSheet.create({
   badgeText: { color: '#ffffff' },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, rowGap: 20 },
   section: { gap: 12 },
-  sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  inlineEditButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 2 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logo: { width: 48, height: 48, borderRadius: 10 },
   logoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
+  readonlyField: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  editActions: { flexDirection: 'row', gap: 10 },
+  editActionButton: { flex: 1 },
 });

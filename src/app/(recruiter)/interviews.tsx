@@ -1,17 +1,16 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatRelativeTime } from '@/lib/format';
-import { listRecruiterApplications } from '@/lib/api/recruiter';
 import type { ApplicationStatus } from '@/lib/api/applicant';
+import { listRecruiterApplications } from '@/lib/api/recruiter';
+import { formatRelativeTime } from '@/lib/format';
 
 const PENDING_STATUSES = new Set(['interview_scheduled', 'interviewing']);
 
@@ -48,26 +47,26 @@ export default function PendingInterviewsScreen() {
           pending.map((app) => (
             <Pressable
               key={app.id}
-              style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+              style={[styles.card, { borderColor: theme.border }]}
               onPress={() => router.push(`/(recruiter)/applications/${app.id}`)}
             >
-              <ThemedView style={styles.cardHeader}>
-                <ThemedView style={styles.cardText}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardText}>
                   <ThemedText type="smallBold" numberOfLines={1}>
                     {app.candidate_name}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                     {app.job_title}
                   </ThemedText>
-                </ThemedView>
+                </View>
                 <StatusBadge status={app.status as ApplicationStatus} />
-              </ThemedView>
-              <ThemedView style={styles.footerRow}>
+              </View>
+              <View style={styles.footerRow}>
                 <FontAwesome6 name="clock" size={11} color={theme.textSecondary} />
                 <ThemedText type="small" themeColor="textSecondary">
                   Applied {formatRelativeTime(app.applied_at)}
                 </ThemedText>
-              </ThemedView>
+              </View>
             </Pressable>
           ))
         )}
