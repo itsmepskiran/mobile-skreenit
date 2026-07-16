@@ -87,26 +87,28 @@ export default function MyJobsScreen() {
         />
       </ThemedView>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-        {FILTERS.map((filter) => {
-          const active = filter.value === statusFilter;
-          return (
-            <Pressable
-              key={filter.value}
-              onPress={() => setStatusFilter(filter.value)}
-              style={[
-                styles.filterChip,
-                { borderColor: theme.border },
-                active && { backgroundColor: theme.primary, borderColor: theme.primary },
-              ]}
-            >
-              <ThemedText type="small" style={active ? { color: '#ffffff' } : undefined}>
-                {filter.label}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <View style={styles.filterContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          {FILTERS.map((filter) => {
+            const active = filter.value === statusFilter;
+            return (
+              <Pressable
+                key={filter.value}
+                onPress={() => setStatusFilter(filter.value)}
+                style={[
+                  styles.filterChip,
+                  { borderColor: theme.border },
+                  active && { backgroundColor: theme.primary, borderColor: theme.primary },
+                ]}
+              >
+                <ThemedText type="small" style={active ? { color: '#ffffff' } : undefined}>
+                  {filter.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <ScrollView contentContainerStyle={styles.list}>
         {filtered.length === 0 ? (
@@ -261,7 +263,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(148,163,184,0.12)',
   },
   searchInput: { flex: 1, fontSize: 15 },
-  filterRow: { paddingHorizontal: 20, paddingVertical: 4, paddingBottom: 8, gap: 8, alignItems: 'center' },
+  filterContainer: { paddingTop: 0, paddingBottom: 8 },
+  filterRow: { paddingHorizontal: 20, paddingVertical: 4, gap: 8, alignItems: 'center' },
   filterChip: {
     borderWidth: 1,
     borderRadius: 20,
