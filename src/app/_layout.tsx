@@ -9,6 +9,8 @@ import { useColorScheme } from 'react-native';
 
 import { useAuthStore } from '@/lib/auth/store';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { TopBrandBar } from '@/components/top-brand-bar';
+import { View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -48,6 +50,7 @@ function useProtectedRoute() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const segments = useSegments();
   const [isHydrated, setIsHydrated] = useState(false);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -72,10 +75,20 @@ export default function RootLayout() {
 
   if (!isReady) return null;
 
+  // The (auth) screens (login/register/etc.) already carry their own brand
+  // treatment via AuthScreenLayout — only show this persistent strip once
+  // the user is inside the candidate/recruiter app.
+  const showBrandBar = segments[0] !== '(auth)';
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Slot />
+        <View style={{ flex: 1 }}>
+          {showBrandBar ? <TopBrandBar /> : null}
+          <View style={{ flex: 1 }}>
+            <Slot />
+          </View>
+        </View>
       </ThemeProvider>
     </QueryClientProvider>
   );

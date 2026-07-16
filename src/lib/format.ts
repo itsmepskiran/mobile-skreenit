@@ -14,6 +14,24 @@ export function formatRelativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// The backend forwards some `candidate_profiles` JSON columns (education,
+// certifications, experience, spoken_languages) as a raw JSON-encoded string
+// rather than a decoded array whenever the underlying column isn't a real
+// MySQL JSON type — mobile's types assume an array, so guard against string/
+// null/undefined at the point of use instead of assuming the API contract.
+export function toArray<T>(value: T[] | string | null | undefined): T[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export function formatSalaryRange(
   min: number | null | undefined,
   max: number | null | undefined,

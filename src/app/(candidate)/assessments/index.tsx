@@ -55,7 +55,7 @@ export default function AssessmentsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ThemedView style={styles.headerRow}>
         <ThemedText type="title">Assessments</ThemedText>
       </ThemedView>

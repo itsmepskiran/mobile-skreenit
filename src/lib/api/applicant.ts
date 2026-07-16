@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-import { apiGet, apiPostJson, apiUpload, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { apiGet, apiPostJson, apiUploadNative, type UploadFile } from '@/lib/api/client';
 
 // Previous-experience entries beyond the current/latest role — freeform JSON
 // stored as-is (candidate_profiles.experience), shape matches what the real
@@ -165,12 +165,16 @@ export function searchColleges(query: string) {
   return apiGet<CollegeOption[]>(`/locations/colleges?search=${encodeURIComponent(query)}&limit=20`, { auth: false });
 }
 
+// Uses apiUploadNative, not apiUpload: the fetch+FormData {uri,name,type}
+// shorthand throws "Unsupported FormDataPart implementation" on Android under
+// this Expo Router/Hermes combination (same bug found and fixed for the
+// video-intro/interview-question uploads — see apiUploadNative's comment).
 export function uploadAvatar(file: UploadFile) {
-  return apiUpload<{ ok: boolean; data: { avatar_url: string } }>('/applicant/profile/avatar', file, 'file');
+  return apiUploadNative<{ ok: boolean; data: { avatar_url: string } }>('/applicant/profile/avatar', file, 'file');
 }
 
 export function uploadResume(file: UploadFile) {
-  return apiUpload<{ ok: boolean; data: { resume_url: string } }>('/applicant/profile/resume', file, 'file');
+  return apiUploadNative<{ ok: boolean; data: { resume_url: string } }>('/applicant/profile/resume', file, 'file');
 }
 
 // Application status enum per database.py's JobApplication model — "pending" is a

@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CandidateProfile } from '@/lib/api/applicant';
+import { toArray } from '@/lib/format';
 
 export interface ProfileViewProps {
   profile: CandidateProfile;
@@ -22,11 +23,11 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
   const theme = useTheme();
 
   const location = [profile.current_city, profile.current_state, profile.current_country].filter(Boolean).join(', ');
-  const degrees = (profile.education ?? []).filter((e) => e.degree || e.institution);
-  const certifications = (profile.certifications ?? []).filter((c) => c.name || c.issuer || c.year);
-  const experience = (profile.experience ?? []).filter((e) => e.job_title || e.company);
-  const skills = profile.skills ?? [];
-  const languages = profile.spoken_languages ?? [];
+  const degrees = toArray(profile.education).filter((e) => e.degree || e.institution);
+  const certifications = toArray(profile.certifications).filter((c) => c.name || c.issuer || c.year);
+  const experience = toArray(profile.experience).filter((e) => e.job_title || e.company);
+  const skills = toArray(profile.skills);
+  const languages = toArray(profile.spoken_languages);
 
   return (
     <ThemedView style={styles.container}>

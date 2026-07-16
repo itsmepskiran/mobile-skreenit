@@ -130,7 +130,8 @@ export function getAssessmentResult(sessionId: string) {
 }
 
 export interface VideoIntroQuestion {
-  question: string;
+  index: number;
+  text: string;
   duration: number;
 }
 

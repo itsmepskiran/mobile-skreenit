@@ -129,7 +129,7 @@ export default function SubscriptionScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ThemedView style={[styles.header, { borderColor: theme.border }]}>
         <Pressable
           onPress={() => {

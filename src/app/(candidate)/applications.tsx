@@ -23,7 +23,7 @@ export default function ApplicationsScreen() {
   const applications = data?.data ?? [];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ThemedView style={styles.header}>
         <ThemedText type="title">Applications</ThemedText>
       </ThemedView>

@@ -77,6 +77,16 @@ export default function AssessmentResultScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="title">{data.assessment_name}</ThemedText>
 
+        {data.analysis_status === 'failed' || (data.analysis_status === 'pending' && pollCount >= MAX_POLLS) ? (
+          <ThemedView style={[styles.card, { borderColor: theme.border }]}>
+            <ThemedText type="smallBold">AI feedback unavailable</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Your submission was saved, but we couldn&apos;t generate AI feedback for it this time. Your responses
+              are still recorded and visible to recruiters.
+            </ThemedText>
+          </ThemedView>
+        ) : null}
+
         {feedback?.overall_score != null ? (
           <ThemedView style={[styles.scoreCard, { borderColor: theme.border }]}>
             <View style={[styles.scoreCircle, { borderColor: theme.primary }]}>

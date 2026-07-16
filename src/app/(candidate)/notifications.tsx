@@ -56,7 +56,7 @@ export default function NotificationsScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ThemedView style={styles.header}>
         <ThemedView style={styles.headerLeft}>
           <Pressable onPress={goBackToDashboard} hitSlop={12}>

@@ -151,22 +151,6 @@ export interface UploadFile {
   type: string;
 }
 
-// For the dedicated single-file endpoints (e.g. /applicant/profile/avatar, /profile/resume).
-// Don't set a Content-Type header here — fetch derives the multipart boundary from the
-// FormData body itself, and overriding it would break the upload.
-export async function apiUpload<T>(
-  path: string,
-  file: UploadFile,
-  fieldName: string,
-  opts: RequestOpts = {},
-): Promise<T> {
-  const formData = new FormData();
-  formData.append(fieldName, { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
-
-  const res = await rawRequest(path, { method: 'POST', body: formData }, opts.auth ?? true);
-  return parseResponse<T>(res);
-}
-
 // Uploads via expo-file-system's native upload task instead of fetch+FormData.
 // The RN/Hermes FormData polyfill under Expo Router on Android throws
 // "Unsupported FormDataPart implementation" for the {uri,name,type} shorthand

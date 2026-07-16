@@ -14,6 +14,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/lib/auth/store';
 import { ApiError } from '@/lib/api/client';
+import { toArray } from '@/lib/format';
 import {
   getProfile,
   updateProfile,
@@ -92,15 +93,15 @@ function fromProfile(profile: CandidateProfile): WizardValues {
     post_graduation: profile.post_graduation ?? '',
     post_graduation_year: toStr(profile.post_graduation_year),
     post_graduation_percentage: toStr(profile.post_graduation_percentage),
-    education: profile.education ?? [],
-    certifications: profile.certifications ?? [],
-    skills: profile.skills ?? [],
-    spoken_languages: profile.spoken_languages?.length ? profile.spoken_languages : ['english'],
+    education: toArray(profile.education),
+    certifications: toArray(profile.certifications),
+    skills: toArray(profile.skills),
+    spoken_languages: toArray(profile.spoken_languages).length ? toArray(profile.spoken_languages) : ['english'],
     current_company: profile.current_company ?? '',
     current_designation: profile.current_designation ?? '',
     current_doj: toDateStr(profile.current_doj),
     current_dol: toDateStr(profile.current_dol),
-    experience: profile.experience ?? [],
+    experience: toArray(profile.experience),
   };
 }
 
@@ -234,7 +235,7 @@ export default function ProfileScreen() {
 
   if (profileQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
@@ -244,7 +245,7 @@ export default function ProfileScreen() {
   // go straight to the wizard regardless of `mode`.
   if (mode === 'view' && profile) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ScrollView contentContainerStyle={styles.content}>
           <ProfileView
             profile={profile}
@@ -268,7 +269,7 @@ export default function ProfileScreen() {
   const stepProps = { values, setValue };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ThemedView style={[styles.editHeader, { borderColor: theme.border }]}>
         <Pressable
           onPress={() => {

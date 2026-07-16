@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPostJson, apiPut, apiUpload, type UploadFile } from '@/lib/api/client';
+import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, type UploadFile } from '@/lib/api/client';
 
 // --- Job posting CRUD -------------------------------------------------------
 // department/role/employment_type/job_type/industry/education_qualification are
@@ -243,12 +243,15 @@ export function updateRecruiterProfile(input: RecruiterProfileInput) {
   });
 }
 
+// Uses apiUploadNative, not apiUpload — see applicant.ts's uploadAvatar for
+// why (fetch+FormData throws "Unsupported FormDataPart implementation" for
+// the {uri,name,type} shorthand on Android under this Expo Router version).
 export function uploadRecruiterAvatar(file: UploadFile) {
-  return apiUpload<{ ok: boolean; data: { avatar_url: string } }>('/recruiter/profile/avatar', file, 'file');
+  return apiUploadNative<{ ok: boolean; data: { avatar_url: string } }>('/recruiter/profile/avatar', file, 'file');
 }
 
 export function uploadCompanyLogo(file: UploadFile) {
-  return apiUpload<{ ok: boolean; data: { avatar_url: string } }>('/recruiter/profile/company-logo', file, 'file');
+  return apiUploadNative<{ ok: boolean; data: { avatar_url: string } }>('/recruiter/profile/company-logo', file, 'file');
 }
 
 // --- Dashboard analytics -----------------------------------------------------

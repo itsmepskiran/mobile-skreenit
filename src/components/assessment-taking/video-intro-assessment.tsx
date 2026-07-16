@@ -152,14 +152,14 @@ export function VideoIntroAssessment() {
       const uploadRes = await uploadIntroVideoResponse(
         { uri: videoUri, name: `intro_q${questionIndex}.mp4`, type: 'video/mp4' },
         questionIndex,
-        question.question,
+        question.text,
       );
       // Web's version of this flow uploads the clip but never saves this
       // metadata, orphaning it in storage — save it here so it's actually
       // retrievable (also updates candidate_profiles.intro_video_url for Q0).
       await saveIntroResponse({
         questionIndex,
-        question: question.question,
+        question: question.text,
         videoUrl: uploadRes.data.url,
         videoPath: uploadRes.data.path,
       });
@@ -184,7 +184,7 @@ export function VideoIntroAssessment() {
           <ThemedText type="small" themeColor="textSecondary">
             Question {questionIndex + 1} of {questions.length}
           </ThemedText>
-          <ThemedText type="smallBold">{question.question}</ThemedText>
+          <ThemedText type="smallBold">{question.text}</ThemedText>
         </View>
 
         <View style={[styles.videoBox, { borderColor: theme.border }]}>

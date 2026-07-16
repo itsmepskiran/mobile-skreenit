@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/brand-header';
@@ -20,6 +20,12 @@ export function AuthScreenLayout({ children }: AuthScreenLayoutProps) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.card}>
+              <Image
+                source={require('@/assets/images/skreenit-logo.png')}
+                style={styles.iconLogo}
+                resizeMode="contain"
+                accessibilityLabel="Skreenit"
+              />
               <BrandHeader />
               <View style={styles.cardBody}>{children}</View>
             </View>
@@ -56,5 +62,11 @@ const styles = StyleSheet.create({
   cardBody: {
     padding: 24,
     gap: 16,
+  },
+  iconLogo: {
+    width: 72,
+    height: 72,
+    alignSelf: 'center',
+    marginTop: 20,
   },
 });

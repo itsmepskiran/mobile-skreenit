@@ -29,14 +29,14 @@ export default function PendingInterviewsScreen() {
 
   if (applicationsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="title">Pending Interviews</ThemedText>
 

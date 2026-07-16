@@ -32,14 +32,14 @@ export default function RecruiterDashboardScreen() {
 
   if (statsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView style={styles.headerRow}>
           <ThemedText type="title">Dashboard</ThemedText>

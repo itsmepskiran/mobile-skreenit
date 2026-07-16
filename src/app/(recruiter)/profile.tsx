@@ -101,7 +101,7 @@ export default function RecruiterProfileScreen() {
 
   if (profileQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
@@ -110,7 +110,7 @@ export default function RecruiterProfileScreen() {
   const initial = (companyName || authUser?.full_name || '?').charAt(0).toUpperCase();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <LinearGradient colors={['#4f46e5', '#7c3aed']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBanner}>
           <Pressable onPress={() => pickImage((f) => avatarMutation.mutate(f))} style={styles.avatarWrap}>
