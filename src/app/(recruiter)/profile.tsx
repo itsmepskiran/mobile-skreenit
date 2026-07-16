@@ -1,7 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,17 +12,17 @@ import { RoleSwitcher } from '@/components/role-switcher';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useAuthStore } from '@/lib/auth/store';
+import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api/client';
 import {
-  getRecruiterProfile,
-  getRecruiterStats,
-  updateRecruiterProfile,
-  uploadCompanyLogo,
-  uploadRecruiterAvatar,
-  type RecruiterProfileInput,
+    getRecruiterProfile,
+    getRecruiterStats,
+    updateRecruiterProfile,
+    uploadCompanyLogo,
+    uploadRecruiterAvatar,
+    type RecruiterProfileInput,
 } from '@/lib/api/recruiter';
-import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/lib/auth/store';
 
 export default function RecruiterProfileScreen() {
   const theme = useTheme();
@@ -45,6 +45,7 @@ export default function RecruiterProfileScreen() {
   const [companyDescription, setCompanyDescription] = useState('');
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!profile) return;
     setContactName(profile.contact_name ?? '');
     setContactEmail(profile.contact_email ?? '');
@@ -52,6 +53,7 @@ export default function RecruiterProfileScreen() {
     setCompanyName(profile.company_name ?? '');
     setCompanyWebsite(profile.company_website ?? '');
     setCompanyDescription(profile.company_description ?? '');
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [profile]);
 
   const invalidate = () => {

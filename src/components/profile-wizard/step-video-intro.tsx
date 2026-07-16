@@ -10,10 +10,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  generateInterviewQuestions,
-  saveIntroResponse,
-  uploadIntroVideoResponse,
-  type GeneratedQuestions,
+    generateInterviewQuestions,
+    saveIntroResponse,
+    uploadIntroVideoResponse,
+    type GeneratedQuestions,
 } from '@/lib/api/applicant';
 
 const MAX_DURATION_SECONDS = 60;
@@ -49,6 +49,7 @@ export function StepVideoIntro({ resumeUrl, existingIntroVideoUrl, onRecorded }:
   const started = rerecording || !existingIntroVideoUrl;
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!started || questions || loadingQuestions) return;
     if (!resumeUrl) {
       setQuestionsError('Upload a resume in the Personal step first — it\'s used to generate your interview questions.');
@@ -60,6 +61,7 @@ export function StepVideoIntro({ resumeUrl, existingIntroVideoUrl, onRecorded }:
       .then((res) => setQuestions(res.data))
       .catch(() => setQuestionsError('Could not generate interview questions. Please try again.'))
       .finally(() => setLoadingQuestions(false));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [started, questions, loadingQuestions, resumeUrl]);
 
   const player = useVideoPlayer(videoUri ?? null, (p) => {

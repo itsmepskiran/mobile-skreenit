@@ -5,12 +5,11 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Slot, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 
-import { useAuthStore } from '@/lib/auth/store';
-import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { TopBrandBar } from '@/components/top-brand-bar';
-import { View } from 'react-native';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useAuthStore } from '@/lib/auth/store';
 
 SplashScreen.preventAutoHideAsync();
 

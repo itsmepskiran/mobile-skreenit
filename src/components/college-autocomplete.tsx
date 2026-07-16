@@ -26,7 +26,9 @@ export function CollegeAutocomplete({ label, value, onChange }: CollegeAutocompl
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setQuery(value);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [value]);
 
   const onChangeText = (text: string) => {

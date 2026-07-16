@@ -1,24 +1,24 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { VideoIntroAssessment } from '@/components/assessment-taking/video-intro-assessment';
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { ApiError } from '@/lib/api/client';
 import {
-  finishAssessment,
-  getAssessmentQuestions,
-  type AssessmentItem,
-  type AssessmentQuestions,
-  type AssessmentResponseInput,
-  type AssessmentSection,
+    finishAssessment,
+    getAssessmentQuestions,
+    type AssessmentItem,
+    type AssessmentQuestions,
+    type AssessmentResponseInput,
+    type AssessmentSection,
 } from '@/lib/api/assessment-taking';
-import { VideoIntroAssessment } from '@/components/assessment-taking/video-intro-assessment';
+import { ApiError } from '@/lib/api/client';
 
 const CODING_PLATFORMS = [
   { id: 'python', label: 'Python' },
@@ -74,8 +74,10 @@ function GenericAssessment({ planId }: { planId: string }) {
   const item: AssessmentItem | null = section?.items[itemIdx] ?? null;
   const responseKey = section && item ? `${section.id}_${item.id}` : null;
 
-  const load = async (chosenPlatform?: string) => {
-    setStage('loading');
+  const load = useCallback(async (chosenPlatform?: string, skipLoading = false) => {
+    if (!skipLoading) {
+      setStage('loading');
+    }
     setErrorMsg(null);
     try {
       const res = await getAssessmentQuestions(planId, chosenPlatform);
@@ -89,14 +91,17 @@ function GenericAssessment({ planId }: { planId: string }) {
         setStage('error');
       }
     }
-  };
+  }, [planId]);
 
   // Non-coding assessments skip straight to loading — the platform picker
   // (which itself triggers `load`) only applies to gen_coding_basic.
   useEffect(() => {
-    if (!needsPlatform) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!needsPlatform) {
+      void load(undefined, true);
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [needsPlatform, load]);
 
   const setResponse = (value: ResponseValue) => {
     if (!responseKey) return;

@@ -7,31 +7,31 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { ProfileView } from '@/components/profile-wizard/profile-view';
+import { StepEducation } from '@/components/profile-wizard/step-education';
+import { StepExperience } from '@/components/profile-wizard/step-experience';
+import { StepPersonal } from '@/components/profile-wizard/step-personal';
+import { StepProfessional } from '@/components/profile-wizard/step-professional';
+import { StepReview } from '@/components/profile-wizard/step-review';
+import { StepSkills } from '@/components/profile-wizard/step-skills';
+import { StepVideoIntro } from '@/components/profile-wizard/step-video-intro';
+import { EMPTY_WIZARD_VALUES, type WizardValues } from '@/components/profile-wizard/types';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { Stepper, type StepDefinition } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/lib/auth/store';
-import { ApiError } from '@/lib/api/client';
-import { toArray } from '@/lib/format';
 import {
-  getProfile,
-  updateProfile,
-  uploadAvatar,
-  uploadResume,
-  type CandidateProfile,
-  type ProfileUpdateInput,
+    getProfile,
+    updateProfile,
+    uploadAvatar,
+    uploadResume,
+    type CandidateProfile,
+    type ProfileUpdateInput,
 } from '@/lib/api/applicant';
-import { EMPTY_WIZARD_VALUES, type WizardValues } from '@/components/profile-wizard/types';
-import { StepPersonal } from '@/components/profile-wizard/step-personal';
-import { StepProfessional } from '@/components/profile-wizard/step-professional';
-import { StepEducation } from '@/components/profile-wizard/step-education';
-import { StepSkills } from '@/components/profile-wizard/step-skills';
-import { StepExperience } from '@/components/profile-wizard/step-experience';
-import { StepReview } from '@/components/profile-wizard/step-review';
-import { StepVideoIntro } from '@/components/profile-wizard/step-video-intro';
-import { ProfileView } from '@/components/profile-wizard/profile-view';
+import { ApiError } from '@/lib/api/client';
+import { useAuthStore } from '@/lib/auth/store';
+import { toArray } from '@/lib/format';
 
 const STEPS: StepDefinition[] = [
   { label: 'Personal', icon: 'user' },
@@ -131,7 +131,9 @@ export default function ProfileScreen() {
   const profile = profileQuery.data?.data;
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (profile) setValues(fromProfile(profile));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [profile]);
 
   const setValue = <K extends keyof WizardValues>(key: K, value: WizardValues[K]) => {

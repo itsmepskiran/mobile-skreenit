@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
-import { useAuthStore } from '@/lib/auth/store';
 import { registerDeviceToken, unregisterDeviceToken } from '@/lib/api/notifications';
+import { useAuthStore } from '@/lib/auth/store';
 
 // expo-notifications' remote-push functionality was removed from Expo Go as of
 // SDK 53 — on Android in particular, merely `import`-ing the module throws
@@ -34,7 +34,7 @@ function getNotificationsModule(): NotificationsModule | null {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     notificationsModule = require('expo-notifications') as NotificationsModule;
     notificationsModule.setNotificationHandler({
       handleNotification: async () => ({

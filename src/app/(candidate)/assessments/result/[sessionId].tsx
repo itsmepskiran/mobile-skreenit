@@ -1,7 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,7 +20,7 @@ const MAX_POLLS = 10;
 export default function AssessmentResultScreen() {
   const theme = useTheme();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
-  const pollCountRef = useRef(0);
+  const [pollCount, setPollCount] = useState(0);
 
   const resultQuery = useQuery({
     queryKey: ['assessment-result', sessionId],
@@ -28,14 +28,13 @@ export default function AssessmentResultScreen() {
     refetchInterval: (query) => {
       const data = query.state.data?.data;
       if (!data || data.analysis_status !== 'pending') return false;
-      if (pollCountRef.current >= MAX_POLLS) return false;
-      pollCountRef.current += 1;
+      if (pollCount >= MAX_POLLS) return false;
+      setPollCount((count: number) => count + 1);
       return POLL_INTERVAL_MS;
     },
   });
 
   const data = resultQuery.data?.data;
-  const pollCount = pollCountRef.current;
   const feedback = data?.ai_feedback;
 
   if (resultQuery.isLoading) {

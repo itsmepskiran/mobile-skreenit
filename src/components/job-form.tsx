@@ -1,7 +1,7 @@
+import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { FontAwesome6 } from '@expo/vector-icons';
 
 import { Button } from '@/components/button';
 import { LocationPicker, type LocationValue } from '@/components/location-picker';
@@ -11,16 +11,16 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  getDepartments,
-  getEducationLevels,
-  getEmploymentTypes,
-  getIndustries,
-  getJobTypes,
-  getRoles,
-  NOTICE_PERIOD_OPTIONS,
-} from '@/lib/api/reference';
 import type { JobInput } from '@/lib/api/recruiter';
+import {
+    getDepartments,
+    getEducationLevels,
+    getEmploymentTypes,
+    getIndustries,
+    getJobTypes,
+    getRoles,
+    NOTICE_PERIOD_OPTIONS,
+} from '@/lib/api/reference';
 
 export interface JobFormProps {
   initialValues?: Partial<Omit<JobInput, 'location'>> & { location?: LocationValue };
@@ -76,6 +76,7 @@ export function JobForm({ initialValues, submitLabel, submitting, onSubmit, onDe
   const [contactEmail, setContactEmail] = useState(initialValues?.contact_person_email ?? '');
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!initialValues) return;
     setJobTitle(initialValues.job_title ?? '');
     setDepartment(initialValues.department ?? '');
@@ -99,6 +100,7 @@ export function JobForm({ initialValues, submitLabel, submitting, onSubmit, onDe
     setRequirements(initialValues.requirements ?? '');
     setContactName(initialValues.contact_person_name ?? '');
     setContactEmail(initialValues.contact_person_email ?? '');
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [initialValues]);
 
   const handleSubmit = () => {

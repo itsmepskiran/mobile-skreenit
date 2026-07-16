@@ -1,18 +1,18 @@
 import { FontAwesome6 } from '@expo/vector-icons';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { deleteJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
 import { JOB_DETAILS_URL } from '@/lib/config';
 import { formatSalaryRange } from '@/lib/format';
-import { deleteJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
 
 function jobUrl(jobId: string) {
   return `${JOB_DETAILS_URL}?job_id=${jobId}`;
@@ -50,14 +50,14 @@ export default function MyJobsScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recruiter', 'jobs'] }),
   });
 
-  const jobs = jobsQuery.data?.data.jobs ?? [];
   const filtered = useMemo(() => {
+    const jobs = jobsQuery.data?.data.jobs ?? [];
     return jobs.filter((job) => {
       if (statusFilter !== 'all' && job.status !== statusFilter) return false;
       if (search.trim() && !job.job_title.toLowerCase().includes(search.trim().toLowerCase())) return false;
       return true;
     });
-  }, [jobs, statusFilter, search]);
+  }, [jobsQuery.data?.data.jobs, statusFilter, search]);
 
   const confirmDelete = (job: RecruiterJobListItem) => {
     Alert.alert('Delete job posting?', `"${job.job_title}" will be permanently removed.`, [

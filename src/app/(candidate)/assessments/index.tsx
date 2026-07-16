@@ -195,9 +195,11 @@ export default function AssessmentsScreen() {
                   <ThemedText type="small" themeColor="primary">
                     ₹{item.price.toLocaleString('en-IN')}
                   </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Tap for details
-                  </ThemedText>
+                  <View style={[styles.detailsButton, { backgroundColor: theme.primary }]}>
+                    <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+                      Tap for details
+                    </ThemedText>
+                  </View>
                 </View>
               </Pressable>
               ))}
@@ -316,9 +318,13 @@ export default function AssessmentsScreen() {
                     </ThemedText>
                   </Pressable>
                 </View>
-                <Pressable onPress={() => goToBundleCheckout(detailItem.industry)}>
-                  <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 2 }}>
-                    Or get the full {detailItem.industryLabel} pack instead
+                <Pressable
+                  style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                  onPress={() => goToBundleCheckout(detailItem.industry)}
+                >
+                  <FontAwesome6 name="crown" size={12} color="#fff" />
+                  <ThemedText type="small" style={{ color: '#fff' }}>
+                    Get Full Access
                   </ThemedText>
                 </Pressable>
               </>
@@ -405,7 +411,8 @@ const styles = StyleSheet.create({
   freeCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 6 },
   startRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   catalogCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 6 },
-  catalogCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  catalogCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, gap: 8 },
+  detailsButton: { borderRadius: Radius.md, paddingVertical: 6, paddingHorizontal: 10 },
   selectedIndustryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   cardTitle: { flex: 1 },
