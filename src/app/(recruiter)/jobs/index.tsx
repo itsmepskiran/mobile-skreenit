@@ -75,7 +75,7 @@ export default function MyJobsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <ThemedView style={styles.searchRow}>
         <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
         <TextInput
@@ -253,15 +253,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     marginHorizontal: 20,
-    marginTop: -8,
-    marginBottom: 6,
+    marginTop: 0,
+    marginBottom: 0,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: Radius.md,
     backgroundColor: 'rgba(148,163,184,0.12)',
   },
   searchInput: { flex: 1, fontSize: 15 },
-  filterRow: { paddingHorizontal: 20, paddingVertical: 6, paddingBottom: 4, gap: 8, alignItems: 'center' },
+  filterRow: { paddingHorizontal: 20, paddingVertical: 2, paddingBottom: 2, gap: 8, alignItems: 'center' },
   filterChip: {
     borderWidth: 1,
     borderRadius: 20,
