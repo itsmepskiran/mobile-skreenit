@@ -11,6 +11,8 @@ export default function RecruiterJobsStackLayout() {
         headerStyle: { backgroundColor: theme.background },
         headerTintColor: theme.text,
         headerShadowVisible: false,
+        headerLargeTitle: false,
+        headerTitleAlign: 'left',
       }}
     >
       <Stack.Screen name="index" options={{ title: 'My Jobs' }} />

@@ -68,14 +68,14 @@ export default function MyJobsScreen() {
 
   if (jobsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ThemedView style={styles.searchRow}>
         <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
         <TextInput
@@ -101,7 +101,7 @@ export default function MyJobsScreen() {
                   active && { backgroundColor: theme.primary, borderColor: theme.primary },
                 ]}
               >
-                <ThemedText type="small" style={active ? { color: '#ffffff' } : undefined}>
+                <ThemedText type="small" style={{ color: active ? '#ffffff' : theme.text }}>
                   {filter.label}
                 </ThemedText>
               </Pressable>
@@ -269,8 +269,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    height: 32,
+    paddingVertical: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
