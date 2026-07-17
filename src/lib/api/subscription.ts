@@ -102,6 +102,7 @@ export interface PurchaseHistoryItem {
   status: string;
   payment_method: string | null;
   transaction_id: string | null;
+  razorpay_order_id: string | null;
   amount_paid: number | null;
   start_date: string | null;
   expiry_date: string | null;

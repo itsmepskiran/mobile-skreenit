@@ -1,6 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -16,7 +17,14 @@ const STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = 
 };
 const DEFAULT_STYLE = { label: 'Unknown', bg: '#f1f5f9', fg: '#475569' };
 
-export function PurchaseHistoryRow({ item }: { item: PurchaseHistoryItem }) {
+interface PurchaseHistoryRowProps {
+  item: PurchaseHistoryItem;
+  onDownloadReceipt: () => void;
+  onRetryPayment: () => void;
+  retrying?: boolean;
+}
+
+export function PurchaseHistoryRow({ item, onDownloadReceipt, onRetryPayment, retrying }: PurchaseHistoryRowProps) {
   const theme = useTheme();
   const statusStyle = STATUS_STYLE[item.status] ?? DEFAULT_STYLE;
 
@@ -59,6 +67,27 @@ export function PurchaseHistoryRow({ item }: { item: PurchaseHistoryItem }) {
           </>
         ) : null}
       </View>
+
+      <View style={styles.idBlock}>
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          Subscription ID: {item.subscription_id}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          Order ID: {item.razorpay_order_id ?? '-'}
+        </ThemedText>
+      </View>
+
+      {item.status === 'active' ? (
+        <Button title="Download Receipt" variant="secondary" icon="download" onPress={onDownloadReceipt} style={styles.actionButton} />
+      ) : item.status === 'pending' ? (
+        <Button
+          title="Retry Payment"
+          icon="rotate-right"
+          loading={retrying}
+          onPress={onRetryPayment}
+          style={styles.actionButton}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -70,4 +99,6 @@ const styles = StyleSheet.create({
   statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   capitalize: { textTransform: 'capitalize' },
+  idBlock: { gap: 2, marginTop: 2 },
+  actionButton: { marginTop: 8 },
 });
