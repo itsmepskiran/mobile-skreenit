@@ -70,10 +70,7 @@ export function PurchaseHistoryRow({ item, onDownloadReceipt, onRetryPayment, re
 
       <View style={styles.idBlock}>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          Subscription ID: {item.subscription_id}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          Order ID: {item.razorpay_order_id ?? '-'}
+          Order ID / Subscription ID: {item.subscription_id}
         </ThemedText>
       </View>
 

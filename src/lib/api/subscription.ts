@@ -99,11 +99,15 @@ export interface PurchaseHistoryItem {
   plan_name: string;
   service_key: string | null;
   service_type: string;
+  billing_cycle: string | null;
+  duration: string | null;
   status: string;
   payment_method: string | null;
   transaction_id: string | null;
   razorpay_order_id: string | null;
   amount_paid: number | null;
+  full_name: string | null;
+  email: string | null;
   start_date: string | null;
   expiry_date: string | null;
   trial_end_date: string | null;
