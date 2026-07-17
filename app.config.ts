@@ -22,9 +22,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: 'automatic',
   ios: {
     bundleIdentifier: 'com.skreenit.app',
+    // ◄ ADDED THIS INFO PLIST BLOCK FOR THE IPHONE HTTP/TAILSCALE ERROR
+    infoPlist: {
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: true,
+      },
+    },
   },
   android: {
     package: 'com.skreenit.app',
+    usesCleartextTraffic: true, // ◄ ADDED TO ALLOW HTTP FOR ANDROID AS WELL
     adaptiveIcon: {
       backgroundColor: '#F8FAFC',
       foregroundImage: './assets/images/android-icon-foreground.png',
