@@ -75,11 +75,14 @@ export interface ActiveSubscription {
   subscription_id: string;
   plan_id: string;
   plan_name: string;
+  plan_label: string | null;
+  service_key: string | null;
   service_type: string;
   status: string;
   start_date: string | null;
   expiry_date: string | null;
   trial_end_date: string | null;
+  features: string | string[] | null;
 }
 
 export function getActiveSubscriptions() {

@@ -1,6 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,7 +12,9 @@ import { useTheme } from '@/hooks/use-theme';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 import { getCandidateStats, listRecentCandidateApplications } from '@/lib/api/candidate-dashboard';
 import { getUnreadCount } from '@/lib/api/notifications';
+import { getActiveSubscriptions } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
+import { INDUSTRIES, resolveSubscribedAssessments } from '@/lib/assessment-catalog';
 import { formatRelativeTime } from '@/lib/format';
 
 export default function CandidateDashboardScreen() {
@@ -28,10 +31,18 @@ export default function CandidateDashboardScreen() {
     queryFn: getUnreadCount,
     refetchInterval: 30000,
   });
+  const subscriptionsQuery = useQuery({
+    queryKey: ['subscription', 'active'],
+    queryFn: getActiveSubscriptions,
+  });
 
   const stats = statsQuery.data?.data;
   const applications = applicationsQuery.data?.data.applications ?? [];
   const unreadCount = unreadQuery.data?.data.unread_count ?? 0;
+  const subscribedAssessments = useMemo(
+    () => resolveSubscribedAssessments(subscriptionsQuery.data?.data ?? []),
+    [subscriptionsQuery.data],
+  );
 
   if (statsQuery.isLoading) {
     return (
@@ -72,6 +83,47 @@ export default function CandidateDashboardScreen() {
             colors={['#a8edea', '#fed6e3']}
             iconColor="#0f172a"
           />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="smallBold">My Assessments</ThemedText>
+            <Pressable onPress={() => router.push('/(candidate)/assessments')}>
+              <ThemedText type="link" themeColor="primary">
+                Browse More
+              </ThemedText>
+            </Pressable>
+          </View>
+          {subscriptionsQuery.isLoading ? (
+            <ActivityIndicator color={theme.primary} />
+          ) : subscribedAssessments.length === 0 ? (
+            <ThemedText themeColor="textSecondary">No assessments purchased yet.</ThemedText>
+          ) : (
+            subscribedAssessments.map((item) => {
+              const pack = INDUSTRIES.find((i) => i.value === item.industry);
+              return (
+                <Pressable
+                  key={item.id}
+                  style={[styles.row, { borderColor: theme.border }]}
+                  onPress={() => router.push(`/(candidate)/assessments/take/${item.id}`)}
+                >
+                  <View style={[styles.assessmentIcon, { backgroundColor: pack?.bg ?? theme.backgroundElement }]}>
+                    <FontAwesome6 name={pack?.icon ?? 'clipboard-check'} size={16} color={pack?.color ?? theme.primary} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <ThemedText type="smallBold" numberOfLines={1}>
+                      {item.name}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {item.status === 'trial' ? 'Trial' : 'Active'}
+                      {item.expiryDate ? ` · Valid until ${new Date(item.expiryDate).toLocaleDateString()}` : ''}
+                    </ThemedText>
+                  </View>
+                  <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
+                </Pressable>
+              );
+            })
+          )}
         </View>
 
         <View style={styles.section}>
@@ -145,4 +197,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowText: { flex: 1, gap: 2 },
+  assessmentIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });

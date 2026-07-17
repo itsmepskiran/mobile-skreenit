@@ -5,6 +5,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { API_V1 } from '@/lib/config';
 
 export interface RazorpaySuccess {
   razorpay_payment_id: string;
@@ -39,6 +40,14 @@ function buildHtml(props: Omit<RazorpayCheckoutProps, 'visible' | 'onSuccess' | 
     order_id: props.orderId,
     prefill: props.prefill,
     theme: { color: '#6366f1' },
+    // Methods that can't complete inline (netbanking, some wallets — the bank
+    // refuses to be iframed) make checkout.js top-navigate away instead of
+    // firing `handler`. Without a real callback_url that lands back in this
+    // same WebView, that navigation strands on the bank's page with no way to
+    // report the result. /razorpay-callback verifies the payment and posts
+    // the same {type, ...} shape `handler`/`payment.failed` already produce.
+    callback_url: `${API_V1}/subscription/razorpay-callback`,
+    redirect: true,
   };
 
   return `<!DOCTYPE html>
