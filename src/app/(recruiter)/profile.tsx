@@ -2,6 +2,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -272,6 +273,12 @@ export default function RecruiterProfileScreen() {
         </ThemedView>
 
         <RoleSwitcher />
+        <Button
+          title="Purchase History"
+          variant="secondary"
+          icon="receipt"
+          onPress={() => router.push('/(recruiter)/purchase-history')}
+        />
         <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
       </ScrollView>
     </SafeAreaView>

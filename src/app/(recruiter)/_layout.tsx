@@ -48,6 +48,7 @@ export default function RecruiterLayout() {
           tabBarIcon: ({ color, size }) => <FontAwesome6 name="circle-user" size={size * 0.8} color={color} />,
         }}
       />
+      <Tabs.Screen name="purchase-history" options={{ href: null }} />
     </Tabs>
   );
 }

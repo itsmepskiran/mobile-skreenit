@@ -49,6 +49,7 @@ export default function CandidateLayout() {
       />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="subscription" options={{ href: null }} />
+      <Tabs.Screen name="purchase-history" options={{ href: null }} />
     </Tabs>
   );
 }
