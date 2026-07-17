@@ -10,12 +10,22 @@ import type { PurchaseHistoryItem } from '@/lib/api/subscription';
 
 const STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = {
   active: { label: 'Active', bg: '#f0fff4', fg: '#2f855a' },
+  // 'confirmed' is what seminar/training registrations use in place of
+  // 'active' once paid — same meaning, same styling.
+  confirmed: { label: 'Confirmed', bg: '#f0fff4', fg: '#2f855a' },
   trial: { label: 'Trial', bg: '#ebf8ff', fg: '#2b6cb0' },
   pending: { label: 'Pending', bg: '#fffaf0', fg: '#c05621' },
   expired: { label: 'Expired', bg: '#f1f5f9', fg: '#475569' },
   cancelled: { label: 'Cancelled', bg: '#fff5f5', fg: '#c53030' },
+  failed: { label: 'Failed', bg: '#fff5f5', fg: '#c53030' },
 };
 const DEFAULT_STYLE = { label: 'Unknown', bg: '#f1f5f9', fg: '#475569' };
+
+// Retry re-runs createRazorpayOrder against /subscription/create-order —
+// seminar/training registrations pay through their own /seminars/create-order
+// and /training/create-order endpoints instead, which this screen doesn't
+// call yet. Hide Retry for them rather than offer an action that 404s.
+const RETRYABLE_SERVICE_TYPES = new Set(['applicant_plan', 'assessment_bundle', 'recruiter_subscription', 'recruiter_plan']);
 
 interface PurchaseHistoryRowProps {
   item: PurchaseHistoryItem;
@@ -74,9 +84,9 @@ export function PurchaseHistoryRow({ item, onDownloadReceipt, onRetryPayment, re
         </ThemedText>
       </View>
 
-      {item.status === 'active' ? (
+      {item.status === 'active' || item.status === 'confirmed' ? (
         <Button title="Download Receipt" variant="secondary" icon="download" onPress={onDownloadReceipt} style={styles.actionButton} />
-      ) : item.status === 'pending' ? (
+      ) : item.status === 'pending' && RETRYABLE_SERVICE_TYPES.has(item.service_type) ? (
         <Button
           title="Retry Payment"
           icon="rotate-right"
