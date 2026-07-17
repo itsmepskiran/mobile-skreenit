@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { listApplications, type ApplicationListItem } from '@/lib/api/applicant';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { listApplications, type ApplicationListItem } from '@/lib/api/applicant';
 import { formatRelativeTime } from '@/lib/format';
 
 export default function ApplicationsScreen() {
@@ -24,16 +23,16 @@ export default function ApplicationsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ThemedView style={styles.header}>
+      <View style={styles.header}>
         <ThemedText type="title">Applications</ThemedText>
-      </ThemedView>
+      </View>
 
       {isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       ) : isError ? (
-        <ThemedView style={styles.centerMessage}>
+        <View style={styles.centerMessage}>
           <ThemedText themeColor="textSecondary">Couldn&apos;t load your applications. Pull down to retry.</ThemedText>
-        </ThemedView>
+        </View>
       ) : (
         <FlatList
           data={applications}
@@ -45,9 +44,9 @@ export default function ApplicationsScreen() {
             <ApplicationRow item={item} onPress={() => router.push(`/(candidate)/jobs/${item.job_id}`)} />
           )}
           ListEmptyComponent={
-            <ThemedView style={styles.centerMessage}>
+            <View style={styles.centerMessage}>
               <ThemedText themeColor="textSecondary">You haven&apos;t applied to any jobs yet.</ThemedText>
-            </ThemedView>
+            </View>
           }
         />
       )}
@@ -63,7 +62,7 @@ function ApplicationRow({ item, onPress }: { item: ApplicationListItem; onPress:
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        { borderColor: theme.border },
         pressed && styles.pressed,
       ]}
     >
@@ -74,12 +73,12 @@ function ApplicationRow({ item, onPress }: { item: ApplicationListItem; onPress:
       <ThemedText type="small" themeColor="textSecondary">
         {item.location}
       </ThemedText>
-      <ThemedView style={styles.statusRow}>
+      <View style={styles.statusRow}>
         <StatusBadge status={item.status} />
         <ThemedText type="small" themeColor="textSecondary">
           Applied {formatRelativeTime(item.applied_at)}
         </ThemedText>
-      </ThemedView>
+      </View>
       {item.feedback ? (
         <ThemedText type="small" style={styles.feedback}>
           {item.feedback}

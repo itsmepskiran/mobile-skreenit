@@ -3,11 +3,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatRelativeTime, formatSalaryRange } from '@/lib/format';
 import type { JobListItem } from '@/lib/api/jobs';
+import { formatRelativeTime, formatSalaryRange } from '@/lib/format';
 
 export interface JobCardProps {
   job: JobListItem;
@@ -29,40 +28,40 @@ export function JobCard({ job, onPress }: JobCardProps) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        { borderColor: theme.border },
         pressed && styles.pressed,
       ]}
     >
-      <ThemedView style={styles.headerRow}>
-        <ThemedView style={styles.headerText}>
+      <View style={styles.headerRow}>
+        <View style={styles.headerText}>
           <ThemedText type="smallBold" numberOfLines={2}>
             {job.job_title}
           </ThemedText>
           <ThemedText themeColor="primary">{job.company_name}</ThemedText>
-        </ThemedView>
+        </View>
         <LinearGradient colors={['#4f46e5', '#7c3aed']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.typeBadge}>
           <ThemedText type="small" style={styles.typeBadgeText}>
             {job.is_remote ? 'Remote' : job.job_type}
           </ThemedText>
         </LinearGradient>
-      </ThemedView>
+      </View>
 
       {!job.is_remote && job.location ? (
-        <ThemedView style={styles.metaRow}>
+        <View style={styles.metaRow}>
           <FontAwesome6 name="location-dot" size={12} color={theme.primary} />
           <ThemedText type="small" themeColor="textSecondary">
             {job.location}
           </ThemedText>
-        </ThemedView>
+        </View>
       ) : null}
 
       {salary ? (
-        <ThemedView style={styles.metaRow}>
+        <View style={styles.metaRow}>
           <FontAwesome6 name="sack-dollar" size={12} color={theme.primary} />
           <ThemedText type="small" themeColor="textSecondary">
             {salary}
           </ThemedText>
-        </ThemedView>
+        </View>
       ) : null}
 
       <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
@@ -86,12 +85,12 @@ export function JobCard({ job, onPress }: JobCardProps) {
         </View>
       ) : null}
 
-      <ThemedView style={styles.footerRow}>
+      <View style={styles.footerRow}>
         <FontAwesome6 name="clock" size={11} color={theme.textSecondary} />
         <ThemedText type="small" themeColor="textSecondary">
           Posted {formatRelativeTime(job.created_at)}
         </ThemedText>
-      </ThemedView>
+      </View>
 
       <LinearGradient colors={['#10b981', '#059669']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.applyButton}>
         <FontAwesome6 name="paper-plane" size={13} color="#ffffff" />

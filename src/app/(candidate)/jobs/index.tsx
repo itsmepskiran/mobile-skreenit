@@ -2,15 +2,14 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { listJobs } from '@/lib/api/jobs';
 import { JobCard } from '@/components/job-card';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Fonts, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { listJobs } from '@/lib/api/jobs';
 
 const PAGE_SIZE = 20;
 
@@ -40,7 +39,7 @@ export default function JobsListScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ThemedView style={styles.searchWrap}>
+      <View style={styles.searchWrap}>
         <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} style={styles.searchIcon} />
         <TextInput
           value={searchInput}
@@ -49,17 +48,17 @@ export default function JobsListScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[
             styles.searchInput,
-            { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border },
+            { color: theme.text, borderColor: theme.border },
           ]}
         />
-      </ThemedView>
+      </View>
 
       {isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       ) : isError ? (
-        <ThemedView style={styles.centerMessage}>
+        <View style={styles.centerMessage}>
           <ThemedText themeColor="textSecondary">Couldn&apos;t load jobs. Pull down to retry.</ThemedText>
-        </ThemedView>
+        </View>
       ) : (
         <FlatList
           data={jobs}
@@ -76,9 +75,9 @@ export default function JobsListScreen() {
           }}
           ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={styles.footerLoader} /> : null}
           ListEmptyComponent={
-            <ThemedView style={styles.centerMessage}>
+            <View style={styles.centerMessage}>
               <ThemedText themeColor="textSecondary">No jobs found.</ThemedText>
-            </ThemedView>
+            </View>
           }
         />
       )}

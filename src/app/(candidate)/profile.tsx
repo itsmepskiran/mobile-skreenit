@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -19,7 +19,6 @@ import { EMPTY_WIZARD_VALUES, type WizardValues } from '@/components/profile-wiz
 import { RoleSwitcher } from '@/components/role-switcher';
 import { Stepper, type StepDefinition } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import {
     getProfile,
@@ -272,7 +271,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ThemedView style={[styles.editHeader, { borderColor: theme.border }]}>
+      <View style={[styles.editHeader, { borderColor: theme.border }]}>
         <Pressable
           onPress={() => {
             if (profile) setValues(fromProfile(profile));
@@ -284,7 +283,7 @@ export default function ProfileScreen() {
           <FontAwesome6 name="xmark" size={16} color={theme.text} />
           <ThemedText>Cancel</ThemedText>
         </Pressable>
-      </ThemedView>
+      </View>
       <Stepper steps={STEPS} activeIndex={stepIndex} />
       <ScrollView contentContainerStyle={styles.content}>
         {stepIndex === 0 ? (
@@ -330,7 +329,7 @@ export default function ProfileScreen() {
         ) : null}
       </ScrollView>
 
-      <ThemedView style={[styles.footer, { borderColor: theme.border }]}>
+      <View style={[styles.footer, { borderColor: theme.border }]}>
         <Pressable
           disabled={isFirstStep}
           onPress={() => setStepIndex((i) => Math.max(0, i - 1))}
@@ -346,7 +345,7 @@ export default function ProfileScreen() {
             <FontAwesome6 name="chevron-right" size={13} color={theme.primary} />
           </Pressable>
         )}
-      </ThemedView>
+      </View>
     </SafeAreaView>
   );
 }

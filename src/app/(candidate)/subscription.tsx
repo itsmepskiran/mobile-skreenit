@@ -10,18 +10,18 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/lib/auth/store';
 import { getProfile } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
-import { CATALOG, INDUSTRIES } from '@/lib/assessment-catalog';
 import {
-  confirmSubscription,
-  createRazorpayOrder,
-  createSubscription,
-  getPaymentConfig,
-  listPricingPlans,
-  type PricingPlan,
+    confirmSubscription,
+    createRazorpayOrder,
+    createSubscription,
+    getPaymentConfig,
+    listPricingPlans,
+    type PricingPlan,
 } from '@/lib/api/subscription';
+import { CATALOG, INDUSTRIES } from '@/lib/assessment-catalog';
+import { useAuthStore } from '@/lib/auth/store';
 
 function parseFeatures(features: PricingPlan['features']): string[] {
   if (Array.isArray(features)) return features;
@@ -34,6 +34,18 @@ function parseFeatures(features: PricingPlan['features']): string[] {
     }
   }
   return [];
+}
+
+function isDuplicateUserPlanError(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return false;
+  const detail = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+  return detail.includes('idx_user_plan_unique') || detail.includes('Duplicate entry');
+}
+
+function isStalePendingSubscriptionError(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return false;
+  const detail = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+  return err.status === 404 || detail.includes('Subscription not found');
 }
 
 export default function SubscriptionScreen() {
@@ -54,6 +66,7 @@ export default function SubscriptionScreen() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmedPlanId, setConfirmedPlanId] = useState<string | null>(null);
+  const [pendingSubscriptionByPlan, setPendingSubscriptionByPlan] = useState<Record<string, string>>({});
 
   const resolvedServiceType = serviceType ?? 'applicant_plan';
   const plansQuery = useQuery({
@@ -82,28 +95,61 @@ export default function SubscriptionScreen() {
 
   const startCheckoutMutation = useMutation({
     mutationFn: async (plan: PricingPlan) => {
-      const sub = await createSubscription(plan.id);
-      const [order, config] = await Promise.all([
-        createRazorpayOrder({
-          amount: sub.data.amount,
-          subscriptionId: sub.data.subscription_id,
-          serviceType: plan.service_type,
-        }),
-        getPaymentConfig(),
-      ]);
-      return {
-        keyId: config.data.key_id,
-        orderId: order.data.order_id,
-        amount: order.data.amount,
-        currency: order.data.currency,
-        subscriptionId: sub.data.subscription_id,
+      const createOrderFor = async (subscriptionId: string) => {
+        const [order, config] = await Promise.all([
+          createRazorpayOrder({
+            amount: plan.price_inr,
+            subscriptionId,
+            serviceType: plan.service_type,
+          }),
+          getPaymentConfig(),
+        ]);
+        return {
+          keyId: config.data.key_id,
+          orderId: order.data.order_id,
+          amount: order.data.amount,
+          currency: order.data.currency,
+          subscriptionId,
+        };
       };
+
+      const pendingSubscriptionId = pendingSubscriptionByPlan[plan.id];
+      if (pendingSubscriptionId) {
+        try {
+          return await createOrderFor(pendingSubscriptionId);
+        } catch (err) {
+          if (!isStalePendingSubscriptionError(err)) throw err;
+          setPendingSubscriptionByPlan((prev) => {
+            const next = { ...prev };
+            delete next[plan.id];
+            return next;
+          });
+        }
+      }
+
+      let createdSubscriptionId: string;
+      try {
+        const sub = await createSubscription(plan.id);
+        createdSubscriptionId = sub.data.subscription_id;
+      } catch (err) {
+        if (!isDuplicateUserPlanError(err) || !pendingSubscriptionId) throw err;
+        createdSubscriptionId = pendingSubscriptionId;
+      }
+
+      setPendingSubscriptionByPlan((prev) => ({ ...prev, [plan.id]: createdSubscriptionId }));
+      return createOrderFor(createdSubscriptionId);
     },
     onSuccess: (result, plan) => {
       setCheckoutOrder(result);
       setCheckoutPlan(plan);
     },
     onError: (err) => {
+      if (isDuplicateUserPlanError(err)) {
+        setError(
+          'A pending order already exists for this plan. Please reopen the same plan and continue payment, or ask backend to clear pending entries.',
+        );
+        return;
+      }
       setError(err instanceof ApiError ? err.message : 'Could not start checkout. Please try again.');
     },
   });
@@ -117,6 +163,13 @@ export default function SubscriptionScreen() {
         amountPaid: checkoutOrder!.amount / 100,
       }),
     onSuccess: () => {
+      if (checkoutPlan) {
+        setPendingSubscriptionByPlan((prev) => {
+          const next = { ...prev };
+          delete next[checkoutPlan.id];
+          return next;
+        });
+      }
       setConfirmedPlanId(checkoutPlan?.id ?? null);
       setCheckoutOrder(null);
       setCheckoutPlan(null);

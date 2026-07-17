@@ -3,7 +3,6 @@ import { Image, Linking, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CandidateProfile } from '@/lib/api/applicant';
@@ -30,14 +29,14 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
   const languages = toArray(profile.spoken_languages);
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={[styles.headerCard, { borderColor: theme.border }]}>
+    <View style={styles.container}>
+      <View style={[styles.headerCard, { borderColor: theme.border }]}>
         {profile.avatar_url ? (
           <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
         ) : (
-          <ThemedView style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: theme.background }]}>
+          <View style={[styles.avatar, styles.avatarPlaceholder, { borderColor: theme.border }]}>
             <FontAwesome6 name="user" size={30} color={theme.textSecondary} />
-          </ThemedView>
+          </View>
         )}
         <ThemedText type="subtitle">{fullName || 'Your name'}</ThemedText>
         <ThemedText themeColor="textSecondary">{email}</ThemedText>
@@ -47,7 +46,7 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
         {location ? <MetaRow icon="location-dot" label={location} /> : null}
 
         <Button title="Edit Profile" icon="pen" onPress={onEdit} style={styles.editButton} />
-      </ThemedView>
+      </View>
 
       <SummaryBlock title="Video Introduction">
         <Row label="Status" value={profile.intro_video_url ? 'Recorded' : 'Not recorded yet'} />
@@ -100,7 +99,7 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
           <ThemedText themeColor="textSecondary">Not uploaded</ThemedText>
         )}
       </SummaryBlock>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -119,10 +118,10 @@ function MetaRow({ icon, label }: { icon: React.ComponentProps<typeof FontAwesom
 function SummaryBlock({ title, children }: { title: string; children: React.ReactNode }) {
   const theme = useTheme();
   return (
-    <ThemedView style={[styles.block, { borderColor: theme.border }]}>
+    <View style={[styles.block, { borderColor: theme.border }]}>
       <ThemedText type="smallBold">{title}</ThemedText>
       {children}
-    </ThemedView>
+    </View>
   );
 }
 
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   avatar: { width: 84, height: 84, borderRadius: 42, marginBottom: 8 },
-  avatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  avatarPlaceholder: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   editButton: { marginTop: 14, alignSelf: 'stretch' },
   block: { borderWidth: 1, borderRadius: Radius.md, padding: 14, gap: 8 },

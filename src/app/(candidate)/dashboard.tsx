@@ -7,13 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
-import { formatRelativeTime } from '@/lib/format';
-import { useAuthStore } from '@/lib/auth/store';
+import type { ApplicationStatus } from '@/lib/api/applicant';
 import { getCandidateStats, listRecentCandidateApplications } from '@/lib/api/candidate-dashboard';
 import { getUnreadCount } from '@/lib/api/notifications';
-import type { ApplicationStatus } from '@/lib/api/applicant';
+import { useAuthStore } from '@/lib/auth/store';
+import { formatRelativeTime } from '@/lib/format';
 
 export default function CandidateDashboardScreen() {
   const theme = useTheme();
@@ -45,11 +44,11 @@ export default function CandidateDashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedView style={styles.headerRow}>
-          <ThemedView>
+      <View style={styles.headerRow}>
+        <View>
             <ThemedText type="title">Dashboard</ThemedText>
             <ThemedText themeColor="textSecondary">Welcome back, {user?.full_name}</ThemedText>
-          </ThemedView>
+        </View>
           <Pressable style={styles.bellButton} onPress={() => router.push('/(candidate)/notifications')}>
             <FontAwesome6 name="bell" size={20} color={theme.text} />
             {unreadCount > 0 ? (
@@ -60,9 +59,9 @@ export default function CandidateDashboardScreen() {
               </View>
             ) : null}
           </Pressable>
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.statsGrid}>
+        <View style={styles.statsGrid}>
           <HighlightTile icon="file-lines" label="Applications" value={String(stats?.total_applications ?? 0)} colors={['#667eea', '#764ba2']} />
           <HighlightTile icon="star" label="Shortlisted" value={String(stats?.shortlisted ?? 0)} colors={['#f093fb', '#f5576c']} />
           <HighlightTile icon="video" label="Interviews" value={String(stats?.interviews ?? 0)} colors={['#fa709a', '#fee140']} />
@@ -73,17 +72,17 @@ export default function CandidateDashboardScreen() {
             colors={['#a8edea', '#fed6e3']}
             iconColor="#0f172a"
           />
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.section}>
-          <ThemedView style={styles.sectionHeader}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <ThemedText type="smallBold">Recent Applications</ThemedText>
             <Pressable onPress={() => router.push('/(candidate)/applications')}>
               <ThemedText type="link" themeColor="primary">
                 View All
               </ThemedText>
             </Pressable>
-          </ThemedView>
+          </View>
           {applications.length === 0 ? (
             <ThemedText themeColor="textSecondary">You haven&apos;t applied to any jobs yet.</ThemedText>
           ) : (
@@ -108,7 +107,7 @@ export default function CandidateDashboardScreen() {
               </Pressable>
             ))
           )}
-        </ThemedView>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

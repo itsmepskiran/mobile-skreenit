@@ -6,7 +6,6 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { listMyAssessments } from '@/lib/api/assessments';
@@ -56,9 +55,9 @@ export default function AssessmentsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ThemedView style={styles.headerRow}>
+      <View style={styles.headerRow}>
         <ThemedText type="title">Assessments</ThemedText>
-      </ThemedView>
+      </View>
 
       <View style={[styles.tabRow, { borderColor: theme.border }]}>
         <Pressable style={styles.tabButton} onPress={() => setTab('browse')}>
@@ -88,7 +87,7 @@ export default function AssessmentsScreen() {
             freePlans.map((plan) => (
               <Pressable
                 key={plan.id}
-                style={[styles.freeCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+                style={[styles.freeCard, { borderColor: theme.border }]}
                 onPress={() => router.push(`/(candidate)/assessments/take/${plan.service_key}`)}
               >
                 <View style={styles.cardHeader}>
@@ -129,7 +128,7 @@ export default function AssessmentsScreen() {
                 industry === null && { backgroundColor: theme.primary, borderColor: theme.primary },
               ]}
             >
-              <ThemedText type="small" style={industry === null ? { color: '#fff' } : undefined}>
+              <ThemedText type="small" style={{ color: industry === null ? '#fff' : theme.text }}>
                 All Industries
               </ThemedText>
             </Pressable>
@@ -145,7 +144,7 @@ export default function AssessmentsScreen() {
                     active && { backgroundColor: theme.primary, borderColor: theme.primary },
                   ]}
                 >
-                  <ThemedText type="small" style={active ? { color: '#fff' } : undefined}>
+                  <ThemedText type="small" style={{ color: active ? '#fff' : theme.text }}>
                     {pack.label}
                   </ThemedText>
                 </Pressable>
@@ -180,7 +179,7 @@ export default function AssessmentsScreen() {
               <Pressable
                 key={item.id}
                 onPress={() => setDetailItem(item)}
-                style={[styles.catalogCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+                style={[styles.catalogCard, { borderColor: theme.border }]}
               >
                 <View style={styles.cardHeader}>
                   <ThemedText type="smallBold" style={styles.cardTitle} numberOfLines={2}>
@@ -218,11 +217,11 @@ export default function AssessmentsScreen() {
             assessments.map((session) => {
               const statusStyle = STATUS_STYLE[session.status] ?? STATUS_STYLE.pending;
               return (
-                <ThemedView
+                <View
                   key={session.session_id}
-                  style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+                  style={[styles.card, { borderColor: theme.border }]}
                 >
-                  <ThemedView style={styles.cardHeader}>
+                  <View style={styles.cardHeader}>
                     <ThemedText type="smallBold" style={styles.cardTitle} numberOfLines={2}>
                       {session.assessment_name}
                     </ThemedText>
@@ -231,7 +230,7 @@ export default function AssessmentsScreen() {
                         {statusStyle.label}
                       </ThemedText>
                     </View>
-                  </ThemedView>
+                  </View>
 
                   <View style={styles.metaRow}>
                     <FontAwesome6 name="layer-group" size={11} color={theme.textSecondary} />
@@ -271,7 +270,7 @@ export default function AssessmentsScreen() {
                       </ThemedText>
                     </View>
                   ) : null}
-                </ThemedView>
+                </View>
               );
             })
           )}
@@ -352,7 +351,7 @@ function IndustryPackCard({
   const savePct = individualTotal > 0 ? Math.round((1 - pack.price / individualTotal) * 100) : 0;
 
   return (
-    <ThemedView style={[styles.packCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+    <View style={[styles.packCard, { borderColor: theme.border }]}>
       <View style={styles.packHeader}>
         <View style={[styles.packIcon, { backgroundColor: pack.bg }]}>
           <FontAwesome6 name={pack.icon} size={16} color={pack.color} />
@@ -392,7 +391,7 @@ function IndustryPackCard({
           </ThemedText>
         </Pressable>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
