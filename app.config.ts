@@ -69,6 +69,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         microphonePermission: 'Allow Skreenit to access your microphone to record your video introduction.',
       },
     ],
+    'expo-image',
+    'expo-status-bar',
+    'expo-web-browser',
     'expo-video',
     ...(skipIOSPush ? [] : [['expo-notifications', { color: '#4F46E5' }] as [string, object]]),
   ],
@@ -78,5 +81,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     apiBaseUrl: API_BASE_URL,
+    eas: {
+      projectId: '3b5ea64f-e099-43c3-a9b2-3ce8603602a3',
+    },
   },
+  owner: 'itsmepskiran',
 });
