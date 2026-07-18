@@ -157,6 +157,9 @@ export default function RecruiterProfileScreen() {
           <ThemedText type="subtitle" style={styles.headerName}>
             {authUser?.full_name}
           </ThemedText>
+          <ThemedText type="small" style={styles.headerCompany}>
+            Company ID: {profile?.company_display_id || 'Pending'}
+          </ThemedText>
           {companyName ? (
             <ThemedText style={styles.headerCompany}>
               <FontAwesome6 name="building" size={12} color="#ffffff" /> {companyName}

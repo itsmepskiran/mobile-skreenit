@@ -39,6 +39,9 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
           </View>
         )}
         <ThemedText type="subtitle">{fullName || 'Your name'}</ThemedText>
+        <ThemedText themeColor="textSecondary" type="small">
+          Skreenit ID: {profile.candidate_display_id || 'Pending'}
+        </ThemedText>
         <ThemedText themeColor="textSecondary">{email}</ThemedText>
         {profile.phone ? (
           <MetaRow icon="phone" label={profile.phone} />
