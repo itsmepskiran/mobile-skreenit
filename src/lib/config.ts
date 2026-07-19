@@ -1,16 +1,33 @@
 import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
 const configuredBaseUrl: string = Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://localhost:8080';
 
-// Inside the Android emulator, "localhost"/"127.0.0.1" refers to the emulator
-// itself, not the host machine — Android's documented workaround is 10.0.2.2.
-// (Physical Android devices need the host's real LAN IP instead; that's a
-// separate manual override via API_BASE_URL, not handled here.)
+function getExpoDevHost(): string | null {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (!hostUri) return null;
+
+  const host = hostUri.split(':')[0];
+  if (!host || host === 'localhost' || host === '127.0.0.1') return null;
+  return host;
+}
+
 function resolveApiBaseUrl(url: string): string {
-  if (Platform.OS === 'android' && /localhost|127\.0\.0\.1/.test(url)) {
-    return url.replace(/localhost|127\.0\.0\.1/, '10.0.2.2');
+  const loopbackHostPattern = /localhost|127\.0\.0\.1/;
+  if (!loopbackHostPattern.test(url)) return url;
+
+  // Android emulator maps host-loopback to 10.0.2.2; physical devices need the
+  // dev machine's LAN host so they can reach local services (for example, API on :8080).
+  if (Platform.OS === 'android' && !Device.isDevice) {
+    return url.replace(loopbackHostPattern, '10.0.2.2');
   }
+
+  const expoDevHost = getExpoDevHost();
+  if (expoDevHost) {
+    return url.replace(loopbackHostPattern, expoDevHost);
+  }
+
   return url;
 }
 
