@@ -1,7 +1,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // Set per-environment via eas.json build profiles, or a local .env when running `expo start`.
-const API_BASE_URL = process.env.API_BASE_URL ?? 'http://100.116.61.35:8080';
+const API_BASE_URL = process.env.API_BASE_URL ?? 'https://api.skreenit.com';
 
 // Apple's free "Personal Team" signing (no paid Developer Program membership)
 // cannot provision the Push Notifications capability at all — attempting to
