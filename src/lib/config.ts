@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
-const configuredBaseUrl: string = Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://localhost:8080';
+const configuredBaseUrl: string = Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://api.skreenit.com';
 
 function getExpoDevHost(): string | null {
   const hostUri = Constants.expoConfig?.hostUri;
