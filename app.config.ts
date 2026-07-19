@@ -1,3 +1,4 @@
+import { withEntitlementsPlist } from 'expo/config-plugins';
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // Set per-environment via eas.json build profiles, or a local .env when running `expo start`.
@@ -11,72 +12,90 @@ const API_BASE_URL = process.env.API_BASE_URL ?? 'https://api.skreenit.com';
 // unaffected since this only strips the plugin, not the capability itself.
 const skipIOSPush = process.env.SKIP_IOS_PUSH === '1';
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
-  name: 'mobile-skreenit',
-  slug: 'mobile-skreenit',
-  version: '1.0.0',
-  orientation: 'portrait',
-  icon: './assets/images/icon.png',
-  scheme: 'skreenit',
-  userInterfaceStyle: 'automatic',
-  ios: {
-    bundleIdentifier: 'com.skreenit.app',
-  },
-  android: {
-    package: 'com.skreenit.app',
-    adaptiveIcon: {
-      backgroundColor: '#F8FAFC',
-      foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
+// @expo/prebuild-config auto-discovers expo-notifications/app.plugin.js via
+// withVersionedExpoSDKPlugins → createLegacyPlugin → withStaticPlugin, which
+// fires regardless of what's in the plugins array. aps-environment ends up in
+// the entitlements even when SKIP_IOS_PUSH=1 removes the explicit plugin.
+// Applying this at the export level ensures it runs last and strips the
+// entitlement so Personal Team local iOS builds can sign successfully.
+function withoutPushEntitlement(appConfig: ExpoConfig): ExpoConfig {
+  return withEntitlementsPlist(appConfig, (c) => {
+    delete c.modResults['aps-environment'];
+    return c;
+  });
+}
+
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const appConfig: ExpoConfig = {
+    ...config,
+    name: 'mobile-skreenit',
+    slug: 'mobile-skreenit',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: 'skreenit',
+    userInterfaceStyle: 'automatic',
+    ios: {
+      bundleIdentifier: 'com.skreenit.app',
     },
-    predictiveBackGestureEnabled: false,
-  },
-  web: {
-    output: 'static',
-    favicon: './assets/images/favicon.png',
-  },
-  plugins: [
-    'expo-router',
-    'expo-secure-store',
-    'expo-font',
-    [
-      'expo-splash-screen',
-      {
-        backgroundColor: '#4F46E5',
-        image: './assets/images/splash-icon.png',
-        imageWidth: 160,
+    android: {
+      package: 'com.skreenit.app',
+      adaptiveIcon: {
+        backgroundColor: '#F8FAFC',
+        foregroundImage: './assets/images/android-icon-foreground.png',
+        backgroundImage: './assets/images/android-icon-background.png',
+        monochromeImage: './assets/images/android-icon-monochrome.png',
       },
-    ],
-    [
-      'expo-image-picker',
-      {
-        photosPermission: 'Allow Skreenit to access your photos to set a profile picture.',
-      },
-    ],
-    [
-      'expo-camera',
-      {
-        cameraPermission: 'Allow Skreenit to access your camera to record your video introduction.',
-        microphonePermission: 'Allow Skreenit to access your microphone to record your video introduction.',
-      },
-    ],
-    'expo-image',
-    'expo-status-bar',
-    'expo-web-browser',
-    'expo-video',
-    ...(skipIOSPush ? [] : [['expo-notifications', { color: '#4F46E5' }] as [string, object]]),
-  ],
-  experiments: {
-    typedRoutes: true,
-    reactCompiler: true,
-  },
-  extra: {
-    apiBaseUrl: API_BASE_URL,
-    eas: {
-      projectId: '3b5ea64f-e099-43c3-a9b2-3ce8603602a3',
+      predictiveBackGestureEnabled: false,
     },
-  },
-  owner: 'itsmepskiran',
-});
+    web: {
+      output: 'static',
+      favicon: './assets/images/favicon.png',
+    },
+    plugins: [
+      'expo-router',
+      'expo-secure-store',
+      'expo-font',
+      [
+        'expo-splash-screen',
+        {
+          backgroundColor: '#4F46E5',
+          image: './assets/images/splash-icon.png',
+          imageWidth: 160,
+        },
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'Allow Skreenit to access your photos to set a profile picture.',
+        },
+      ],
+      [
+        'expo-camera',
+        {
+          cameraPermission: 'Allow Skreenit to access your camera to record your video introduction.',
+          microphonePermission:
+            'Allow Skreenit to access your microphone to record your video introduction.',
+        },
+      ],
+      'expo-image',
+      'expo-status-bar',
+      'expo-web-browser',
+      'expo-video',
+      ...(skipIOSPush ? [] : [['expo-notifications', { color: '#4F46E5' }] as [string, object]]),
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+    extra: {
+      apiBaseUrl: API_BASE_URL,
+      eas: {
+        projectId: '3b5ea64f-e099-43c3-a9b2-3ce8603602a3',
+      },
+    },
+    owner: 'itsmepskiran',
+  };
+
+  return skipIOSPush ? withoutPushEntitlement(appConfig) : appConfig;
+};
