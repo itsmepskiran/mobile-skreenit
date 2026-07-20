@@ -41,16 +41,8 @@ export default function AssessmentsScreen() {
   );
   const selectedPack = industry ? INDUSTRIES.find((i) => i.value === industry) : undefined;
 
-  const goToBundleCheckout = (industryValue: string) => {
-    router.push(`/(candidate)/subscription?serviceType=assessment_bundle&industryKey=${industryValue}`);
-  };
-
-  // Matches web's individual-assessment "Unlock" flow (premium-features.js
-  // handleAssessmentSelection -> btnUnlockConfirm): this buys just the one
-  // test via its own applicant_plan pricing_plans row (item.dbId), not the
-  // industry bundle.
-  const goToIndividualCheckout = (item: CatalogItem) => {
-    router.push(`/(candidate)/subscription?serviceType=applicant_plan&planId=${item.dbId}`);
+  const goToAssessment = (item: CatalogItem) => {
+    router.push(`/(candidate)/assessments/take/${item.id}`);
   };
 
   return (
@@ -116,7 +108,7 @@ export default function AssessmentsScreen() {
           )}
 
           <ThemedText type="subtitle" style={styles.paidHeading}>
-            Paid Assessments
+            Industry Assessments
           </ThemedText>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -154,25 +146,15 @@ export default function AssessmentsScreen() {
 
           {industry === null ? (
             INDUSTRIES.map((pack) => (
-              <IndustryPackCard
-                key={pack.value}
-                pack={pack}
-                onBrowse={() => setIndustry(pack.value)}
-                onUnlock={() => goToBundleCheckout(pack.value)}
-              />
+              <IndustryPackCard key={pack.value} pack={pack} onBrowse={() => setIndustry(pack.value)} />
             ))
           ) : (
             <>
               {selectedPack ? (
                 <View style={styles.selectedIndustryRow}>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {filteredCatalog.length} individual assessments in {selectedPack.label}
+                    {filteredCatalog.length} assessments in {selectedPack.label}
                   </ThemedText>
-                  <Pressable onPress={() => goToBundleCheckout(selectedPack.value)}>
-                    <ThemedText type="small" themeColor="primary">
-                      Get full pack (₹{selectedPack.price})
-                    </ThemedText>
-                  </Pressable>
                 </View>
               ) : null}
               {filteredCatalog.map((item) => (
@@ -185,14 +167,13 @@ export default function AssessmentsScreen() {
                   <ThemedText type="smallBold" style={styles.cardTitle} numberOfLines={2}>
                     {item.name}
                   </ThemedText>
-                  <FontAwesome6 name="lock" size={13} color={theme.textSecondary} />
                 </View>
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
                   {item.desc}
                 </ThemedText>
                 <View style={styles.catalogCardFooter}>
-                  <ThemedText type="small" themeColor="primary">
-                    ₹{item.price.toLocaleString('en-IN')}
+                  <ThemedText type="small" themeColor="secondary">
+                    Free
                   </ThemedText>
                   <View style={[styles.detailsButton, { backgroundColor: theme.primary }]}>
                     <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
@@ -293,9 +274,6 @@ export default function AssessmentsScreen() {
                   <ThemedText type="smallBold">Skills measured: </ThemedText>
                   {detailItem.skills}
                 </ThemedText>
-                <ThemedText type="smallBold" themeColor="primary">
-                  One-time price: ₹{detailItem.price.toLocaleString('en-IN')}
-                </ThemedText>
                 <View style={styles.modalActions}>
                   <Pressable
                     style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1, flex: 1 }]}
@@ -308,24 +286,15 @@ export default function AssessmentsScreen() {
                     onPress={() => {
                       const target = detailItem;
                       setDetailItem(null);
-                      goToIndividualCheckout(target);
+                      goToAssessment(target);
                     }}
                   >
-                    <FontAwesome6 name="unlock" size={12} color="#fff" />
+                    <FontAwesome6 name="play" size={12} color="#fff" />
                     <ThemedText type="small" style={{ color: '#fff' }}>
-                      Unlock to Take Test
+                      Take Test
                     </ThemedText>
                   </Pressable>
                 </View>
-                <Pressable
-                  style={[styles.actionButton, { backgroundColor: theme.primary }]}
-                  onPress={() => goToBundleCheckout(detailItem.industry)}
-                >
-                  <FontAwesome6 name="crown" size={12} color="#fff" />
-                  <ThemedText type="small" style={{ color: '#fff' }}>
-                    Get Full Access
-                  </ThemedText>
-                </Pressable>
               </>
             ) : null}
           </Pressable>
@@ -338,17 +307,13 @@ export default function AssessmentsScreen() {
 function IndustryPackCard({
   pack,
   onBrowse,
-  onUnlock,
   browseLabel = 'Browse',
 }: {
   pack: (typeof INDUSTRIES)[number];
   onBrowse: () => void;
-  onUnlock: () => void;
   browseLabel?: string;
 }) {
   const theme = useTheme();
-  const individualTotal = CATALOG.filter((c) => c.industry === pack.value).reduce((sum, c) => sum + c.price, 0);
-  const savePct = individualTotal > 0 ? Math.round((1 - pack.price / individualTotal) * 100) : 0;
 
   return (
     <View style={[styles.packCard, { borderColor: theme.border }]}>
@@ -366,29 +331,10 @@ function IndustryPackCard({
       <ThemedText type="small" themeColor="textSecondary">
         {pack.desc}
       </ThemedText>
-      <View style={styles.packPriceRow}>
-        <ThemedText type="smallBold">₹{pack.price}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          / full access
-        </ThemedText>
-        {savePct > 0 ? (
-          <View style={styles.saveBadge}>
-            <ThemedText type="small" style={{ color: '#15803d', fontWeight: '600' }}>
-              Save {savePct}%
-            </ThemedText>
-          </View>
-        ) : null}
-      </View>
       <View style={styles.packButtonRow}>
         <Pressable style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1, flex: 1 }]} onPress={onBrowse}>
           <FontAwesome6 name="magnifying-glass" size={12} color={theme.text} />
           <ThemedText type="small">{browseLabel}</ThemedText>
-        </Pressable>
-        <Pressable style={[styles.actionButton, { backgroundColor: theme.primary, flex: 1 }]} onPress={onUnlock}>
-          <FontAwesome6 name="crown" size={12} color="#fff" />
-          <ThemedText type="small" style={{ color: '#fff' }}>
-            Get Full Access
-          </ThemedText>
         </Pressable>
       </View>
     </View>
@@ -421,8 +367,6 @@ const styles = StyleSheet.create({
   packHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   packIcon: { width: 44, height: 44, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   packHeaderText: { flex: 1, gap: 2 },
-  packPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  saveBadge: { backgroundColor: '#dcfce7', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 'auto' },
   packButtonRow: { flexDirection: 'row', gap: 8 },
   actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, paddingVertical: 9, paddingHorizontal: 12 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },

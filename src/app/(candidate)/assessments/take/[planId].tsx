@@ -43,7 +43,7 @@ const EXERCISE_TYPE_LABELS: Record<string, string> = {
 
 type ResponseValue = { type: string; text?: string; selectedIdx?: number };
 
-type Stage = 'loading' | 'error' | 'locked' | 'platform-select' | 'overview' | 'section-intro' | 'exercise' | 'submitting';
+type Stage = 'loading' | 'error' | 'platform-select' | 'overview' | 'section-intro' | 'exercise' | 'submitting';
 
 export default function TakeAssessmentScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
@@ -84,12 +84,8 @@ function GenericAssessment({ planId }: { planId: string }) {
       setData(res.data);
       setStage('overview');
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        setStage('locked');
-      } else {
-        setErrorMsg(err instanceof ApiError ? err.message : 'Could not load this assessment. Please try again.');
-        setStage('error');
-      }
+      setErrorMsg(err instanceof ApiError ? err.message : 'Could not load this assessment. Please try again.');
+      setStage('error');
     }
   }, [planId]);
 
@@ -196,23 +192,6 @@ function GenericAssessment({ planId }: { planId: string }) {
         <ThemedText type="small" themeColor="textSecondary" style={styles.centerText}>
           Preparing your assessment...
         </ThemedText>
-      </SafeAreaView>
-    );
-  }
-
-  if (stage === 'locked') {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centerBlock}>
-          <FontAwesome6 name="lock" size={32} color={theme.textSecondary} />
-          <ThemedText type="subtitle" style={styles.centerText}>
-            Not unlocked yet
-          </ThemedText>
-          <ThemedText themeColor="textSecondary" type="small" style={styles.centerText}>
-            You don&apos;t have an active subscription for this assessment.
-          </ThemedText>
-          <Button title="Go back" variant="secondary" onPress={() => router.back()} />
-        </View>
       </SafeAreaView>
     );
   }
