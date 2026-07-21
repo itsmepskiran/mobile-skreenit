@@ -71,26 +71,7 @@ export function confirmSubscription(input: {
   });
 }
 
-export interface ActiveSubscription {
-  subscription_id: string;
-  plan_id: string;
-  plan_name: string;
-  plan_label: string | null;
-  service_key: string | null;
-  service_type: string;
-  status: string;
-  start_date: string | null;
-  expiry_date: string | null;
-  trial_end_date: string | null;
-  features: string | string[] | null;
-}
-
-export function getActiveSubscriptions() {
-  return apiGet<{ ok: boolean; data: ActiveSubscription[] }>('/subscription/active');
-}
-
-// Every purchase regardless of status (active/trial/expired/cancelled) —
-// unlike getActiveSubscriptions, which only returns currently-usable ones.
+// Every purchase regardless of status (active/trial/expired/cancelled).
 // Same endpoint/shape for candidates and recruiters: both buy through the
 // same user_subscriptions table, scoped by user_id rather than role.
 export interface PurchaseHistoryItem {

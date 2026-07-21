@@ -1,8 +1,6 @@
 import type { ComponentProps } from 'react';
 import type { FontAwesome6 } from '@expo/vector-icons';
 
-import type { ActiveSubscription } from '@/lib/api/subscription';
-
 type IconName = ComponentProps<typeof FontAwesome6>['name'];
 
 // Ported from sql-skreenit/dashboard/js/premium-features.js (catalogData +
@@ -123,61 +121,3 @@ export const CATALOG: CatalogItem[] = [
   { id: 'edu_delivery', dbId: 'SINEDU26060358', industry: 'education', industryLabel: 'Education & Training', name: 'Communication & Delivery Assessment', desc: 'Measures how effectively a candidate communicates ideas during instruction or training delivery.', skills: 'Cadence control, dynamic feedback listening metrics, structural concept breakdown.', price: 39 },
 ];
 
-export interface SubscribedAssessment extends CatalogItem {
-  subscriptionId: string;
-  planName: string;
-  status: string;
-  expiryDate: string | null;
-}
-
-function parseFeatureKeys(features: ActiveSubscription['features']): string[] {
-  if (Array.isArray(features)) return features;
-  if (typeof features === 'string') {
-    try {
-      const parsed = JSON.parse(features);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-// Ported from sql-skreenit/dashboard/js/candidate-dashboard.js's renderAssessments():
-// each active/trial subscription unlocks either one assessment directly (an
-// individual test purchase) or a whole industry pack's worth (a bundle
-// purchase) — expand and dedupe both into the catalog items they unlock.
-//
-// Individual purchases are matched on plan_id (pricing_plans' primary key),
-// NOT service_key: live backend data has several individual plans whose
-// service_key doesn't match this catalog's naming (e.g. DB has
-// "it_algorithmic"/"it_sys_design_lite", catalog has
-// "it_algorithmic_thinking"/"it_system_design_lite") while plan_id — what
-// create-order/create-subscription actually key off — always lines up with
-// dbId. Bundle purchases' `features` array does use this catalog's naming
-// (verified against the live pricing_plans rows), so those still resolve by key.
-export function resolveSubscribedAssessments(subscriptions: ActiveSubscription[]): SubscribedAssessment[] {
-  const byId = new Map(CATALOG.map((item) => [item.id, item]));
-  const byDbId = new Map(CATALOG.map((item) => [item.dbId, item]));
-  const resolved = new Map<string, SubscribedAssessment>();
-
-  const add = (item: CatalogItem | undefined, sub: ActiveSubscription) => {
-    if (!item || resolved.has(item.id)) return;
-    resolved.set(item.id, {
-      ...item,
-      subscriptionId: sub.subscription_id,
-      planName: sub.plan_name,
-      status: sub.status,
-      expiryDate: sub.expiry_date,
-    });
-  };
-
-  for (const sub of subscriptions) {
-    for (const key of parseFeatureKeys(sub.features)) {
-      add(byId.get(key), sub);
-    }
-    add(byDbId.get(sub.plan_id), sub);
-  }
-
-  return Array.from(resolved.values());
-}

@@ -1,7 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,14 +12,15 @@ import { useTheme } from '@/hooks/use-theme';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 import { getCandidateStats, listRecentCandidateApplications } from '@/lib/api/candidate-dashboard';
 import { getUnreadCount } from '@/lib/api/notifications';
-import { getActiveSubscriptions } from '@/lib/api/subscription';
+import { listPricingPlans } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
-import { INDUSTRIES, resolveSubscribedAssessments } from '@/lib/assessment-catalog';
+import { CATALOG, INDUSTRIES } from '@/lib/assessment-catalog';
 import { formatRelativeTime } from '@/lib/format';
 
 export default function CandidateDashboardScreen() {
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
+  const [assessmentsExpanded, setAssessmentsExpanded] = useState(false);
 
   const statsQuery = useQuery({ queryKey: ['candidate', 'stats'], queryFn: getCandidateStats });
   const applicationsQuery = useQuery({
@@ -31,18 +32,16 @@ export default function CandidateDashboardScreen() {
     queryFn: getUnreadCount,
     refetchInterval: 30000,
   });
-  const subscriptionsQuery = useQuery({
-    queryKey: ['subscription', 'active'],
-    queryFn: getActiveSubscriptions,
+  const freePlansQuery = useQuery({
+    queryKey: ['subscription', 'plans', 'general_plan'],
+    queryFn: () => listPricingPlans('general_plan'),
+    enabled: assessmentsExpanded,
   });
 
   const stats = statsQuery.data?.data;
   const applications = applicationsQuery.data?.data.applications ?? [];
   const unreadCount = unreadQuery.data?.data.unread_count ?? 0;
-  const subscribedAssessments = useMemo(
-    () => resolveSubscribedAssessments(subscriptionsQuery.data?.data ?? []),
-    [subscriptionsQuery.data],
-  );
+  const freePlans = freePlansQuery.data?.data ?? [];
 
   if (statsQuery.isLoading) {
     return (
@@ -87,43 +86,74 @@ export default function CandidateDashboardScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <ThemedText type="smallBold">My Assessments</ThemedText>
+            <ThemedText type="smallBold">Assessments</ThemedText>
             <Pressable onPress={() => router.push('/(candidate)/assessments')}>
               <ThemedText type="link" themeColor="primary">
                 Browse More
               </ThemedText>
             </Pressable>
           </View>
-          {subscriptionsQuery.isLoading ? (
-            <ActivityIndicator color={theme.primary} />
-          ) : subscribedAssessments.length === 0 ? (
-            <ThemedText themeColor="textSecondary">No assessments purchased yet.</ThemedText>
-          ) : (
-            subscribedAssessments.map((item) => {
-              const pack = INDUSTRIES.find((i) => i.value === item.industry);
-              return (
-                <Pressable
-                  key={item.id}
-                  style={[styles.row, { borderColor: theme.border }]}
-                  onPress={() => router.push(`/(candidate)/assessments/take/${item.id}`)}
-                >
-                  <View style={[styles.assessmentIcon, { backgroundColor: pack?.bg ?? theme.backgroundElement }]}>
-                    <FontAwesome6 name={pack?.icon ?? 'clipboard-check'} size={16} color={pack?.color ?? theme.primary} />
-                  </View>
-                  <View style={styles.rowText}>
-                    <ThemedText type="smallBold" numberOfLines={1}>
-                      {item.name}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {item.status === 'trial' ? 'Trial' : 'Active'}
-                      {item.expiryDate ? ` · Valid until ${new Date(item.expiryDate).toLocaleDateString()}` : ''}
-                    </ThemedText>
-                  </View>
-                  <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
-                </Pressable>
-              );
-            })
-          )}
+          <Pressable
+            style={[styles.assessmentsToggle, { borderColor: theme.border }]}
+            onPress={() => setAssessmentsExpanded((expanded) => !expanded)}
+          >
+            <FontAwesome6 name="clipboard-list" size={14} color={theme.primary} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.assessmentsToggleText}>
+              {assessmentsExpanded ? 'Tap to hide assessments' : 'Tap to view all assessments — free for everyone'}
+            </ThemedText>
+            <FontAwesome6 name={assessmentsExpanded ? 'chevron-up' : 'chevron-down'} size={12} color={theme.textSecondary} />
+          </Pressable>
+          {assessmentsExpanded ? (
+            freePlansQuery.isLoading ? (
+              <ActivityIndicator color={theme.primary} />
+            ) : (
+              <>
+                {freePlans.map((plan) => (
+                  <Pressable
+                    key={plan.id}
+                    style={[styles.row, { borderColor: theme.border }]}
+                    onPress={() => router.push(`/(candidate)/assessments/take/${plan.service_key}`)}
+                  >
+                    <View style={[styles.assessmentIcon, { backgroundColor: theme.backgroundElement }]}>
+                      <FontAwesome6 name="star" size={16} color={theme.primary} />
+                    </View>
+                    <View style={styles.rowText}>
+                      <ThemedText type="smallBold" numberOfLines={1}>
+                        {plan.name}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        Free
+                      </ThemedText>
+                    </View>
+                    <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
+                  </Pressable>
+                ))}
+                {CATALOG.map((item) => {
+                  const pack = INDUSTRIES.find((i) => i.value === item.industry);
+                  return (
+                    <Pressable
+                      key={item.id}
+                      style={[styles.row, { borderColor: theme.border }]}
+                      onPress={() => router.push(`/(candidate)/assessments/take/${item.id}`)}
+                    >
+                      <View style={[styles.assessmentIcon, { backgroundColor: pack?.bg ?? theme.backgroundElement }]}>
+                        <FontAwesome6 name={pack?.icon ?? 'clipboard-check'} size={16} color={pack?.color ?? theme.primary} />
+                      </View>
+                      <View style={styles.rowText}>
+                        <ThemedText type="smallBold" numberOfLines={1}>
+                          {item.name}
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {item.industryLabel}
+                        </ThemedText>
+                      </View>
+                      <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
+                    </Pressable>
+                  );
+                })}
+              </>
+            )
+          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -198,4 +228,15 @@ const styles = StyleSheet.create({
   },
   rowText: { flex: 1, gap: 2 },
   assessmentIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  assessmentsToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  assessmentsToggleText: { flex: 1 },
 });
