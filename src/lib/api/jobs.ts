@@ -3,9 +3,12 @@ import { apiGet } from '@/lib/api/client';
 // GET /dashboard/jobs is the truly-public, fully-documented listing endpoint
 // (also whitelisted in middleware/auth_middleware.py) — used instead of the
 // less-defined /applicant/jobs. Only free-text `search` is supported
-// server-side (matches job_title OR location) — no structured filters exist.
+// server-side (matches job_title, company_name, jrf_number, or reference_no) —
+// no structured filters exist.
 export interface JobListItem {
   id: string;
+  jrf_number: string;
+  reference_no: string;
   job_title: string;
   title: string;
   description: string;

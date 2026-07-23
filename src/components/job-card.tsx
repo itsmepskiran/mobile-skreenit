@@ -38,6 +38,9 @@ export function JobCard({ job, onPress }: JobCardProps) {
             {job.job_title}
           </ThemedText>
           <ThemedText themeColor="primary">{job.company_name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            JRF: {job.jrf_number || '—'} &middot; Ref: {job.reference_no || '—'}
+          </ThemedText>
         </View>
         <LinearGradient colors={['#4f46e5', '#7c3aed']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.typeBadge}>
           <ThemedText type="small" style={styles.typeBadgeText}>

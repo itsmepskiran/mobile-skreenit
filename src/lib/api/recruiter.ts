@@ -36,6 +36,8 @@ export interface JobInput {
 
 export interface RecruiterJobListItem {
   id: string;
+  jrf_number: string;
+  reference_no: string;
   job_title: string;
   location: string;
   job_type: string;
@@ -65,6 +67,8 @@ export function parseSkills(raw: string | null | undefined): string[] {
 
 export interface RecruiterJobDetail {
   id: string;
+  jrf_number: string;
+  reference_no: string;
   job_title: string;
   department: string | null;
   department_id: string | null;
@@ -105,10 +109,14 @@ function toSkillsPayload(skills?: string[]): string | undefined {
   return skills ? JSON.stringify(skills) : undefined;
 }
 
-export function listMyJobs(params: { page?: number; pageSize?: number; status?: string } = {}) {
+export function listMyJobs(params: { page?: number; pageSize?: number; status?: string; search?: string } = {}) {
   const query = new URLSearchParams();
   if (params.page) query.set('page', String(params.page));
   if (params.pageSize) query.set('page_size', String(params.pageSize));
+  // `search` matches job_title, JRF Number, or Reference No — server-side, over this
+  // recruiter's entire job set (not just the fetched page), so it finds a match regardless
+  // of how many jobs they've posted.
+  if (params.search) query.set('search', params.search);
   return apiGet<{ ok: boolean; data: { jobs: RecruiterJobListItem[]; count: number; page: number; page_size: number } }>(
     `/recruiter/jobs?${query.toString()}`,
   ).then((res) => {
@@ -271,6 +279,8 @@ export function getRecruiterStats() {
 
 export interface RecruiterDashboardJob {
   id: string;
+  jrf_number: string;
+  reference_no: string;
   job_title: string;
   title: string;
   status: string;

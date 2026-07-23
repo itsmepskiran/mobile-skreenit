@@ -1,7 +1,7 @@
 import { FontAwesome6 } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,12 +36,25 @@ export default function MyJobsScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [qrJob, setQrJob] = useState<RecruiterJobListItem | null>(null);
 
+  // Debounced, same pattern as the candidate jobs list (src/app/(candidate)/jobs/index.tsx).
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearch(searchInput.trim()), 400);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  // `search` is sent to the backend (matches job_title, JRF Number, or Reference No across this
+  // recruiter's ENTIRE job set, not just one fetched page) — a client-side filter over a capped
+  // page can never find an older posting once a recruiter has more jobs than that page size.
   const jobsQuery = useQuery({
-    queryKey: ['recruiter', 'jobs'],
-    queryFn: () => listMyJobs({ pageSize: 50 }),
+    queryKey: ['recruiter', 'jobs', search],
+    queryFn: () => listMyJobs({ pageSize: 50, search: search || undefined }),
+    // Keep showing the previous results while a new search term is in flight, instead of
+    // blanking the whole screen (incl. the search box) back to a full-page spinner on every keystroke.
+    placeholderData: keepPreviousData,
   });
 
   const deleteMutation = useMutation({
@@ -51,12 +64,9 @@ export default function MyJobsScreen() {
 
   const filtered = useMemo(() => {
     const jobs = jobsQuery.data?.data.jobs ?? [];
-    return jobs.filter((job) => {
-      if (statusFilter !== 'all' && job.status !== statusFilter) return false;
-      if (search.trim() && !job.job_title.toLowerCase().includes(search.trim().toLowerCase())) return false;
-      return true;
-    });
-  }, [jobsQuery.data?.data.jobs, statusFilter, search]);
+    if (statusFilter === 'all') return jobs;
+    return jobs.filter((job) => job.status === statusFilter);
+  }, [jobsQuery.data?.data.jobs, statusFilter]);
 
   const confirmDelete = (job: RecruiterJobListItem) => {
     Alert.alert('Delete job posting?', `"${job.job_title}" will be permanently removed.`, [
@@ -78,9 +88,9 @@ export default function MyJobsScreen() {
       <View style={[styles.searchRow, { borderColor: theme.border }]}>
         <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
         <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search your jobs..."
+          value={searchInput}
+          onChangeText={setSearchInput}
+          placeholder="Search by title, JRF, or Ref No..."
           placeholderTextColor={theme.textSecondary}
           style={[styles.searchInput, { color: theme.text }]}
         />
@@ -123,9 +133,14 @@ export default function MyJobsScreen() {
             return (
               <View key={job.id} style={[styles.card, { borderColor: theme.border }]}>
                 <View style={styles.cardHeader}>
-                  <ThemedText type="smallBold" style={styles.cardTitle} numberOfLines={2}>
-                    {job.job_title}
-                  </ThemedText>
+                  <View style={styles.cardTitle}>
+                    <ThemedText type="smallBold" numberOfLines={2}>
+                      {job.job_title}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      JRF: {job.jrf_number || '—'} &middot; Ref: {job.reference_no || '—'}
+                    </ThemedText>
+                  </View>
                   <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
                     <ThemedText type="small" style={{ color: statusStyle.fg, fontWeight: '600' }}>
                       {statusStyle.label}

@@ -84,6 +84,9 @@ export default function JobDetailScreen() {
         <ThemedView style={styles.header}>
           <ThemedText type="subtitle">{job.job_title}</ThemedText>
           <ThemedText themeColor="primary">{job.company_name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            JRF: {job.jrf_number || '—'} &middot; Ref: {job.reference_no || '—'}
+          </ThemedText>
           <ThemedView style={styles.metaRow}>
             <FontAwesome6 name="location-dot" size={12} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
