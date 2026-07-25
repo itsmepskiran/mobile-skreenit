@@ -2,11 +2,11 @@ import { Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Matches sql-skreenit's `.mobile-header-brand` (assets/assets/css/mobile.css)
-// — a small logobrand.png shown at the top of every dashboard-family page
+// — a small logobrand.webp shown at the top of every dashboard-family page
 // once the sidebar collapses on small screens. The mobile app has no sidebar
 // to collapse from, so this renders unconditionally as a persistent strip
 // above every candidate/recruiter screen (see RootLayout) rather than only
-// appearing below a breakpoint. The real logobrand.png has an opaque
+// appearing below a breakpoint. The real logobrand.webp has an opaque
 // near-black background baked into the file itself, which read as a jarring
 // black box — `skreenit-brand-transparent.png` is a locally chroma-keyed copy
 // (near-black pixels made transparent) so the app's actual violet brand color

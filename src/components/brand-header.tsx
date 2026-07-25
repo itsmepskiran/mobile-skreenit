@@ -2,7 +2,7 @@ import { Image, StyleSheet, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 
-// Same lockup as sql-skreenit's .auth-header.has-image (logobrand.png banner
+// Same lockup as sql-skreenit's .auth-header.has-image (logobrand.webp banner
 // on a white strip). Always light — the web auth header has no dark mode.
 export function BrandHeader() {
   return (
