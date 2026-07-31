@@ -21,7 +21,7 @@ export function AuthScreenLayout({ children }: AuthScreenLayoutProps) {
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.card}>
               <Image
-                source={require('@/assets/images/skreenit-logo.webp')}
+                source={require('@/assets/images/skreenit-logo.png')}
                 style={styles.iconLogo}
                 resizeMode="contain"
                 accessibilityLabel="Skreenit"
