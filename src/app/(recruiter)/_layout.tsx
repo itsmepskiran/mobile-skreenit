@@ -49,6 +49,12 @@ export default function RecruiterLayout() {
         }}
       />
       <Tabs.Screen name="purchase-history" options={{ href: null }} />
+      <Tabs.Screen name="resume-analysis" options={{ href: null }} />
+      <Tabs.Screen name="candidate-search" options={{ href: null }} />
+      <Tabs.Screen name="interviews-calendar" options={{ href: null }} />
+      <Tabs.Screen name="jd-writer" options={{ href: null }} />
+      <Tabs.Screen name="premium" options={{ href: null }} />
+      <Tabs.Screen name="analysis-reports" options={{ href: null }} />
     </Tabs>
   );
 }

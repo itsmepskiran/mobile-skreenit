@@ -1,28 +1,32 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
-import type { ApplicationStatus } from '@/lib/api/applicant';
+import { getAssignedAssessments, type ApplicationStatus } from '@/lib/api/applicant';
+import { getAssessmentCatalog } from '@/lib/api/assessments';
 import { getCandidateStats, listRecentCandidateApplications } from '@/lib/api/candidate-dashboard';
 import { getUnreadCount } from '@/lib/api/notifications';
 import { listPricingPlans } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
-import { CATALOG, INDUSTRIES } from '@/lib/assessment-catalog';
+import { buildCatalog } from '@/lib/assessment-catalog';
 import { formatRelativeTime } from '@/lib/format';
 
 export default function CandidateDashboardScreen() {
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
   const [assessmentsExpanded, setAssessmentsExpanded] = useState(false);
+  const [assignedModalOpen, setAssignedModalOpen] = useState(false);
 
   const statsQuery = useQuery({ queryKey: ['candidate', 'stats'], queryFn: getCandidateStats });
+  const assignedQuery = useQuery({ queryKey: ['applicant', 'assigned-assessments'], queryFn: getAssignedAssessments });
   const applicationsQuery = useQuery({
     queryKey: ['candidate', 'dashboard-applications'],
     queryFn: () => listRecentCandidateApplications({ pageSize: 4 }),
@@ -37,11 +41,21 @@ export default function CandidateDashboardScreen() {
     queryFn: () => listPricingPlans('general_plan'),
     enabled: assessmentsExpanded,
   });
+  const catalogQuery = useQuery({
+    queryKey: ['premium', 'catalog'],
+    queryFn: getAssessmentCatalog,
+    enabled: assessmentsExpanded,
+  });
 
   const stats = statsQuery.data?.data;
   const applications = applicationsQuery.data?.data.applications ?? [];
   const unreadCount = unreadQuery.data?.data.unread_count ?? 0;
   const freePlans = freePlansQuery.data?.data ?? [];
+  const { catalogData, industryPacks } = useMemo(
+    () => buildCatalog(catalogQuery.data?.data?.by_industry ?? {}),
+    [catalogQuery.data],
+  );
+  const assignedJobs = (assignedQuery.data?.data.assigned ?? []).filter((job) => !job.all_completed);
 
   if (statsQuery.isLoading) {
     return (
@@ -83,6 +97,23 @@ export default function CandidateDashboardScreen() {
             iconColor="#0f172a"
           />
         </View>
+
+        {assignedJobs.length > 0 ? (
+          <Pressable style={[styles.assignedBanner, { borderColor: theme.border }]} onPress={() => setAssignedModalOpen(true)}>
+            <View style={[styles.assignedIcon, { backgroundColor: theme.backgroundElement }]}>
+              <FontAwesome6 name="clipboard-check" size={16} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText type="smallBold">
+                {assignedJobs.length} assessment{assignedJobs.length === 1 ? '' : 's'} assigned to you
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                A recruiter invited you to take {assignedJobs.length === 1 ? 'an assessment' : 'assessments'} for a job
+              </ThemedText>
+            </View>
+            <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -128,8 +159,8 @@ export default function CandidateDashboardScreen() {
                     <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
                   </Pressable>
                 ))}
-                {CATALOG.map((item) => {
-                  const pack = INDUSTRIES.find((i) => i.value === item.industry);
+                {catalogData.map((item) => {
+                  const pack = industryPacks.find((i) => i.value === item.industry);
                   return (
                     <Pressable
                       key={item.id}
@@ -191,6 +222,55 @@ export default function CandidateDashboardScreen() {
           )}
         </View>
       </ScrollView>
+
+      <Modal visible={assignedModalOpen} transparent animationType="fade" onRequestClose={() => setAssignedModalOpen(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setAssignedModalOpen(false)}>
+          <Pressable style={[styles.assignedModalCard, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
+            <View style={styles.assignedModalHeader}>
+              <ThemedText type="subtitle">Assigned Assessments</ThemedText>
+              <Pressable onPress={() => setAssignedModalOpen(false)} hitSlop={12}>
+                <FontAwesome6 name="xmark" size={16} color={theme.text} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.assignedModalContent}>
+              {assignedJobs.map((job) => (
+                <ThemedView key={job.invitee_id} style={[styles.assignedJobCard, { borderColor: theme.border }]}>
+                  <ThemedText type="smallBold">{job.job_title}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {job.company_name}
+                  </ThemedText>
+                  {job.assessments.map((a) => (
+                    <View key={a.key} style={styles.assignedAssessmentRow}>
+                      <ThemedText type="small" style={{ flex: 1 }}>
+                        {a.name}
+                      </ThemedText>
+                      {a.completed ? (
+                        <ThemedText type="small" themeColor="secondary">
+                          Completed
+                        </ThemedText>
+                      ) : (
+                        <Pressable
+                          style={[styles.takeButton, { backgroundColor: theme.primary }]}
+                          onPress={() => {
+                            setAssignedModalOpen(false);
+                            router.push(
+                              `/(candidate)/assessments/take/${a.key}?job_id=${job.job_id}&link_id=${job.link_id}`,
+                            );
+                          }}
+                        >
+                          <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+                            Take Assessment
+                          </ThemedText>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))}
+                </ThemedView>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -239,4 +319,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   assessmentsToggleText: { flex: 1 },
+  assignedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  assignedIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  assignedModalCard: { width: '100%', maxWidth: 400, maxHeight: '80%', borderRadius: 16, padding: 20, gap: 12 },
+  assignedModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  assignedModalContent: { gap: 10 },
+  assignedJobCard: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 },
+  assignedAssessmentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  takeButton: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
 });

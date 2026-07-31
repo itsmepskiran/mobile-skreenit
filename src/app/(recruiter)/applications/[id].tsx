@@ -4,15 +4,17 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AssessmentInviteModal, type AssessmentInviteContext } from '@/components/assessment-invite-modal';
 import { Button } from '@/components/button';
 import { Radius } from '@/constants/theme';
 import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { bulkAnalyzeResponses } from '@/lib/api/analytics';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime } from '@/lib/format';
@@ -52,6 +54,11 @@ export default function ApplicationReviewScreen() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [questionsText, setQuestionsText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [inviteContext, setInviteContext] = useState<AssessmentInviteContext | null>(null);
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => bulkAnalyzeResponses([id]),
+  });
 
   const updateMutation = useMutation({
     mutationFn: () => {
@@ -142,6 +149,19 @@ export default function ApplicationReviewScreen() {
           />
         ) : null}
 
+        <Button
+          title="Move to Assessment"
+          variant="secondary"
+          icon="clipboard-check"
+          onPress={() =>
+            setInviteContext({
+              jobId: application.job_id,
+              candidateName: application.candidate_name,
+              candidateEmail: application.candidate_email,
+            })
+          }
+        />
+
         {application.intro_video_url ? (
           <ThemedView style={styles.section}>
             <ThemedText type="smallBold">Video Introduction</ThemedText>
@@ -158,6 +178,20 @@ export default function ApplicationReviewScreen() {
               .map((response) => (
                 <InterviewResponseCard key={response.question_index} response={response} />
               ))}
+            <Button
+              title="Analyze Responses"
+              variant="secondary"
+              icon="chart-simple"
+              loading={analyzeMutation.isPending}
+              onPress={() => analyzeMutation.mutate()}
+            />
+            {analyzeMutation.isSuccess ? (
+              <Pressable onPress={() => router.push('/(recruiter)/analysis-reports')}>
+                <ThemedText type="small" themeColor="primary">
+                  Analysis queued — View Reports →
+                </ThemedText>
+              </Pressable>
+            ) : null}
           </ThemedView>
         ) : null}
 
@@ -211,6 +245,8 @@ export default function ApplicationReviewScreen() {
           />
         </ThemedView>
       </ScrollView>
+
+      <AssessmentInviteModal context={inviteContext} onClose={() => setInviteContext(null)} />
     </SafeAreaView>
   );
 }

@@ -98,3 +98,17 @@ export interface PurchaseHistoryItem {
 export function getPurchaseHistory() {
   return apiGet<{ ok: boolean; data: PurchaseHistoryItem[] }>('/subscription/history');
 }
+
+// Currently-active/trial subscriptions only (not history) — used to gate the
+// Recruiter Premium view, mirroring sql-skreenit's loadRecruiterPremiumServices().
+export interface ActiveSubscription {
+  subscription_id: string;
+  plan_id: string;
+  service_key: string | null;
+  service_type: string;
+  status: string;
+}
+
+export function getActiveSubscriptions() {
+  return apiGet<{ ok: boolean; data: ActiveSubscription[] }>('/subscription/active');
+}

@@ -281,15 +281,52 @@ export interface VideoUploadResult {
   url: string;
 }
 
-// `application_id` is a required Form field on the backend but unused for this
-// profile-level flow — sent empty, matching the web's onboarding-interview call.
-export function uploadIntroVideoResponse(file: UploadFile, questionIndex: number, question: string) {
+// `application_id` empty (default) is the profile-level onboarding path (see
+// step-video-intro.tsx); a real id here is the per-job interview-response path
+// (see (candidate)/interview-room/[applicationId].tsx) — same endpoint, same
+// backend branch on whether application_id is set (routers/applicant_new.py).
+export function uploadIntroVideoResponse(
+  file: UploadFile,
+  questionIndex: number,
+  question: string,
+  applicationId = '',
+) {
   return apiUploadNative<{ data: VideoUploadResult }>(
     '/applicant/upload-video-response',
     file,
     'video_file',
-    { application_id: '', question_index: questionIndex, question },
+    { application_id: applicationId, question_index: questionIndex, question },
   );
+}
+
+// --- Per-job interview responses (distinct from the profile-level intro above) ---
+// Ported from sql-skreenit's dashboard/interview-room.html + interview-room.js.
+export interface ApplicationInterview {
+  interview_questions: string[];
+  job_title: string;
+  company_name: string;
+  location: string | null;
+  job_type: string | null;
+}
+
+export function getApplicationInterview(applicationId: string) {
+  return apiGet<{ ok: boolean; data: ApplicationInterview }>(`/applicant/applications/${applicationId}/interview`);
+}
+
+export function saveInterviewResponse(
+  applicationId: string,
+  input: { question: string; videoPath: string; videoUrl: string; questionIndex: number },
+) {
+  return apiPostJson<{ ok: boolean; data: { id: string } }>(`/applicant/applications/${applicationId}/response`, {
+    question: input.question,
+    video_path: input.videoPath,
+    video_url: input.videoUrl,
+    question_index: input.questionIndex,
+  });
+}
+
+export function finishInterview(applicationId: string) {
+  return apiPostJson<{ ok: boolean }>(`/applicant/applications/${applicationId}/finish-interview`, {});
 }
 
 export function saveIntroResponse(input: {
@@ -317,4 +354,29 @@ export interface CandidateVideo {
 
 export function getCandidateVideos() {
   return apiGet<{ ok: boolean; data: CandidateVideo[] }>('/applicant/videos');
+}
+
+// --- Recruiter-assigned assessments ("Move to Assessment" invites) ----------
+// Ported from sql-skreenit's candidate-dashboard.js loadAssignedAssessments().
+// Distinct from the guest flow (routers/assessment_invite.py) -- this is for a
+// candidate who is already a logged-in Skreenit user and was invited by email.
+export interface AssignedAssessmentItem {
+  key: string;
+  name: string;
+  completed: boolean;
+}
+
+export interface AssignedAssessmentJob {
+  invitee_id: string;
+  link_id: string;
+  token: string;
+  job_id: string;
+  job_title: string;
+  company_name: string;
+  assessments: AssignedAssessmentItem[];
+  all_completed: boolean;
+}
+
+export function getAssignedAssessments() {
+  return apiGet<{ ok: boolean; data: { assigned: AssignedAssessmentJob[] } }>('/applicant/assessments/assigned');
 }

@@ -1,5 +1,40 @@
 import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, type UploadFile } from '@/lib/api/client';
 
+// --- JD document upload -> autofill ------------------------------------------
+// Ported from sql-skreenit/recruiter/js/job-create.js's handleJdUpload/autofillFromJD.
+// The backend runs a full LLM extraction pass (30-120s observed on web) — no
+// client timeout override needed here since apiUploadNative has none (unlike
+// web's 150000ms override).
+export interface ParsedJobDescription {
+  available: boolean;
+  job_title?: string;
+  department?: string;
+  role?: string;
+  employment_type?: string;
+  job_type?: string;
+  industry?: string;
+  education_qualification?: string;
+  experience_min?: number;
+  experience_max?: number;
+  salary_min?: number;
+  salary_max?: number;
+  notice_period_days?: number;
+  is_remote?: boolean;
+  diversity_hiring?: boolean;
+  responsibilities?: string;
+  requirements?: string;
+  contact_person_name?: string;
+  contact_person_email?: string;
+  location_city?: string;
+  location_state?: string;
+  location_country?: string;
+  skills?: string[];
+}
+
+export function parseJobDescription(file: UploadFile) {
+  return apiUploadNative<{ ok: boolean; data: ParsedJobDescription }>('/recruiter/jobs/parse-jd', file, 'file');
+}
+
 // --- Job posting CRUD -------------------------------------------------------
 // department/role/employment_type/job_type/industry/education_qualification are
 // reference-data IDs (see routers/reference.py), not free text — despite being
@@ -212,6 +247,52 @@ export function updateApplicationStatus(
       questions: input.questions,
     },
   });
+}
+
+// --- Candidate Search ---------------------------------------------------------
+// Ported from sql-skreenit/dashboard/js/candidate-search.js. Free feature (RBAC
+// only, no recruiter_plan gate). One row per application, not per candidate — a
+// candidate who applied to N of this recruiter's jobs appears N times.
+export interface CandidateSearchResult {
+  candidate_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  skills: string[];
+  experience_years: number | null;
+  current_designation: string | null;
+  current_company: string | null;
+  application_id: string;
+  job_id: string;
+  job_title: string;
+  jrf_number: string | null;
+  reference_no: string | null;
+  status: string;
+  applied_at: string | null;
+}
+
+export interface CandidateSearchParams {
+  q?: string;
+  jrfRef?: string;
+  jobId?: string;
+  status?: string;
+  experienceMin?: number;
+  experienceMax?: number;
+}
+
+export function searchCandidates(params: CandidateSearchParams = {}) {
+  const query = new URLSearchParams();
+  if (params.q) query.set('q', params.q);
+  if (params.jrfRef) query.set('jrf_ref', params.jrfRef);
+  if (params.jobId) query.set('job_id', params.jobId);
+  if (params.status) query.set('status', params.status);
+  if (params.experienceMin != null) query.set('experience_min', String(params.experienceMin));
+  if (params.experienceMax != null) query.set('experience_max', String(params.experienceMax));
+  query.set('page_size', '50');
+  return apiGet<{
+    ok: boolean;
+    data: { candidates: CandidateSearchResult[]; total: number; page: number; page_size: number };
+  }>(`/recruiter/candidates/search?${query.toString()}`);
 }
 
 // --- Recruiter / company profile --------------------------------------------

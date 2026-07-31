@@ -8,9 +8,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { listMyAssessments } from '@/lib/api/assessments';
+import { getAssessmentCatalog, listMyAssessments } from '@/lib/api/assessments';
 import { listPricingPlans } from '@/lib/api/subscription';
-import { CATALOG, INDUSTRIES, type CatalogItem } from '@/lib/assessment-catalog';
+import { buildCatalog, type CatalogItem, type IndustryPack } from '@/lib/assessment-catalog';
 
 const STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = {
   completed: { label: 'Completed', bg: '#f0fff4', fg: '#2f855a' },
@@ -35,11 +35,17 @@ export default function AssessmentsScreen() {
   });
   const freePlans = freePlansQuery.data?.data ?? [];
 
-  const filteredCatalog = useMemo(
-    () => (industry ? CATALOG.filter((item) => item.industry === industry) : []),
-    [industry],
+  const catalogQuery = useQuery({ queryKey: ['premium', 'catalog'], queryFn: getAssessmentCatalog });
+  const { catalogData, industryPacks } = useMemo(
+    () => buildCatalog(catalogQuery.data?.data?.by_industry ?? {}),
+    [catalogQuery.data],
   );
-  const selectedPack = industry ? INDUSTRIES.find((i) => i.value === industry) : undefined;
+
+  const filteredCatalog = useMemo(
+    () => (industry ? catalogData.filter((item) => item.industry === industry) : []),
+    [industry, catalogData],
+  );
+  const selectedPack = industry ? industryPacks.find((i) => i.value === industry) : undefined;
 
   const goToAssessment = (item: CatalogItem) => {
     router.push(`/(candidate)/assessments/take/${item.id}`);
@@ -124,7 +130,7 @@ export default function AssessmentsScreen() {
                 All Industries
               </ThemedText>
             </Pressable>
-            {INDUSTRIES.map((pack) => {
+            {industryPacks.map((pack) => {
               const active = industry === pack.value;
               return (
                 <Pressable
@@ -145,7 +151,7 @@ export default function AssessmentsScreen() {
           </ScrollView>
 
           {industry === null ? (
-            INDUSTRIES.map((pack) => (
+            industryPacks.map((pack) => (
               <IndustryPackCard key={pack.value} pack={pack} onBrowse={() => setIndustry(pack.value)} />
             ))
           ) : (
@@ -309,7 +315,7 @@ function IndustryPackCard({
   onBrowse,
   browseLabel = 'Browse',
 }: {
-  pack: (typeof INDUSTRIES)[number];
+  pack: IndustryPack;
   onBrowse: () => void;
   browseLabel?: string;
 }) {

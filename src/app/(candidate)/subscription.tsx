@@ -20,7 +20,6 @@ import {
     listPricingPlans,
     type PricingPlan,
 } from '@/lib/api/subscription';
-import { CATALOG, INDUSTRIES } from '@/lib/assessment-catalog';
 import { useAuthStore } from '@/lib/auth/store';
 
 function parseFeatures(features: PricingPlan['features']): string[] {
@@ -38,9 +37,8 @@ function parseFeatures(features: PricingPlan['features']): string[] {
 
 export default function SubscriptionScreen() {
   const theme = useTheme();
-  const { serviceType, industryKey, planId } = useLocalSearchParams<{
+  const { serviceType, planId } = useLocalSearchParams<{
     serviceType?: string;
-    industryKey?: string;
     planId?: string;
   }>();
   const authUser = useAuthStore((state) => state.user);
@@ -63,22 +61,9 @@ export default function SubscriptionScreen() {
   const profileQuery = useQuery({ queryKey: ['profile'], queryFn: getProfile });
   const profile = profileQuery.data?.data;
 
-  const industryPack = industryKey ? INDUSTRIES.find((i) => i.value === industryKey) : undefined;
-  const catalogItem = planId ? CATALOG.find((item) => item.dbId === planId) : undefined;
-  const plans = (plansQuery.data?.data ?? []).filter((plan) => {
-    if (industryPack) return plan.id === industryPack.planId;
-    if (planId) return plan.id === planId;
-    return true;
-  });
+  const plans = (plansQuery.data?.data ?? []).filter((plan) => (planId ? plan.id === planId : true));
 
-  const screenTitle =
-    resolvedServiceType === 'assessment_bundle'
-      ? industryPack
-        ? `${industryPack.label} Access`
-        : 'Industry Assessment Packs'
-      : catalogItem
-        ? catalogItem.name
-        : 'Upgrade to Premium';
+  const screenTitle = plans.length === 1 ? plans[0].name : 'Upgrade to Premium';
 
   const startCheckoutMutation = useMutation({
     mutationFn: async (plan: PricingPlan) => {

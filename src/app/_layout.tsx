@@ -28,9 +28,13 @@ function useProtectedRoute() {
 
     const group = segments[0];
     const inAuthGroup = group === '(auth)';
+    // Guest assessment-invite deep links (skreenit://assessment-invite?token=...)
+    // are opened by people who, by definition, have no Skreenit account —
+    // never force them through login.
+    const isPublicRoute = inAuthGroup || group === 'assessment-invite';
     const roleHome = role === 'recruiter' ? '/(recruiter)/dashboard' : '/(candidate)/jobs';
 
-    if (status === 'signedOut' && !inAuthGroup) {
+    if (status === 'signedOut' && !isPublicRoute) {
       router.replace('/(auth)/login');
     } else if (status === 'signedIn' && inAuthGroup) {
       router.replace(roleHome);

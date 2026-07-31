@@ -1,3 +1,4 @@
+import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
@@ -41,7 +42,11 @@ export default function ApplicationsScreen() {
           onRefresh={refetch}
           refreshing={isRefetching}
           renderItem={({ item }) => (
-            <ApplicationRow item={item} onPress={() => router.push(`/(candidate)/jobs/${item.job_id}`)} />
+            <ApplicationRow
+              item={item}
+              onPress={() => router.push(`/(candidate)/jobs/${item.job_id}`)}
+              onRecordInterview={() => router.push(`/(candidate)/interview-room/${item.id}`)}
+            />
           )}
           ListEmptyComponent={
             <View style={styles.centerMessage}>
@@ -54,8 +59,17 @@ export default function ApplicationsScreen() {
   );
 }
 
-function ApplicationRow({ item, onPress }: { item: ApplicationListItem; onPress: () => void }) {
+function ApplicationRow({
+  item,
+  onPress,
+  onRecordInterview,
+}: {
+  item: ApplicationListItem;
+  onPress: () => void;
+  onRecordInterview: () => void;
+}) {
   const theme = useTheme();
+  const canRecordInterview = item.status === 'interview_scheduled' || item.status === 'interviewing';
 
   return (
     <Pressable
@@ -84,6 +98,14 @@ function ApplicationRow({ item, onPress }: { item: ApplicationListItem; onPress:
           {item.feedback}
         </ThemedText>
       ) : null}
+      {canRecordInterview ? (
+        <Pressable style={[styles.recordButton, { backgroundColor: theme.primary }]} onPress={onRecordInterview}>
+          <FontAwesome6 name="video" size={12} color="#fff" />
+          <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+            Record Interview Responses
+          </ThemedText>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -109,5 +131,14 @@ const styles = StyleSheet.create({
   },
   feedback: {
     fontStyle: 'italic',
+  },
+  recordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    marginTop: 6,
   },
 });

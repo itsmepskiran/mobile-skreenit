@@ -42,6 +42,11 @@ export const API_V1 = `${API_BASE_URL}/api/v1`;
 // devices off this dev machine's network, unlike API_BASE_URL above.
 export const JOB_DETAILS_URL = 'https://dashboard.skreenit.com/job-details.html';
 
+// Matches CONFIG.PAGES.ASSESSMENT_INVITE_APPLY in sql-skreenit/assets/assets/js/config.js
+// (production branch) — the public, no-login guest-candidate apply page a
+// Move-to-Assessment invite link's QR code / share link should resolve to.
+export const ASSESSMENT_INVITE_APPLY_URL = 'https://assessments.skreenit.com/apply.html';
+
 // Passed as `email_redirect_to` to the backend so confirmation/reset emails
 // deep-link straight back into this app instead of the web login pages.
 export const DEEP_LINK_CONFIRM_EMAIL = 'skreenit://confirm-email';
