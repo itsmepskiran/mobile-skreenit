@@ -68,44 +68,6 @@ export default function RecruiterDashboardScreen() {
 
         <ThemedView style={styles.section}>
           <ThemedView style={styles.sectionHeader}>
-            <ThemedText type="smallBold">ATS Services</ThemedText>
-          </ThemedView>
-          <View style={styles.atsGrid}>
-            <AtsServiceCard
-              icon="file-lines"
-              label="Analyse Resumes"
-              onPress={() => router.push('/(recruiter)/resume-analysis')}
-            />
-            <AtsServiceCard
-              icon="magnifying-glass"
-              label="Candidate Search"
-              onPress={() => router.push('/(recruiter)/candidate-search')}
-            />
-            <AtsServiceCard
-              icon="calendar-days"
-              label="Interview Schedules"
-              onPress={() => router.push('/(recruiter)/interviews-calendar')}
-            />
-            <AtsServiceCard
-              icon="file-pen"
-              label="JD Section"
-              onPress={() => router.push('/(recruiter)/jd-writer')}
-            />
-            <AtsServiceCard
-              icon="crown"
-              label="Premium (Assessments)"
-              onPress={() => router.push('/(recruiter)/premium')}
-            />
-            <AtsServiceCard
-              icon="chart-simple"
-              label="Analysis Reports"
-              onPress={() => router.push('/(recruiter)/analysis-reports')}
-            />
-          </View>
-        </ThemedView>
-
-        <ThemedView style={styles.section}>
-          <ThemedView style={styles.sectionHeader}>
             <ThemedText type="smallBold">Recent Jobs</ThemedText>
             <Pressable onPress={() => router.push('/(recruiter)/jobs')}>
               <ThemedText type="link" themeColor="primary">
@@ -169,28 +131,6 @@ export default function RecruiterDashboardScreen() {
   );
 }
 
-function AtsServiceCard({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: React.ComponentProps<typeof FontAwesome6>['name'];
-  label: string;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable style={[styles.atsCard, { borderColor: theme.border }]} onPress={onPress}>
-      <View style={[styles.atsIcon, { backgroundColor: theme.backgroundElement }]}>
-        <FontAwesome6 name={icon} size={16} color={theme.primary} />
-      </View>
-      <ThemedText type="small" style={styles.atsLabel}>
-        {label}
-      </ThemedText>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   loader: { marginTop: 40 },
@@ -224,8 +164,4 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowText: { flex: 1, gap: 2 },
-  atsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  atsCard: { flexBasis: '31%', flexGrow: 1, borderWidth: 1, borderRadius: 12, padding: 12, alignItems: 'center', gap: 8 },
-  atsIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  atsLabel: { textAlign: 'center' },
 });

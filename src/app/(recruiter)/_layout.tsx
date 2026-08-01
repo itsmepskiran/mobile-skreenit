@@ -3,9 +3,10 @@ import { Tabs } from 'expo-router';
 
 import { useTheme } from '@/hooks/use-theme';
 
-// 5 tabs per product spec: Dashboard, Job Posts, Applications Received,
-// Pending Interviews, Profile. Icons match sql-skreenit's recruiter sidebar
-// (Overview/My Jobs/Applications/My Profile) plus a dedicated interview icon.
+// 6 tabs: ATS Services, Dashboard, Job Posts, Applications Received, Pending
+// Interviews, Profile. ATS Services leads (and is the post-login landing tab
+// — see roleHome in src/app/_layout.tsx) since it's the primary reason a
+// recruiter opens the app day-to-day, ahead of the stats-focused Dashboard.
 export default function RecruiterLayout() {
   const theme = useTheme();
 
@@ -17,6 +18,14 @@ export default function RecruiterLayout() {
         tabBarInactiveTintColor: theme.textSecondary,
       }}
     >
+      <Tabs.Screen
+        name="ats-services"
+        options={{
+          title: 'ATS Services',
+          tabBarLabel: 'ATS Services',
+          tabBarIcon: ({ color, size }) => <FontAwesome6 name="toolbox" size={size * 0.8} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="dashboard"
         options={{ title: 'Dashboard', tabBarIcon: ({ color, size }) => <FontAwesome6 name="gauge" size={size * 0.8} color={color} /> }}

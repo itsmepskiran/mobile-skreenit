@@ -18,6 +18,7 @@ export interface Interview {
   interviewer_name: string | null;
   interviewer_email: string | null;
   meeting_link: string | null;
+  meeting_platform: string | null;
   location: string | null;
   status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled' | 'no_show';
   notes: string | null;
@@ -39,6 +40,7 @@ export interface InterviewInput {
   interviewerName?: string;
   interviewerEmail?: string;
   meetingLink?: string;
+  meetingPlatform?: string;
   location?: string;
   notes?: string;
   questions?: string[];
@@ -57,6 +59,7 @@ function toCreateBody(input: InterviewInput) {
     interviewer_name: input.interviewerName,
     interviewer_email: input.interviewerEmail,
     meeting_link: input.meetingLink,
+    meeting_platform: input.meetingPlatform,
     location: input.location,
     notes: input.notes,
     questions: input.questions ?? [],
@@ -89,6 +92,7 @@ export function updateInterview(
       interviewer_name: input.interviewerName,
       interviewer_email: input.interviewerEmail,
       meeting_link: input.meetingLink,
+      meeting_platform: input.meetingPlatform,
       location: input.location,
       notes: input.notes,
       questions: input.questions,

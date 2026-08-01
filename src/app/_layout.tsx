@@ -32,7 +32,7 @@ function useProtectedRoute() {
     // are opened by people who, by definition, have no Skreenit account —
     // never force them through login.
     const isPublicRoute = inAuthGroup || group === 'assessment-invite';
-    const roleHome = role === 'recruiter' ? '/(recruiter)/dashboard' : '/(candidate)/jobs';
+    const roleHome = role === 'recruiter' ? '/(recruiter)/ats-services' : '/(candidate)/jobs';
 
     if (status === 'signedOut' && !isPublicRoute) {
       router.replace('/(auth)/login');

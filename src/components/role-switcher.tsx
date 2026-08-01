@@ -22,7 +22,7 @@ export function RoleSwitcher() {
     try {
       const res = await switchRoleRequest(targetRole);
       await setSession({ accessToken: res.access_token, refreshToken: res.refresh_token }, res.user);
-      router.replace(targetRole === 'recruiter' ? '/(recruiter)/dashboard' : '/(candidate)/jobs');
+      router.replace(targetRole === 'recruiter' ? '/(recruiter)/ats-services' : '/(candidate)/jobs');
     } finally {
       setLoading(false);
     }

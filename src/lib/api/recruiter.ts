@@ -295,6 +295,55 @@ export function searchCandidates(params: CandidateSearchParams = {}) {
   }>(`/recruiter/candidates/search?${query.toString()}`);
 }
 
+// --- Candidate profile (for the Interview Schedules "View Profile" modal) ----
+// GET /recruiter/candidates/{id} — same endpoint web's candidate-details.html uses,
+// combining the users + candidate_profiles tables.
+export interface CandidateProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  location: string | null;
+  summary: string | null;
+  avatar_url: string | null;
+  resume_url: string | null;
+  intro_video_url: string | null;
+  linkedin_url: string | null;
+  portfolio_url: string | null;
+  skills: string[];
+  experience_years: number | null;
+  experience: unknown[];
+  education: unknown[];
+  current_city: string | null;
+  current_state: string | null;
+}
+
+export function getCandidateDetails(candidateId: string) {
+  return apiGet<{ ok: boolean; data: { profile: CandidateProfile; user: Record<string, unknown> } }>(
+    `/recruiter/candidates/${candidateId}`,
+  );
+}
+
+// GET /recruiter/candidates/{id}/assessments — all of a candidate's completed
+// assessment sessions across every job, not scoped to one job's assessment link.
+export interface CandidateAssessmentSummary {
+  session_id: string;
+  assessment_key: string;
+  assessment_name: string;
+  format: string | null;
+  overall_score: number | null;
+  overall_grade: string | null;
+  mcq_score: number | null;
+  mcq_total: number | null;
+  completed_at: string;
+}
+
+export function getCandidateAssessments(candidateId: string) {
+  return apiGet<{ ok: boolean; data: CandidateAssessmentSummary[] }>(
+    `/recruiter/candidates/${candidateId}/assessments`,
+  );
+}
+
 // --- Recruiter / company profile --------------------------------------------
 export interface RecruiterProfile {
   id?: string;

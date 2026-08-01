@@ -39,6 +39,15 @@ interface Props {
   onScheduled: () => void;
 }
 
+// Extensible list — new integrations (e.g. a future Webex/custom link) are just a new
+// option here, no schema change needed since meeting_platform is a plain string column.
+const MEETING_PLATFORM_OPTIONS = [
+  { label: 'Google Meet', value: 'google_meet' },
+  { label: 'Zoom', value: 'zoom' },
+  { label: 'Microsoft Teams', value: 'teams' },
+  { label: 'Other', value: 'other' },
+];
+
 export function ScheduleInterviewModal({ visible, context, onClose, onScheduled }: Props) {
   const theme = useTheme();
   const jobsQuery = useQuery({
@@ -59,6 +68,7 @@ export function ScheduleInterviewModal({ visible, context, onClose, onScheduled 
   const [interviewerName, setInterviewerName] = useState('');
   const [interviewerEmail, setInterviewerEmail] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
+  const [meetingPlatform, setMeetingPlatform] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [questions, setQuestions] = useState<string[]>([]);
@@ -73,6 +83,7 @@ export function ScheduleInterviewModal({ visible, context, onClose, onScheduled 
     setInterviewerName('');
     setInterviewerEmail('');
     setMeetingLink('');
+    setMeetingPlatform('');
     setLocation('');
     setNotes('');
     setQuestions([]);
@@ -118,6 +129,7 @@ export function ScheduleInterviewModal({ visible, context, onClose, onScheduled 
             interviewerName: interviewerName.trim() || undefined,
             interviewerEmail: interviewerEmail.trim() || undefined,
             meetingLink: meetingLink.trim() || undefined,
+            meetingPlatform: meetingPlatform || undefined,
             location: location.trim() || undefined,
             notes: notes.trim() || undefined,
             questions,
@@ -228,6 +240,13 @@ export function ScheduleInterviewModal({ visible, context, onClose, onScheduled 
               autoCapitalize="none"
             />
             <TextField label="Meeting Link" value={meetingLink} onChangeText={setMeetingLink} autoCapitalize="none" />
+            <SelectField
+              label="Meeting Platform"
+              value={meetingPlatform}
+              options={MEETING_PLATFORM_OPTIONS}
+              placeholder="Select..."
+              onChange={setMeetingPlatform}
+            />
             <TextField label="Location" value={location} onChangeText={setLocation} />
 
             <ThemedText type="smallBold">Interview Questions (optional)</ThemedText>

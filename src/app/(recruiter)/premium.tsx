@@ -106,7 +106,7 @@ export default function RecruiterPremiumScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/dashboard')} hitSlop={12}>
+        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
         <FontAwesome6 name="crown" size={15} color={theme.primary} />
