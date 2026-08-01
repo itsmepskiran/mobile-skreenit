@@ -2,21 +2,23 @@ import { Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Matches sql-skreenit's `.mobile-header-brand` (assets/assets/css/mobile.css)
-// — a small logobrand.webp shown at the top of every dashboard-family page
-// once the sidebar collapses on small screens. The mobile app has no sidebar
-// to collapse from, so this renders unconditionally as a persistent strip
-// above every candidate/recruiter screen (see RootLayout) rather than only
-// appearing below a breakpoint. The real logobrand.webp has an opaque
-// near-black background baked into the file itself, which read as a jarring
-// black box — `skreenit-brand-transparent.png` is a locally chroma-keyed copy
-// (near-black pixels made transparent) so the app's actual violet brand color
-// shows through instead.
+// — the real logobrand.webp banner shown at the top of every dashboard-family
+// page once the sidebar collapses on small screens. The mobile app has no
+// sidebar to collapse from, so this renders unconditionally as a persistent
+// strip above every candidate/recruiter screen (see RootLayout) rather than
+// only appearing below a breakpoint.
+//
+// logobrand.webp has an opaque near-black background baked into the file
+// itself (~#050206), so this bar is colored to match rather than the
+// previous violet (#4F46E5) — a chroma-keyed transparent copy was tried
+// before but left the wordmark text looking ghostly, so the real file is
+// used here as-is instead.
 export function TopBrandBar() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.bar}>
         <Image
-          source={require('@/assets/images/skreenit-brand-transparent.png')}
+          source={require('@/assets/images/logobrand.webp')}
           style={styles.logo}
           resizeMode="contain"
           accessibilityLabel="Skreenit"
@@ -27,12 +29,12 @@ export function TopBrandBar() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { backgroundColor: '#4F46E5' },
+  safeArea: { backgroundColor: '#050206' },
   bar: {
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#050206',
   },
-  logo: { width: 118, height: 32 },
+  logo: { height: 32, aspectRatio: 600 / 189 },
 });

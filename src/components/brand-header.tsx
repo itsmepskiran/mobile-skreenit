@@ -1,14 +1,14 @@
 import { Image, StyleSheet, View } from 'react-native';
 
-import { Colors } from '@/constants/theme';
-
-// Same lockup as sql-skreenit's .auth-header.has-image (logobrand.webp banner
-// on a white strip). Always light — the web auth header has no dark mode.
+// Same lockup as sql-skreenit's .auth-header.has-image — the real
+// logobrand.webp banner, used as-is. That file has an opaque near-black
+// background baked in (~#050206), so the container is colored to match
+// rather than sitting behind it as a mismatched light strip.
 export function BrandHeader() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('@/assets/images/skreenit-brand.png')}
+        source={require('@/assets/images/logobrand.webp')}
         style={styles.image}
         resizeMode="contain"
         accessibilityLabel="Skreenit"
@@ -20,13 +20,12 @@ export function BrandHeader() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 20,
-    backgroundColor: Colors.light.backgroundElement,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    backgroundColor: '#050206',
   },
   image: {
-    width: '80%',
-    height: 76,
+    height: 90,
+    aspectRatio: 600 / 189,
   },
 });
