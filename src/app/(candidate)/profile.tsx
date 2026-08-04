@@ -260,6 +260,12 @@ export default function ProfileScreen() {
           />
           <RoleSwitcher />
           <Button
+            title="Resume Writing Services"
+            variant="secondary"
+            icon="pen-nib"
+            onPress={() => router.push('/(candidate)/resume-writing')}
+          />
+          <Button
             title="Purchase History"
             variant="secondary"
             icon="receipt"

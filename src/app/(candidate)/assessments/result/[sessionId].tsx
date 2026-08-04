@@ -169,6 +169,19 @@ export default function AssessmentResultScreen() {
           </ThemedView>
         ) : null}
 
+        {feedback?.skill_breakdown?.length ? (
+          <ThemedView style={[styles.card, { borderColor: theme.border }]}>
+            <ThemedText type="smallBold">Skill Breakdown</ThemedText>
+            {feedback.skill_breakdown.map((sb, i) => (
+              <View key={i} style={styles.listRow}>
+                <ThemedText type="small" style={{ flex: 1 }}>
+                  <ThemedText type="smallBold">{sb.skill}</ThemedText> — {sb.score}/100. {sb.note}
+                </ThemedText>
+              </View>
+            ))}
+          </ThemedView>
+        ) : null}
+
         <View style={styles.metaRow}>
           <ThemedText type="small" themeColor="textSecondary">
             {data.total_exercises} exercises · {data.time_taken_seconds ? `${Math.round(data.time_taken_seconds / 60)} min` : '—'}

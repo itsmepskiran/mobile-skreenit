@@ -35,6 +35,12 @@ export interface ResumeInsightsContact {
   website: string[];
 }
 
+export interface ResumeSkillDepth {
+  skill: string;
+  depth_signal: string;
+  reasoning: string;
+}
+
 export interface ResumeInsights {
   summary: string;
   name: string | null;
@@ -45,6 +51,10 @@ export interface ResumeInsights {
   strengths: string[];
   gaps: string[];
   recommendations: string[];
+  skills_depth?: ResumeSkillDepth[];
+  communication_signals?: string;
+  career_trajectory?: string;
+  analysis_source?: 'ai' | 'rule-based';
 }
 
 export interface ResumeAnalysisResult {

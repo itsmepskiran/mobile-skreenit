@@ -91,6 +91,12 @@ export interface AssessmentResponseFeedback {
   [key: string]: unknown;
 }
 
+export interface AssessmentSkillBreakdown {
+  skill: string;
+  score: number;
+  note: string;
+}
+
 export interface AssessmentAiFeedback {
   overall_score: number | null;
   overall_grade?: string;
@@ -99,6 +105,7 @@ export interface AssessmentAiFeedback {
   summary: string;
   strengths: string[];
   areas_for_improvement: string[];
+  skill_breakdown?: AssessmentSkillBreakdown[];
   response_feedback: AssessmentResponseFeedback[];
   trait_profile?: Record<string, number>;
   work_style?: string;

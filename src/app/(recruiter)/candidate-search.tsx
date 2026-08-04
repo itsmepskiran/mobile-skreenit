@@ -1,5 +1,5 @@
 import { FontAwesome6 } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -16,7 +16,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { listMyJobs, searchCandidates, type CandidateSearchResult } from '@/lib/api/recruiter';
+import {
+  getTopCandidatesForJob,
+  listMyJobs,
+  searchCandidates,
+  type AiRankedCandidate,
+  type CandidateSearchResult,
+} from '@/lib/api/recruiter';
 
 const STATUS_OPTIONS = [
   { label: 'Any status', value: '' },
@@ -60,6 +66,20 @@ export default function CandidateSearchScreen() {
   });
   const candidates = searchQuery.data?.data.candidates ?? [];
 
+  const [aiRankings, setAiRankings] = useState<Record<string, AiRankedCandidate>>({});
+  const rankMutation = useMutation({
+    mutationFn: () => getTopCandidatesForJob(jobId),
+    onSuccess: (res) => {
+      const byName: Record<string, AiRankedCandidate> = {};
+      for (const c of res.data.top_candidates) byName[c.candidate_name] = c;
+      setAiRankings(byName);
+    },
+  });
+
+  const sortedCandidates = Object.keys(aiRankings).length
+    ? [...candidates].sort((a, b) => (aiRankings[b.full_name]?.match_score ?? -1) - (aiRankings[a.full_name]?.match_score ?? -1))
+    : candidates;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={styles.headerRow}>
@@ -77,7 +97,32 @@ export default function CandidateSearchScreen() {
           placeholder="e.g. React, John, Sales Manager"
         />
         <TextField label="JRF / Reference No" value={jrfRef} onChangeText={setJrfRef} />
-        <SelectField label="Job Applied To" value={jobId} options={jobOptions} onChange={setJobId} />
+        <SelectField
+          label="Job Applied To"
+          value={jobId}
+          options={jobOptions}
+          onChange={(v) => {
+            setJobId(v);
+            setAiRankings({});
+          }}
+        />
+        <Pressable
+          style={[
+            styles.rankButton,
+            { borderColor: theme.primary, opacity: jobId ? 1 : 0.5 },
+          ]}
+          disabled={!jobId || rankMutation.isPending}
+          onPress={() => rankMutation.mutate()}
+        >
+          {rankMutation.isPending ? (
+            <ActivityIndicator size="small" color={theme.primary} />
+          ) : (
+            <FontAwesome6 name="wand-magic-sparkles" size={13} color={theme.primary} />
+          )}
+          <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>
+            {jobId ? 'Rank Candidates with AI' : 'Select a job to rank with AI'}
+          </ThemedText>
+        </Pressable>
         <SelectField label="Status" value={status} options={STATUS_OPTIONS} onChange={setStatus} />
         <View style={styles.expRow}>
           <View style={styles.expField}>
@@ -95,10 +140,11 @@ export default function CandidateSearchScreen() {
             No candidates match these filters.
           </ThemedText>
         ) : (
-          candidates.map((c) => (
+          sortedCandidates.map((c) => (
             <CandidateCard
               key={c.application_id}
               candidate={c}
+              ranking={aiRankings[c.full_name]}
               onSchedule={() =>
                 setScheduleContext({
                   jobId: c.job_id,
@@ -127,14 +173,17 @@ export default function CandidateSearchScreen() {
 
 function CandidateCard({
   candidate,
+  ranking,
   onSchedule,
   onInvite,
 }: {
   candidate: CandidateSearchResult;
+  ranking?: AiRankedCandidate;
   onSchedule: () => void;
   onInvite: () => void;
 }) {
   const theme = useTheme();
+  const scoreColor = !ranking ? theme.text : ranking.match_score >= 70 ? '#16a34a' : ranking.match_score >= 40 ? '#d97706' : '#dc2626';
   return (
     <ThemedView style={[styles.card, { borderColor: theme.border }]}>
       <View style={styles.cardHeader}>
@@ -144,10 +193,32 @@ function CandidateCard({
             {candidate.email}
           </ThemedText>
         </View>
+        {ranking ? (
+          <View style={[styles.statusBadge, { backgroundColor: `${scoreColor}22` }]}>
+            <ThemedText type="small" style={{ color: scoreColor, fontWeight: '700' }}>
+              {ranking.match_score}/100
+            </ThemedText>
+          </View>
+        ) : null}
         <View style={[styles.statusBadge, { backgroundColor: theme.backgroundElement }]}>
           <ThemedText type="small">{candidate.status.replace(/_/g, ' ')}</ThemedText>
         </View>
       </View>
+
+      {ranking && (ranking.key_strengths.length || ranking.concerns.length) ? (
+        <View style={{ gap: 2 }}>
+          {ranking.key_strengths.slice(0, 2).map((s) => (
+            <ThemedText key={s} type="small" style={{ color: '#16a34a' }}>
+              + {s}
+            </ThemedText>
+          ))}
+          {ranking.concerns.slice(0, 1).map((c) => (
+            <ThemedText key={c} type="small" style={{ color: '#dc2626' }}>
+              − {c}
+            </ThemedText>
+          ))}
+        </View>
+      ) : null}
 
       {candidate.skills.length ? (
         <View style={styles.chipRow}>
@@ -198,6 +269,15 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 10 },
   expRow: { flexDirection: 'row', gap: 12 },
   expField: { flex: 1 },
+  rankButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingVertical: 12,
+  },
   loader: { marginTop: 24 },
   empty: { textAlign: 'center', marginTop: 24 },
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 8 },

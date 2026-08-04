@@ -163,7 +163,7 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
           </View>
 
           {step === 1 ? (
-            <View style={styles.content}>
+            <ScrollView contentContainerStyle={styles.content}>
               <SelectField label="Select Job" value={jobId} options={jobOptions} onChange={setJobId} />
               <Button
                 title="Next"
@@ -181,11 +181,11 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
                   {error}
                 </ThemedText>
               ) : null}
-            </View>
+            </ScrollView>
           ) : null}
 
           {step === 2 ? (
-            <View style={styles.content}>
+            <ScrollView contentContainerStyle={styles.content}>
               <ThemedText type="small" themeColor="textSecondary">
                 Upload a job description to get AI-recommended assessments, or skip straight to browsing the full
                 catalog.
@@ -205,7 +205,7 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
                   Go straight to selection →
                 </ThemedText>
               </Pressable>
-            </View>
+            </ScrollView>
           ) : null}
 
           {step === 3 ? (
@@ -314,7 +314,7 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
           ) : null}
 
           {step === 4 ? (
-            <View style={styles.content}>
+            <ScrollView contentContainerStyle={styles.content}>
               <ThemedText type="subtitle">Confirm Selection</ThemedText>
               {Array.from(selections.entries()).map(([key, label]) => (
                 <View key={key} style={[styles.confirmRow, { borderColor: theme.border }]}>
@@ -333,7 +333,7 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
                   ← Back to selection
                 </ThemedText>
               </Pressable>
-            </View>
+            </ScrollView>
           ) : null}
         </ThemedView>
       </View>

@@ -295,6 +295,43 @@ export function searchCandidates(params: CandidateSearchParams = {}) {
   }>(`/recruiter/candidates/search?${query.toString()}`);
 }
 
+// --- Profile Ranking (AI) ------------------------------------------------------
+// Ported from services/jd_matching_service.py. get_top_candidates ranks by
+// candidate_name (not application_id) -- see routers/recruiter_new.py's
+// /jobs/{job_id}/top-candidates.
+export interface AiRankedCandidate {
+  candidate_name: string;
+  candidate_id: string;
+  match_score: number;
+  key_strengths: string[];
+  concerns: string[];
+}
+
+export function getTopCandidatesForJob(jobId: string, topN = 50) {
+  return apiGet<{
+    ok: boolean;
+    data: { job_id: string; job_title: string; total_applicants: number; top_candidates: AiRankedCandidate[] };
+  }>(`/recruiter/jobs/${jobId}/top-candidates?top_n=${topN}`);
+}
+
+export interface AiApplicationScore {
+  match_score: number;
+  matched_skills: string[];
+  missing_skills: string[];
+  experience_fit: string;
+  education_fit: string;
+  strengths: string[];
+  concerns: string[];
+  hire_recommendation: string;
+}
+
+export function getApplicationAiScore(applicationId: string) {
+  return apiPostJson<{
+    ok: boolean;
+    data: { application_id: string; job_title: string; candidate: string; score: AiApplicationScore };
+  }>(`/recruiter/applications/${applicationId}/ai-score`, {});
+}
+
 // --- Candidate profile (for the Interview Schedules "View Profile" modal) ----
 // GET /recruiter/candidates/{id} — same endpoint web's candidate-details.html uses,
 // combining the users + candidate_profiles tables.

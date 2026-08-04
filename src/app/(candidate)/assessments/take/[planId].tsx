@@ -269,7 +269,7 @@ function GenericAssessment({ planId }: { planId: string }) {
   if (stage === 'section-intro' && section) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.dotsRow}>
             {data.sections.map((_, i) => (
               <View
@@ -299,7 +299,7 @@ function GenericAssessment({ planId }: { planId: string }) {
             </View>
           </View>
           <Button title="Begin" icon="arrow-right" onPress={goToExercise} />
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }

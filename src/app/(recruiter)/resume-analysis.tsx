@@ -167,6 +167,31 @@ export default function ResumeAnalysisScreen() {
               <InsightList theme={theme} title="Strengths" icon="circle-check" color="#2f855a" items={insights.strengths} />
               <InsightList theme={theme} title="Gaps" icon="triangle-exclamation" color="#c05621" items={insights.gaps} />
               <InsightList theme={theme} title="Recommendations" icon="lightbulb" color={theme.primary} items={insights.recommendations} />
+              <InsightList
+                theme={theme}
+                title="Skills Depth"
+                icon="gauge-high"
+                color="#0369a1"
+                items={(insights.skills_depth ?? []).map((s) => `${s.skill} — ${s.depth_signal}: ${s.reasoning}`)}
+              />
+
+              {insights.communication_signals ? (
+                <View style={styles.insightSection}>
+                  <ThemedText type="smallBold">Communication Signals</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.insightText}>
+                    {insights.communication_signals}
+                  </ThemedText>
+                </View>
+              ) : null}
+
+              {insights.career_trajectory ? (
+                <View style={styles.insightSection}>
+                  <ThemedText type="smallBold">Career Trajectory</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.insightText}>
+                    {insights.career_trajectory}
+                  </ThemedText>
+                </View>
+              ) : null}
             </ThemedView>
 
             <View style={styles.actionRow}>

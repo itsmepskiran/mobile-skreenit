@@ -20,8 +20,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime } from '@/lib/format';
 import { ApiError } from '@/lib/api/client';
 import {
+  getApplicationAiScore,
   listRecruiterApplications,
   updateApplicationStatus,
+  type AiApplicationScore,
   type InterviewResponse,
   type RecruiterApplicationStatus,
 } from '@/lib/api/recruiter';
@@ -58,6 +60,12 @@ export default function ApplicationReviewScreen() {
 
   const analyzeMutation = useMutation({
     mutationFn: () => bulkAnalyzeResponses([id]),
+  });
+
+  const [aiScore, setAiScore] = useState<AiApplicationScore | null>(null);
+  const aiScoreMutation = useMutation({
+    mutationFn: () => getApplicationAiScore(id),
+    onSuccess: (res) => setAiScore(res.data.score),
   });
 
   const updateMutation = useMutation({
@@ -132,6 +140,52 @@ export default function ApplicationReviewScreen() {
             ))}
           </ThemedView>
         ) : null}
+
+        <ThemedView style={styles.section}>
+          <ThemedText type="smallBold">AI Match Score</ThemedText>
+          {!aiScore ? (
+            <Button
+              title={application.ai_score ? `Refresh AI Score (last: ${application.ai_score}/100)` : 'Get AI Match Score'}
+              variant="secondary"
+              icon="wand-magic-sparkles"
+              loading={aiScoreMutation.isPending}
+              onPress={() => aiScoreMutation.mutate()}
+            />
+          ) : (
+            <>
+              <ThemedText type="subtitle" style={{ color: aiScore.match_score >= 70 ? '#16a34a' : aiScore.match_score >= 40 ? '#d97706' : '#dc2626' }}>
+                {aiScore.match_score}/100 — {aiScore.hire_recommendation}
+              </ThemedText>
+              {aiScore.matched_skills.length ? (
+                <ThemedView style={styles.skillsRow}>
+                  {aiScore.matched_skills.map((s) => (
+                    <ThemedView key={s} style={[styles.skillChip, { backgroundColor: 'rgba(22,163,74,0.12)' }]}>
+                      <ThemedText type="small" style={{ color: '#16a34a' }}>{s}</ThemedText>
+                    </ThemedView>
+                  ))}
+                </ThemedView>
+              ) : null}
+              {aiScore.missing_skills.length ? (
+                <ThemedView style={styles.skillsRow}>
+                  {aiScore.missing_skills.map((s) => (
+                    <ThemedView key={s} style={[styles.skillChip, { backgroundColor: 'rgba(220,38,38,0.12)' }]}>
+                      <ThemedText type="small" style={{ color: '#dc2626' }}>{s}</ThemedText>
+                    </ThemedView>
+                  ))}
+                </ThemedView>
+              ) : null}
+              {aiScore.experience_fit ? <ThemedText type="small" themeColor="textSecondary">Experience fit: {aiScore.experience_fit}</ThemedText> : null}
+              {aiScore.education_fit ? <ThemedText type="small" themeColor="textSecondary">Education fit: {aiScore.education_fit}</ThemedText> : null}
+              <Button
+                title="Refresh"
+                variant="secondary"
+                icon="rotate"
+                loading={aiScoreMutation.isPending}
+                onPress={() => aiScoreMutation.mutate()}
+              />
+            </>
+          )}
+        </ThemedView>
 
         {application.cover_letter ? (
           <ThemedView style={styles.section}>
