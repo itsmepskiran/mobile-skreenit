@@ -42,6 +42,11 @@ export default function AtsServicesScreen() {
             label="Analysis Reports"
             onPress={() => router.push('/(recruiter)/analysis-reports')}
           />
+          <AtsServiceCard
+            icon="chart-pie"
+            label="Reports"
+            onPress={() => router.push('/(recruiter)/reports')}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

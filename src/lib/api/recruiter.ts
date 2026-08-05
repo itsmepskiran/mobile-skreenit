@@ -299,12 +299,23 @@ export function searchCandidates(params: CandidateSearchParams = {}) {
 // Ported from services/jd_matching_service.py. get_top_candidates ranks by
 // candidate_name (not application_id) -- see routers/recruiter_new.py's
 // /jobs/{job_id}/top-candidates.
+export interface AiScoreBreakdown {
+  ai_score: number | null;
+  match_score: number | null;
+  assessment_score: number | null;
+  video_score: number | null;
+}
+
 export interface AiRankedCandidate {
   candidate_name: string;
   candidate_id: string;
   match_score: number;
   key_strengths: string[];
   concerns: string[];
+  // Blend of ai_score (this match_score) + resume/JD match_score + assessment score +
+  // video score, renormalized over whichever are available (see jd_matching_service.py).
+  composite_score?: number | null;
+  score_breakdown?: AiScoreBreakdown;
 }
 
 export function getTopCandidatesForJob(jobId: string, topN = 50) {

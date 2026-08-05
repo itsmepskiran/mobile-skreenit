@@ -76,8 +76,17 @@ export default function CandidateSearchScreen() {
     },
   });
 
+  // composite_score blends ai_score + resume/JD match_score + assessment score + video
+  // score (see services/jd_matching_service.py) — falls back to the plain AI match_score
+  // for candidates with no other signals yet.
+  const rankScore = (name: string) => {
+    const r = aiRankings[name];
+    if (!r) return -1;
+    return r.composite_score ?? r.match_score ?? -1;
+  };
+
   const sortedCandidates = Object.keys(aiRankings).length
-    ? [...candidates].sort((a, b) => (aiRankings[b.full_name]?.match_score ?? -1) - (aiRankings[a.full_name]?.match_score ?? -1))
+    ? [...candidates].sort((a, b) => rankScore(b.full_name) - rankScore(a.full_name))
     : candidates;
 
   return (
@@ -183,7 +192,8 @@ function CandidateCard({
   onInvite: () => void;
 }) {
   const theme = useTheme();
-  const scoreColor = !ranking ? theme.text : ranking.match_score >= 70 ? '#16a34a' : ranking.match_score >= 40 ? '#d97706' : '#dc2626';
+  const displayScore = ranking ? ranking.composite_score ?? ranking.match_score : null;
+  const scoreColor = displayScore == null ? theme.text : displayScore >= 70 ? '#16a34a' : displayScore >= 40 ? '#d97706' : '#dc2626';
   return (
     <ThemedView style={[styles.card, { borderColor: theme.border }]}>
       <View style={styles.cardHeader}>
@@ -196,7 +206,7 @@ function CandidateCard({
         {ranking ? (
           <View style={[styles.statusBadge, { backgroundColor: `${scoreColor}22` }]}>
             <ThemedText type="small" style={{ color: scoreColor, fontWeight: '700' }}>
-              {ranking.match_score}/100
+              {displayScore}/100
             </ThemedText>
           </View>
         ) : null}
@@ -204,6 +214,13 @@ function CandidateCard({
           <ThemedText type="small">{candidate.status.replace(/_/g, ' ')}</ThemedText>
         </View>
       </View>
+
+      {ranking?.score_breakdown ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          AI {ranking.score_breakdown.ai_score ?? '–'} · Match {ranking.score_breakdown.match_score ?? '–'} · Assess{' '}
+          {ranking.score_breakdown.assessment_score ?? '–'} · Video {ranking.score_breakdown.video_score ?? '–'}
+        </ThemedText>
+      ) : null}
 
       {ranking && (ranking.key_strengths.length || ranking.concerns.length) ? (
         <View style={{ gap: 2 }}>
