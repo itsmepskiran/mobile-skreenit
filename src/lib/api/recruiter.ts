@@ -206,6 +206,11 @@ export interface RecruiterApplicationItem {
   candidate_id: string;
   cover_letter: string | null;
   intro_video_url: string | null;
+  // What was actually submitted with THIS application — intro_video_url above
+  // falls back to the candidate's general profile video (so a list badge/AI
+  // analysis still has something to show), so gate any "did they submit a
+  // video for this job" decision on this field instead.
+  application_intro_video_url: string | null;
   resume_url: string | null;
   status: string;
   ai_score: number | null;

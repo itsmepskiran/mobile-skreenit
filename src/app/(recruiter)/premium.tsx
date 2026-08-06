@@ -2,7 +2,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AssessmentWizardModal } from '@/components/assessment-wizard-modal';
@@ -13,6 +13,7 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getProfile } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
+import { JOB_DETAILS_URL } from '@/lib/config';
 import { listAssessmentConfigs } from '@/lib/api/position-assessments';
 import {
   confirmSubscription,
@@ -165,6 +166,23 @@ export default function RecruiterPremiumScreen() {
                         {row.assessments.length} assessment(s) · {row.status}
                       </ThemedText>
                     </View>
+                    <Pressable
+                      onPress={() => router.push({ pathname: '/(recruiter)/applications', params: { jobId: row.job_id } })}
+                      hitSlop={10}
+                      style={styles.configRowAction}
+                    >
+                      <FontAwesome6 name="users" size={15} color={theme.primary} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        const url = `${JOB_DETAILS_URL}?job_id=${row.job_id}`;
+                        Share.share({ message: url, url });
+                      }}
+                      hitSlop={10}
+                      style={styles.configRowAction}
+                    >
+                      <FontAwesome6 name="share-nodes" size={15} color={theme.primary} />
+                    </Pressable>
                   </ThemedView>
                 ))
               )}
@@ -258,6 +276,7 @@ const styles = StyleSheet.create({
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   getStartedButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, paddingVertical: 12, marginTop: 4 },
   sectionTitle: { marginTop: 8 },
-  configRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: Radius.md, padding: 12 },
+  configRow: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderRadius: Radius.md, padding: 12 },
+  configRowAction: { padding: 4 },
   subscribeButton: { borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
 });

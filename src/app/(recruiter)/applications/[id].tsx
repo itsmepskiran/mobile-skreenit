@@ -216,10 +216,10 @@ export default function ApplicationReviewScreen() {
           }
         />
 
-        {application.intro_video_url ? (
+        {application.application_intro_video_url ? (
           <ThemedView style={styles.section}>
             <ThemedText type="smallBold">Video Introduction</ThemedText>
-            <VideoPlayerBox url={application.intro_video_url} />
+            <VideoPlayerBox url={application.application_intro_video_url} />
           </ThemedView>
         ) : null}
 
