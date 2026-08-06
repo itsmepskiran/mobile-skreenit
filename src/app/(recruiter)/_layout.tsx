@@ -64,6 +64,7 @@ export default function RecruiterLayout() {
       <Tabs.Screen name="jd-writer" options={{ href: null }} />
       <Tabs.Screen name="premium" options={{ href: null }} />
       <Tabs.Screen name="analysis-reports" options={{ href: null }} />
+      <Tabs.Screen name="reports" options={{ href: null }} />
     </Tabs>
   );
 }
