@@ -241,7 +241,7 @@ export default function MyJobsScreen() {
                 <View style={styles.modalActions}>
                   <Pressable
                     style={[styles.actionButton, { borderColor: theme.border }]}
-                    onPress={() => Share.share({ message: jobUrl(qrJob.id), url: jobUrl(qrJob.id) })}
+                    onPress={() => Share.share({ message: jobUrl(qrJob.id) })}
                   >
                     <FontAwesome6 name="share-nodes" size={13} color={theme.primary} />
                     <ThemedText type="small" themeColor="primary">

@@ -77,7 +77,7 @@ export function AssessmentInviteModal({ context, onClose }: Props) {
               </ThemedText>
               <Pressable
                 style={[styles.shareButton, { backgroundColor: theme.primary }]}
-                onPress={() => Share.share({ message: applyUrl, url: applyUrl })}
+                onPress={() => Share.share({ message: applyUrl })}
               >
                 <FontAwesome6 name="share" size={13} color="#fff" />
                 <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>

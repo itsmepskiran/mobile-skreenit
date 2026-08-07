@@ -176,7 +176,7 @@ export default function RecruiterPremiumScreen() {
                     <Pressable
                       onPress={() => {
                         const url = `${JOB_DETAILS_URL}?job_id=${row.job_id}`;
-                        Share.share({ message: url, url });
+                        Share.share({ message: url });
                       }}
                       hitSlop={10}
                       style={styles.configRowAction}
