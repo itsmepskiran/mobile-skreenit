@@ -4,6 +4,8 @@ import { apiGet, apiPostJson } from '@/lib/api/client';
 // Scope cut vs. web: the expandable "Communication Skills" sub-breakdown
 // (grammar/vocabulary/sentence-complexity/readability) and PDF download are not
 // ported -- the summary + per-question scores below are the primary value.
+// Voice Analysis and Regional Language Analysis ARE ported (see AnalysisDetailModal
+// in analysis-reports.tsx) to match web's equivalent sections.
 export interface AnalysisSummary {
   overall_score: number;
   speaking_pace: number;
@@ -15,11 +17,46 @@ export interface AnalysisSummary {
   duration: number;
 }
 
+export interface AudioAnalysis {
+  pronunciation?: { score?: number };
+  voice_modulation?: {
+    score?: number;
+    pitch?: { monotone_risk?: boolean };
+    tone_quality?: { score?: number };
+    expressiveness?: number;
+  };
+  speech_patterns?: {
+    pause_analysis?: { total_pauses?: number; avg_pause_duration?: number };
+    rhythm?: { flow_score?: number };
+  };
+}
+
+export interface LanguageAnalysis {
+  language?: string;
+  language_name?: string;
+  transcription?: string;
+  translated_to_english?: string;
+  // 'not_needed' (English) | 'translated' | 'unsupported' (no Google Translate
+  // support for this language at all) | 'failed' (attempted, errored)
+  translation_status?: string;
+}
+
+export interface NlpAnalysis {
+  source_language?: string;
+  analyzed_translated_text?: boolean;
+  translation_unsupported?: boolean;
+}
+
 export interface QuestionAnalysis {
   question_index: number;
   question: string;
   cached: boolean;
-  analysis: { summary: AnalysisSummary };
+  analysis: {
+    summary: AnalysisSummary;
+    audio_analysis?: AudioAnalysis;
+    language_analysis?: LanguageAnalysis;
+    nlp_analysis?: NlpAnalysis;
+  };
 }
 
 export interface CandidateAnalysisReport {

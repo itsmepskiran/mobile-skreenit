@@ -185,6 +185,9 @@ function AnalysisDetailModal({ report, onClose }: { report: CandidateAnalysisRep
               .map((qa) => {
                 const s = qa.analysis.summary;
                 const qGrade = gradeFromScore(s.overall_score);
+                const audio = qa.analysis.audio_analysis;
+                const languageAnalysis = qa.analysis.language_analysis;
+                const isRegional = !!languageAnalysis?.language && languageAnalysis.language !== 'en';
                 return (
                   <ThemedView key={qa.question_index} style={[styles.questionCard, { borderColor: theme.border }]}>
                     <ThemedText type="smallBold" numberOfLines={2}>
@@ -204,6 +207,54 @@ function AnalysisDetailModal({ report, onClose }: { report: CandidateAnalysisRep
                       Face presence {s.face_presence}% · Confidence {s.confidence_score} · {s.dominant_emotion} ·{' '}
                       {s.duration}s
                     </ThemedText>
+
+                    {audio && (audio.voice_modulation?.score || audio.pronunciation?.score || audio.speech_patterns) ? (
+                      <View style={[styles.subSection, { backgroundColor: `${theme.primary}0d` }]}>
+                        <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>
+                          Voice Analysis
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {isRegional ? 'Pronunciation N/A (English-only)' : `Pronunciation ${audio.pronunciation?.score ?? 0}`} ·{' '}
+                          Tone {Math.round(audio.voice_modulation?.tone_quality?.score ?? 0)} · Expressiveness{' '}
+                          {Math.round(audio.voice_modulation?.expressiveness ?? 0)}
+                          {audio.speech_patterns?.pause_analysis?.total_pauses !== undefined
+                            ? ` · ${audio.speech_patterns.pause_analysis.total_pauses} pauses`
+                            : ''}
+                          {audio.voice_modulation?.pitch?.monotone_risk ? ' · Monotone risk' : ''}
+                        </ThemedText>
+                      </View>
+                    ) : null}
+
+                    {isRegional ? (
+                      <View style={[styles.subSection, { backgroundColor: '#f97316' + '0d' }]}>
+                        <ThemedText type="small" style={{ color: '#c2410c', fontWeight: '600' }}>
+                          Regional Language: {languageAnalysis?.language_name ?? languageAnalysis?.language}
+                        </ThemedText>
+                        {languageAnalysis?.translation_status === 'unsupported' ? (
+                          <ThemedText type="small" style={{ color: '#c2410c' }}>
+                            Automatic translation is not available for {languageAnalysis?.language_name ?? languageAnalysis?.language} -- Grammar, Vocabulary, and Sentence Formation could not be scored. Native transcript below for manual review.
+                          </ThemedText>
+                        ) : languageAnalysis?.translation_status === 'failed' ? (
+                          <ThemedText type="small" style={{ color: '#c2410c' }}>
+                            Automatic translation failed for this response. Grammar, Vocabulary, and Sentence Formation could not be scored. Native transcript below for manual review.
+                          </ThemedText>
+                        ) : qa.analysis.nlp_analysis?.analyzed_translated_text ? (
+                          <ThemedText type="small" style={{ color: '#c2410c' }}>
+                            Grammar, Vocabulary, and Sentence Formation scores above were computed on an automatic English translation, not the original native-language speech.
+                          </ThemedText>
+                        ) : null}
+                        {languageAnalysis?.transcription ? (
+                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={4}>
+                            Native: {languageAnalysis.transcription}
+                          </ThemedText>
+                        ) : null}
+                        {languageAnalysis?.translated_to_english ? (
+                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={4}>
+                            Translated: {languageAnalysis.translated_to_english}
+                          </ThemedText>
+                        ) : null}
+                      </View>
+                    ) : null}
                   </ThemedView>
                 );
               })}
@@ -241,6 +292,7 @@ const styles = StyleSheet.create({
   sheetContent: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
   overallCard: { borderRadius: Radius.lg, padding: 16, alignItems: 'center', gap: 4 },
   questionCard: { borderWidth: 1, borderRadius: Radius.md, padding: 12, gap: 6 },
+  subSection: { borderRadius: Radius.sm, padding: 8, gap: 4, marginTop: 4 },
   qaMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   qaBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
 });
