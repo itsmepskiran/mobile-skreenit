@@ -214,6 +214,11 @@ export interface RecruiterApplicationItem {
   resume_url: string | null;
   status: string;
   ai_score: number | null;
+  // Automatic resume/JD match score (0-100), computed at application time.
+  // Prefer this over ai_score, which is null until a recruiter manually
+  // triggers on-demand LLM scoring.
+  match_score: number | null;
+  match_overall_fit: string | null;
   feedback: string | null;
   applied_at: string;
   updated_at: string;

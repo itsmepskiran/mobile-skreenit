@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { applyToJob, checkApplicationStatus } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
-import { getJob } from '@/lib/api/jobs';
+import { getJob, getJobMatchScore } from '@/lib/api/jobs';
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
@@ -27,9 +27,17 @@ export default function JobDetailScreen() {
     queryKey: ['applicationStatus', id],
     queryFn: () => checkApplicationStatus(id),
   });
+  // Personalized resume/JD match score — informational only, never gates
+  // applying. Best-effort: an error (e.g. incomplete profile) just hides the tile.
+  const matchScoreQuery = useQuery({
+    queryKey: ['jobMatchScore', id],
+    queryFn: () => getJobMatchScore(id),
+    retry: false,
+  });
 
   const job = jobQuery.data?.data;
   const applicationStatus = statusQuery.data?.data;
+  const matchScore = matchScoreQuery.data?.data?.match_score;
 
   // Matches sql-skreenit's apply flow: no cover-letter field exists there — a single tap.
   const onApply = async () => {
@@ -107,6 +115,14 @@ export default function JobDetailScreen() {
         {/* Matches sql-skreenit's job-details.html "Job Highlights" 8-tile grid (7 here — the
             public detail endpoint doesn't surface no_of_openings). */}
         <ThemedView style={styles.highlightsGrid}>
+          {matchScore !== undefined ? (
+            <HighlightTile
+              icon="bullseye"
+              label="Your Match Score"
+              value={`${matchScore}%`}
+              colors={['#16a34a', '#059669']}
+            />
+          ) : null}
           {job.department ? (
             <HighlightTile icon="building" label="Department" value={job.department} colors={['#667eea', '#764ba2']} />
           ) : null}

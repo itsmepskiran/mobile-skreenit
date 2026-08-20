@@ -1,5 +1,5 @@
 import { FontAwesome6 } from '@expo/vector-icons';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, TextInput, View } from 'react-native';
@@ -9,7 +9,7 @@ import { JobCard } from '@/components/job-card';
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { listJobs } from '@/lib/api/jobs';
+import { getJobsMatchScores, listJobs } from '@/lib/api/jobs';
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +36,17 @@ export default function JobsListScreen() {
     });
 
   const jobs = data?.pages.flatMap((page) => page.data.jobs) ?? [];
+  const jobIds = jobs.map((job) => job.id);
+
+  // Personalized match scores — informational only, never gates applying.
+  // Best-effort: query errors (e.g. incomplete profile) just leave badges hidden.
+  const matchScoresQuery = useQuery({
+    queryKey: ['jobs', 'match-scores', jobIds.join(',')],
+    queryFn: () => getJobsMatchScores(jobIds),
+    enabled: jobIds.length > 0,
+    retry: false,
+  });
+  const matchScores = matchScoresQuery.data?.data ?? {};
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -65,7 +76,11 @@ export default function JobsListScreen() {
           keyExtractor={(job) => job.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <JobCard job={item} onPress={() => router.push(`/(candidate)/jobs/${item.id}`)} />
+            <JobCard
+              job={item}
+              onPress={() => router.push(`/(candidate)/jobs/${item.id}`)}
+              matchScore={matchScores[item.id]?.match_score}
+            />
           )}
           onRefresh={refetch}
           refreshing={isRefetching}

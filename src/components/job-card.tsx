@@ -11,17 +11,22 @@ import { formatRelativeTime, formatSalaryRange } from '@/lib/format';
 export interface JobCardProps {
   job: JobListItem;
   onPress: () => void;
+  // Personalized resume/JD match score (0-100) — informational only, never
+  // gates applying. Omitted while unknown/loading; the badge just stays hidden.
+  matchScore?: number;
 }
 
 // Matches sql-skreenit's jobs.html job-card exactly: header row with a job-type
 // pill badge, separate icon rows for location/salary/experience, truncated
 // description, skill chips, "Posted {date}" footer, green-gradient Apply button.
-export function JobCard({ job, onPress }: JobCardProps) {
+export function JobCard({ job, onPress, matchScore }: JobCardProps) {
   const theme = useTheme();
   const salary = formatSalaryRange(job.salary_min, job.salary_max, job.currency);
   const skills = job.skills?.slice(0, 4) ?? [];
   const extraSkillCount = (job.skills?.length ?? 0) - skills.length;
   const description = job.description.length > 120 ? `${job.description.slice(0, 120)}…` : job.description;
+  const matchColor =
+    matchScore === undefined ? undefined : matchScore >= 70 ? '#16a34a' : matchScore >= 40 ? '#d97706' : '#dc2626';
 
   return (
     <Pressable
@@ -48,6 +53,14 @@ export function JobCard({ job, onPress }: JobCardProps) {
           </ThemedText>
         </LinearGradient>
       </View>
+
+      {matchScore !== undefined ? (
+        <View style={[styles.matchBadge, { borderColor: matchColor }]}>
+          <ThemedText type="small" style={{ color: matchColor, fontWeight: '600' }}>
+            {matchScore}% Match
+          </ThemedText>
+        </View>
+      ) : null}
 
       {!job.is_remote && job.location ? (
         <View style={styles.metaRow}>
@@ -137,6 +150,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  matchBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
   },
   skillsRow: {
     flexDirection: 'row',

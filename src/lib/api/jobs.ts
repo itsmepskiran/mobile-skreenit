@@ -60,3 +60,28 @@ export function getJob(id: string) {
   // available — belt-and-suspenders in case that ever changes, and harmless either way.
   return apiGet<{ ok: boolean; data: JobDetail }>(`/dashboard/jobs/${id}`);
 }
+
+// Personalized resume/JD match score(s) — informational only, never restricts
+// applying. Requires auth (computed against the candidate's own profile).
+export interface JobMatchScore {
+  match_score: number;
+  overall_fit: 'high' | 'medium' | 'low';
+}
+
+export interface JobMatchScoreDetail extends JobMatchScore {
+  skills_matched: string[];
+  skills_missing: string[];
+}
+
+export function getJobsMatchScores(jobIds: string[]) {
+  if (jobIds.length === 0) {
+    return Promise.resolve({ ok: true, data: {} as Record<string, JobMatchScore> });
+  }
+  return apiGet<{ ok: boolean; data: Record<string, JobMatchScore> }>(
+    `/applicant/jobs/match-scores?job_ids=${encodeURIComponent(jobIds.join(','))}`
+  );
+}
+
+export function getJobMatchScore(id: string) {
+  return apiGet<{ ok: boolean; data: JobMatchScoreDetail | null }>(`/applicant/jobs/${id}/match-score`);
+}

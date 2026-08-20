@@ -52,31 +52,45 @@ export default function RecruiterApplicationsScreen() {
             No applications yet.
           </ThemedText>
         ) : (
-          applications.map((app) => (
-            <Pressable
-              key={app.id}
-              style={[styles.card, { borderColor: theme.border }]}
-              onPress={() => router.push(`/(recruiter)/applications/${app.id}`)}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardText}>
-                  <ThemedText type="smallBold" numberOfLines={1}>
-                    {app.candidate_name}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                    {app.job_title}
-                  </ThemedText>
+          applications.map((app) => {
+            // Prefer the automatic resume/JD match_score; fall back to the
+            // on-demand ai_score if a recruiter already triggered it.
+            const score = typeof app.match_score === 'number' ? app.match_score : app.ai_score;
+            const scoreColor = score === null || score === undefined
+              ? theme.textSecondary
+              : score >= 70 ? '#16a34a' : score >= 40 ? '#d97706' : '#dc2626';
+
+            return (
+              <Pressable
+                key={app.id}
+                style={[styles.card, { borderColor: theme.border }]}
+                onPress={() => router.push(`/(recruiter)/applications/${app.id}`)}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardText}>
+                    <ThemedText type="smallBold" numberOfLines={1}>
+                      {app.candidate_name}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                      {app.job_title}
+                    </ThemedText>
+                  </View>
+                  <StatusBadge status={app.status as ApplicationStatus} />
                 </View>
-                <StatusBadge status={app.status as ApplicationStatus} />
-              </View>
-              <View style={styles.footerRow}>
-                <FontAwesome6 name="clock" size={11} color={theme.textSecondary} />
-                <ThemedText type="small" themeColor="textSecondary">
-                  Applied {formatRelativeTime(app.applied_at)}
-                </ThemedText>
-              </View>
-            </Pressable>
-          ))
+                <View style={styles.footerRow}>
+                  <FontAwesome6 name="clock" size={11} color={theme.textSecondary} />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Applied {formatRelativeTime(app.applied_at)}
+                  </ThemedText>
+                  {score !== null && score !== undefined ? (
+                    <ThemedText type="small" style={{ color: scoreColor, marginLeft: 'auto', fontWeight: '600' }}>
+                      Match {score}%
+                    </ThemedText>
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
