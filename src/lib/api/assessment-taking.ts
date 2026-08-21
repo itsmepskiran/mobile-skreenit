@@ -44,9 +44,10 @@ export interface AssessmentQuestions {
   mcq_token: string | null;
 }
 
-export function getAssessmentQuestions(planId: string, platform?: string) {
+export function getAssessmentQuestions(planId: string, platform?: string, jobId?: string) {
   const params = new URLSearchParams({ planId, mode: planId });
   if (platform) params.set('platform', platform);
+  if (jobId) params.set('job_id', jobId);
   return apiGet<{ ok: boolean; data: AssessmentQuestions }>(`/premium/assessment-questions?${params.toString()}`);
 }
 

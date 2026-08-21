@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { z } from 'zod';
 
 import { login, switchRole } from '@/lib/api/auth';
@@ -30,12 +30,20 @@ interface PendingSession {
   user: AuthUser;
 }
 
+// Matches sql-skreenit's tabbed login (Email/User ID + Mobile OTP placeholder,
+// commit b8106a4). The Mobile tab isn't wired to a real OTP flow yet on web
+// either — it just surfaces a "coming soon" notice.
+type LoginTab = 'email' | 'mobile';
+
 export default function LoginScreen() {
   const theme = useTheme();
   const setSession = useAuthStore((state) => state.setSession);
   const [formError, setFormError] = useState<string | null>(null);
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   const [switchingRole, setSwitchingRole] = useState<Role | null>(null);
+  const [activeTab, setActiveTab] = useState<LoginTab>('email');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [mobileNotice, setMobileNotice] = useState<string | null>(null);
 
   const {
     control,
@@ -63,6 +71,16 @@ export default function LoginScreen() {
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
     }
+  };
+
+  const onSelectTab = (tab: LoginTab) => {
+    setActiveTab(tab);
+    setFormError(null);
+    setMobileNotice(null);
+  };
+
+  const onSubmitMobile = () => {
+    setMobileNotice("Mobile number (OTP-based) login isn't available yet. Please sign in with your Email / User ID for now.");
   };
 
   const onSelectRole = async (role: Role) => {
@@ -101,59 +119,111 @@ export default function LoginScreen() {
         <ThemedText themeColor="textSecondary">Sign in to your Skreenit account</ThemedText>
       </ThemedView>
 
-      <Controller
-        control={control}
-        name="loginId"
-        render={({ field }) => (
-          <TextField
-            label="Email ID / User ID"
-            icon="user"
-            placeholder="Enter your email or User ID"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={field.value}
-            onChangeText={field.onChange}
-            error={errors.loginId?.message}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="password"
-        render={({ field }) => (
-          <TextField
-            label="Password"
-            icon="lock"
-            isPassword
-            placeholder="Enter your password"
-            value={field.value}
-            onChangeText={field.onChange}
-            error={errors.password?.message}
-          />
-        )}
-      />
-
-      {formError ? (
-        <ThemedText type="small" style={{ color: theme.danger }}>
-          {formError}
-        </ThemedText>
-      ) : null}
-
-      <Button title="Sign In" icon="right-to-bracket" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
-
-      <ThemedView style={styles.actionsRow}>
-        <Link href="/(auth)/register">
-          <ThemedText type="link" themeColor="primary">
-            Create account
+      <ThemedView style={[styles.tabsRow, { borderBottomColor: theme.border }]}>
+        <Pressable
+          onPress={() => onSelectTab('email')}
+          style={[styles.tab, activeTab === 'email' && { borderBottomColor: theme.primary }]}
+        >
+          <FontAwesome6 name="user" size={13} color={activeTab === 'email' ? theme.primary : theme.textSecondary} />
+          <ThemedText type="smallBold" themeColor={activeTab === 'email' ? 'primary' : 'textSecondary'}>
+            Email / User ID
           </ThemedText>
-        </Link>
-        <Link href="/(auth)/forgot-password">
-          <ThemedText type="link" themeColor="primary">
-            Forgot password?
+        </Pressable>
+        <Pressable
+          onPress={() => onSelectTab('mobile')}
+          style={[styles.tab, activeTab === 'mobile' && { borderBottomColor: theme.primary }]}
+        >
+          <FontAwesome6
+            name="mobile-screen-button"
+            size={13}
+            color={activeTab === 'mobile' ? theme.primary : theme.textSecondary}
+          />
+          <ThemedText type="smallBold" themeColor={activeTab === 'mobile' ? 'primary' : 'textSecondary'}>
+            Mobile Number
           </ThemedText>
-        </Link>
+        </Pressable>
       </ThemedView>
+
+      {activeTab === 'email' ? (
+        <>
+          <Controller
+            control={control}
+            name="loginId"
+            render={({ field }) => (
+              <TextField
+                label="Email ID / User ID"
+                icon="user"
+                placeholder="Enter your email or User ID"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={field.value}
+                onChangeText={field.onChange}
+                error={errors.loginId?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field }) => (
+              <TextField
+                label="Password"
+                icon="lock"
+                isPassword
+                placeholder="Enter your password"
+                value={field.value}
+                onChangeText={field.onChange}
+                error={errors.password?.message}
+              />
+            )}
+          />
+
+          {formError ? (
+            <ThemedText type="small" style={{ color: theme.danger }}>
+              {formError}
+            </ThemedText>
+          ) : null}
+
+          <Button title="Sign In" icon="right-to-bracket" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
+
+          <ThemedView style={styles.actionsRow}>
+            <Link href="/(auth)/register">
+              <ThemedText type="link" themeColor="primary">
+                Create account
+              </ThemedText>
+            </Link>
+            <Link href="/(auth)/forgot-password">
+              <ThemedText type="link" themeColor="primary">
+                Forgot password?
+              </ThemedText>
+            </Link>
+          </ThemedView>
+        </>
+      ) : (
+        <>
+          <TextField
+            label="Mobile Number"
+            icon="mobile-screen-button"
+            placeholder="Enter your mobile number"
+            keyboardType="phone-pad"
+            value={mobileNumber}
+            onChangeText={setMobileNumber}
+          />
+
+          {mobileNotice ? (
+            <ThemedText type="small" themeColor="primary">
+              {mobileNotice}
+            </ThemedText>
+          ) : null}
+
+          <Button title="Send OTP" icon="paper-plane" onPress={onSubmitMobile} />
+
+          <ThemedText type="small" themeColor="textSecondary">
+            OTP-based login will be available soon.
+          </ThemedText>
+        </>
+      )}
 
       <AuthFooter action="logging in to" />
 
@@ -180,5 +250,21 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 2,
+    marginBottom: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    marginBottom: -2,
   },
 });

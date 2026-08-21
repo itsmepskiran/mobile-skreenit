@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { listApplications, type ApplicationListItem } from '@/lib/api/applicant';
+import { getJobsMatchScores } from '@/lib/api/jobs';
 import { formatRelativeTime } from '@/lib/format';
 
 export default function ApplicationsScreen() {
@@ -21,6 +22,18 @@ export default function ApplicationsScreen() {
   });
 
   const applications = data?.data ?? [];
+  const jobIds = applications.map((item) => item.job_id);
+
+  // Personalized match scores — informational only. Best-effort: query errors
+  // (e.g. incomplete profile) just leave badges hidden. Matches the batch-fetch
+  // pattern used on the jobs list (src/app/(candidate)/jobs/index.tsx).
+  const matchScoresQuery = useQuery({
+    queryKey: ['jobs', 'match-scores', jobIds.join(',')],
+    queryFn: () => getJobsMatchScores(jobIds),
+    enabled: jobIds.length > 0,
+    retry: false,
+  });
+  const matchScores = matchScoresQuery.data?.data ?? {};
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -44,6 +57,7 @@ export default function ApplicationsScreen() {
           renderItem={({ item }) => (
             <ApplicationRow
               item={item}
+              matchScore={matchScores[item.job_id]?.match_score}
               onPress={() => router.push(`/(candidate)/jobs/${item.job_id}`)}
               onRecordInterview={() => router.push(`/(candidate)/interview-room/${item.id}`)}
             />
@@ -61,15 +75,21 @@ export default function ApplicationsScreen() {
 
 function ApplicationRow({
   item,
+  matchScore,
   onPress,
   onRecordInterview,
 }: {
   item: ApplicationListItem;
+  // Personalized resume/JD match score (0-100) — informational only. Omitted
+  // while unknown/loading; the badge just stays hidden.
+  matchScore?: number;
   onPress: () => void;
   onRecordInterview: () => void;
 }) {
   const theme = useTheme();
   const canRecordInterview = item.status === 'interview_scheduled' || item.status === 'interviewing';
+  const matchColor =
+    matchScore === undefined ? undefined : matchScore >= 70 ? '#16a34a' : matchScore >= 40 ? '#d97706' : '#dc2626';
 
   return (
     <Pressable
@@ -87,6 +107,13 @@ function ApplicationRow({
       <ThemedText type="small" themeColor="textSecondary">
         {item.location}
       </ThemedText>
+      {matchScore !== undefined ? (
+        <View style={[styles.matchBadge, { borderColor: matchColor }]}>
+          <ThemedText type="small" style={{ color: matchColor, fontWeight: '600' }}>
+            {matchScore}% Match
+          </ThemedText>
+        </View>
+      ) : null}
       <View style={styles.statusRow}>
         <StatusBadge status={item.status} />
         <ThemedText type="small" themeColor="textSecondary">
@@ -123,6 +150,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pressed: { opacity: 0.8 },
+  matchBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',

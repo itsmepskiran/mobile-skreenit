@@ -2,16 +2,18 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { applyToJob, checkApplicationStatus } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
 import { getJob, getJobMatchScore } from '@/lib/api/jobs';
+import { Button } from '@/components/button';
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime, formatSalaryRange } from '@/lib/format';
 
@@ -21,6 +23,9 @@ export default function JobDetailScreen() {
   const queryClient = useQueryClient();
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [coverLetterModalVisible, setCoverLetterModalVisible] = useState(false);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [declarationAgreed, setDeclarationAgreed] = useState(false);
 
   const jobQuery = useQuery({ queryKey: ['job', id], queryFn: () => getJob(id) });
   const statusQuery = useQuery({
@@ -39,20 +44,25 @@ export default function JobDetailScreen() {
   const applicationStatus = statusQuery.data?.data;
   const matchScore = matchScoreQuery.data?.data?.match_score;
 
-  // Matches sql-skreenit's apply flow: no cover-letter field exists there — a single tap.
+  // Matches sql-skreenit's detailed-application-form.html: an optional cover-letter
+  // text area plus a declaration checkbox gate the submission.
   const onApply = async () => {
     setApplyError(null);
     setApplying(true);
     try {
-      await applyToJob(id);
+      await applyToJob(id, coverLetter.trim() || undefined);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['applicationStatus', id] }),
         queryClient.invalidateQueries({ queryKey: ['applications'] }),
       ]);
+      setCoverLetterModalVisible(false);
+      setCoverLetter('');
+      setDeclarationAgreed(false);
     } catch (err) {
       if (err instanceof ApiError && typeof err.detail === 'string' && err.detail.includes('Already applied')) {
         // Backend state and our cached status disagree — resync rather than show a scary error.
         await queryClient.invalidateQueries({ queryKey: ['applicationStatus', id] });
+        setCoverLetterModalVisible(false);
       } else {
         setApplyError(err instanceof ApiError ? err.message : 'Could not submit your application. Please try again.');
       }
@@ -202,20 +212,14 @@ export default function JobDetailScreen() {
                 </ThemedText>
               ) : null}
               <Pressable
-                onPress={onApply}
+                onPress={() => setCoverLetterModalVisible(true)}
                 disabled={applying}
                 style={[styles.applyButton, { backgroundColor: theme.primary }, applying && styles.applyButtonDisabled]}
               >
-                {applying ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <>
-                    <ThemedText type="smallBold" style={styles.applyButtonText}>
-                      Apply Now
-                    </ThemedText>
-                    <FontAwesome6 name="paper-plane" size={15} color="#ffffff" />
-                  </>
-                )}
+                <ThemedText type="smallBold" style={styles.applyButtonText}>
+                  Apply Now
+                </ThemedText>
+                <FontAwesome6 name="paper-plane" size={15} color="#ffffff" />
               </Pressable>
             </>
           )}
@@ -229,6 +233,65 @@ export default function JobDetailScreen() {
           ) : null}
         </ThemedView>
       </ScrollView>
+
+      <Modal visible={coverLetterModalVisible} transparent animationType="slide" onRequestClose={() => setCoverLetterModalVisible(false)}>
+        <View style={styles.backdrop}>
+          <ThemedView style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="subtitle">Cover Letter</ThemedText>
+              <Pressable onPress={() => setCoverLetterModalVisible(false)} hitSlop={12}>
+                <FontAwesome6 name="xmark" size={18} color={theme.text} />
+              </Pressable>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Optional — introduce yourself and tell the recruiter why you&apos;re a great fit.
+              </ThemedText>
+              <TextInput
+                value={coverLetter}
+                onChangeText={setCoverLetter}
+                placeholder="Write your cover letter..."
+                placeholderTextColor={theme.textSecondary}
+                multiline
+                numberOfLines={6}
+                style={[
+                  styles.coverLetterInput,
+                  { color: theme.text, borderColor: theme.border, backgroundColor: theme.background },
+                ]}
+              />
+
+              <Pressable style={styles.declarationRow} onPress={() => setDeclarationAgreed((v) => !v)}>
+                <FontAwesome6
+                  name={declarationAgreed ? 'square-check' : 'square'}
+                  size={18}
+                  color={declarationAgreed ? theme.primary : theme.textSecondary}
+                />
+                <ThemedText type="small" style={styles.declarationText}>
+                  <ThemedText type="smallBold">Declaration*: </ThemedText>
+                  I hereby declare that all the information provided in this application is true and accurate to
+                  the best of my knowledge. I understand that any false information may result in disqualification
+                  of my application.
+                </ThemedText>
+              </Pressable>
+
+              {applyError ? (
+                <ThemedText type="small" style={{ color: theme.danger }}>
+                  {applyError}
+                </ThemedText>
+              ) : null}
+
+              <Button
+                title="Submit Application"
+                onPress={onApply}
+                loading={applying}
+                disabled={!declarationAgreed}
+                style={styles.submitButton}
+              />
+            </ScrollView>
+          </ThemedView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -270,4 +333,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: { maxHeight: '90%', borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg, paddingTop: 16 },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  modalContent: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
+  coverLetterInput: {
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    minHeight: 140,
+    textAlignVertical: 'top',
+  },
+  declarationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  declarationText: {
+    flex: 1,
+  },
+  submitButton: { marginTop: 4 },
 });

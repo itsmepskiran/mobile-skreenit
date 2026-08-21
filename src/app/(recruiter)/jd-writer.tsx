@@ -134,13 +134,24 @@ function JdListItem({ record }: { record: JdWriterRecord }) {
         </View>
       </View>
       {isReady ? (
-        <Pressable
-          style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1 }]}
-          onPress={() => setExpanded((v) => !v)}
-        >
-          <FontAwesome6 name={expanded ? 'chevron-up' : 'eye'} size={12} color={theme.text} />
-          <ThemedText type="small">{expanded ? 'Hide' : 'View / Share'}</ThemedText>
-        </Pressable>
+        <View style={styles.actionRow}>
+          <Pressable
+            style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1 }]}
+            onPress={() => setExpanded((v) => !v)}
+          >
+            <FontAwesome6 name={expanded ? 'chevron-up' : 'eye'} size={12} color={theme.text} />
+            <ThemedText type="small">{expanded ? 'Hide' : 'View / Share'}</ThemedText>
+          </Pressable>
+          <Pressable
+            style={[styles.actionButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.push({ pathname: '/(recruiter)/jobs/create', params: { jdId: record.id } })}
+          >
+            <FontAwesome6 name="paper-plane" size={12} color="#ffffff" />
+            <ThemedText type="small" style={{ color: '#ffffff' }}>
+              Post this Job
+            </ThemedText>
+          </Pressable>
+        </View>
       ) : record.status === 'failed' ? (
         <ThemedText type="small" style={{ color: theme.danger }}>
           Generation failed.
@@ -272,7 +283,8 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 10 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, paddingVertical: 8 },
+  actionRow: { flexDirection: 'row', gap: 10 },
+  actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, paddingVertical: 8 },
   jdText: { lineHeight: 20 },
   expRow: { flexDirection: 'row', gap: 12 },
   expField: { flex: 1 },

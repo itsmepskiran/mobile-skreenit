@@ -46,16 +46,16 @@ type ResponseValue = { type: string; text?: string; selectedIdx?: number };
 type Stage = 'loading' | 'error' | 'platform-select' | 'overview' | 'section-intro' | 'exercise' | 'submitting';
 
 export default function TakeAssessmentScreen() {
-  const { planId } = useLocalSearchParams<{ planId: string }>();
+  const { planId, job_id: jobId } = useLocalSearchParams<{ planId: string; job_id?: string }>();
 
   if (planId === 'gen_video_intro') {
     return <VideoIntroAssessment />;
   }
 
-  return <GenericAssessment planId={planId} />;
+  return <GenericAssessment planId={planId} jobId={jobId} />;
 }
 
-function GenericAssessment({ planId }: { planId: string }) {
+function GenericAssessment({ planId, jobId }: { planId: string; jobId?: string }) {
   const theme = useTheme();
   const needsPlatform = planId === 'gen_coding_basic';
 
@@ -80,14 +80,14 @@ function GenericAssessment({ planId }: { planId: string }) {
     }
     setErrorMsg(null);
     try {
-      const res = await getAssessmentQuestions(planId, chosenPlatform);
+      const res = await getAssessmentQuestions(planId, chosenPlatform, jobId);
       setData(res.data);
       setStage('overview');
     } catch (err) {
       setErrorMsg(err instanceof ApiError ? err.message : 'Could not load this assessment. Please try again.');
       setStage('error');
     }
-  }, [planId]);
+  }, [planId, jobId]);
 
   // Non-coding assessments skip straight to loading — the platform picker
   // (which itself triggers `load`) only applies to gen_coding_basic.

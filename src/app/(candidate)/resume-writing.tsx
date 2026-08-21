@@ -1,7 +1,6 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -16,10 +15,10 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   createResumeFromScratch,
+  downloadRenderedResume,
   getResumeDraft,
   improveResume,
   listResumeDrafts,
-  renderResumeDraft,
   type ResumeEducationInput,
   type ResumeExperienceInput,
   type ResumeWritingDraft,
@@ -119,10 +118,9 @@ function DraftCard({ draft }: { draft: ResumeWritingDraft }) {
   });
 
   const renderMutation = useMutation({
-    mutationFn: (templateId: string) => renderResumeDraft(draft.id, templateId),
-    onSuccess: (res) => {
+    mutationFn: (templateId: string) => downloadRenderedResume(draft.id, templateId),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['candidate', 'resume-writing', 'list'] });
-      Linking.openURL(res.data.pdf_url);
     },
   });
 
@@ -181,13 +179,10 @@ function DraftCard({ draft }: { draft: ResumeWritingDraft }) {
             ))}
           </View>
           {renderMutation.isPending ? <ActivityIndicator size="small" color={theme.primary} /> : null}
-          {draft.pdf_url ? (
-            <Button
-              title="Open Last PDF"
-              variant="secondary"
-              icon="download"
-              onPress={() => Linking.openURL(draft.pdf_url as string)}
-            />
+          {renderMutation.isError ? (
+            <ThemedText type="small" style={{ color: theme.danger }}>
+              {(renderMutation.error as Error)?.message || 'Could not generate the CV. Please try again.'}
+            </ThemedText>
           ) : null}
         </>
       ) : null}

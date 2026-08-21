@@ -18,6 +18,7 @@ import { ApiError } from '@/lib/api/client';
 import {
   analyzeResume,
   checkDetailedAnalysisAccess,
+  downloadDetailedReport,
   type ResumeAnalysisResult,
 } from '@/lib/api/resume-analysis';
 
@@ -46,6 +47,20 @@ export default function ResumeAnalysisScreen() {
     onSuccess: (res) => {
       setResult(res.data);
       setShowQuestions(false);
+    },
+  });
+
+  const downloadReportMutation = useMutation({
+    mutationFn: () => {
+      if (!result) throw new Error('Please run Analyse Resume first.');
+      return downloadDetailedReport({
+        resume_filename: file?.name ?? 'resume',
+        insights: result.insights,
+        questions: result.questions,
+        source: result.source,
+        model: result.model,
+        reason: result.reason,
+      });
     },
   });
 
@@ -246,9 +261,32 @@ export default function ResumeAnalysisScreen() {
                 <ThemedText type="subtitle">Detailed Analysis</ThemedText>
               </View>
               {detailedAccessQuery.data?.data.accessible ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  Detailed analysis is available on your plan — full report generation from mobile is coming soon.
-                </ThemedText>
+                <>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Detailed analysis is available on your plan — download the full PDF report below.
+                  </ThemedText>
+                  <Pressable
+                    style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                    onPress={() => downloadReportMutation.mutate()}
+                    disabled={downloadReportMutation.isPending}
+                  >
+                    {downloadReportMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <FontAwesome6 name="file-arrow-down" size={13} color="#fff" />
+                    )}
+                    <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+                      {downloadReportMutation.isPending ? 'Preparing report…' : 'Download Detailed Report'}
+                    </ThemedText>
+                  </Pressable>
+                  {downloadReportMutation.isError ? (
+                    <ThemedText type="small" style={{ color: theme.danger }}>
+                      {downloadReportMutation.error instanceof ApiError
+                        ? downloadReportMutation.error.message
+                        : 'Failed to download the report. Please try again.'}
+                    </ThemedText>
+                  ) : null}
+                </>
               ) : (
                 <ThemedText type="small" themeColor="textSecondary">
                   Unlock merged resume + assessment scoring with Recruiter Premium.
