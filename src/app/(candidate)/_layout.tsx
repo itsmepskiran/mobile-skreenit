@@ -50,7 +50,7 @@ export default function CandidateLayout() {
       <Tabs.Screen name="resume-writing" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="purchase-history" options={{ href: null }} />
-      <Tabs.Screen name="interview-room" options={{ href: null }} />
+      <Tabs.Screen name="interview-room/[applicationId]" options={{ href: null }} />
     </Tabs>
   );
 }
