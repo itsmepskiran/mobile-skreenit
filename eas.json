@@ -23,6 +23,9 @@
     "production": {
       "env": {
         "API_BASE_URL": "https://api.skreenit.com"
+      },
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   },
