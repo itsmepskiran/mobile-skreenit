@@ -4,7 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -29,6 +29,7 @@ import {
     type CandidateProfile,
     type ProfileUpdateInput,
 } from '@/lib/api/applicant';
+import { deleteAccount } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/auth/store';
 import { toArray } from '@/lib/format';
@@ -158,6 +159,37 @@ export default function ProfileScreen() {
   const avatarMutation = useMutation({ mutationFn: uploadAvatar, onSuccess: invalidateProfile });
   const resumeMutation = useMutation({ mutationFn: uploadResume, onSuccess: invalidateProfile });
 
+  const deleteAccountMutation = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      Alert.alert('Account deleted', 'Your Skreenit account and personal data have been deleted.');
+      signOut();
+    },
+    onError: (err) => {
+      Alert.alert('Could not delete account', err instanceof ApiError ? err.message : 'Please try again.');
+    },
+  });
+
+  const onDeleteAccount = () => {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your Skreenit account and personal data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Are you absolutely sure?', 'This is your last chance to cancel.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Yes, delete my account', style: 'destructive', onPress: () => deleteAccountMutation.mutate() },
+            ]);
+          },
+        },
+      ],
+    );
+  };
+
   const onPickAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
@@ -272,6 +304,12 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(candidate)/purchase-history')}
           />
           <Button title="Sign out" variant="secondary" onPress={() => signOut()} style={styles.signOutButton} />
+          <Button
+            title="Delete Account"
+            variant="secondary"
+            loading={deleteAccountMutation.isPending}
+            onPress={onDeleteAccount}
+          />
         </ScrollView>
       </SafeAreaView>
     );

@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -14,6 +14,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
+import { deleteAccount } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import {
     getRecruiterProfile,
@@ -77,6 +78,37 @@ export default function RecruiterProfileScreen() {
 
   const avatarMutation = useMutation({ mutationFn: uploadRecruiterAvatar, onSuccess: invalidate });
   const logoMutation = useMutation({ mutationFn: uploadCompanyLogo, onSuccess: invalidate });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      Alert.alert('Account deleted', 'Your Skreenit account and personal data have been deleted.');
+      signOut();
+    },
+    onError: (err) => {
+      Alert.alert('Could not delete account', err instanceof ApiError ? err.message : 'Please try again.');
+    },
+  });
+
+  const onDeleteAccount = () => {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your Skreenit account, company profile, and personal data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Are you absolutely sure?', 'This is your last chance to cancel.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Yes, delete my account', style: 'destructive', onPress: () => deleteAccountMutation.mutate() },
+            ]);
+          },
+        },
+      ],
+    );
+  };
 
   const pickImage = async (onPicked: (file: { uri: string; name: string; type: string }) => void) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -283,6 +315,12 @@ export default function RecruiterProfileScreen() {
           onPress={() => router.push('/(recruiter)/purchase-history')}
         />
         <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
+        <Button
+          title="Delete Account"
+          variant="secondary"
+          loading={deleteAccountMutation.isPending}
+          onPress={onDeleteAccount}
+        />
       </ScrollView>
     </SafeAreaView>
   );

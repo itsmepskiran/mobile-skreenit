@@ -118,3 +118,7 @@ export function toAuthUser(data: MeResponseUser): AuthUser {
 export function logout() {
   return apiPostJson<{ ok: boolean; message: string }>('/logout', {});
 }
+
+export function deleteAccount() {
+  return apiPostJson<{ ok: boolean; message: string }>('/account-deletion', {});
+}
