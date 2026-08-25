@@ -4,8 +4,8 @@ import { StyleSheet, Text } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 
-const TERMS_URL = 'https://legal.skreenit.com/terms-conditions.html';
-const PRIVACY_URL = 'https://legal.skreenit.com/privacy-policy.html';
+const TERMS_URL = 'https://support.skreenit.com/legal/terms-conditions.html';
+const PRIVACY_URL = 'https://support.skreenit.com/legal/privacy-policy.html';
 
 export interface AuthFooterProps {
   action: 'logging in to' | 'creating';
