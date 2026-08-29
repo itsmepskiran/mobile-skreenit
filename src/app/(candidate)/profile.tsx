@@ -127,6 +127,7 @@ export default function ProfileScreen() {
   const [values, setValues] = useState<WizardValues>(EMPTY_WIZARD_VALUES);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [declarationAgreed, setDeclarationAgreed] = useState(false);
 
   const profileQuery = useQuery({ queryKey: ['profile'], queryFn: getProfile });
   const profile = profileQuery.data?.data;
@@ -149,6 +150,7 @@ export default function ProfileScreen() {
       await invalidateProfile();
       setSaved(true);
       setMode('view');
+      setDeclarationAgreed(false);
       setTimeout(() => setSaved(false), 2000);
     },
     onError: (err) => {
@@ -320,6 +322,14 @@ export default function ProfileScreen() {
 
   const stepProps = { values, setValue };
 
+  // Mirrors web's validateStep(7): the profile can't be finalized without a
+  // resume, a completed video introduction, and the declaration checkbox.
+  const missingRequirements: string[] = [];
+  if (!profile?.resume_url) missingRequirements.push('Upload your resume in the Personal step');
+  if (!profile?.intro_video_url) missingRequirements.push('Complete your video introduction above');
+  if (!declarationAgreed) missingRequirements.push('Agree to the declaration below');
+  const canSave = missingRequirements.length === 0;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={[styles.editHeader, { borderColor: theme.border }]}>
@@ -355,22 +365,44 @@ export default function ProfileScreen() {
         {stepIndex === 3 ? <StepSkills {...stepProps} /> : null}
         {stepIndex === 4 ? <StepExperience {...stepProps} /> : null}
         {stepIndex === REVIEW_STEP ? (
+          <StepReview values={values} fullName={authUser?.full_name ?? ''} email={authUser?.email ?? ''} />
+        ) : null}
+        {stepIndex === VIDEO_STEP ? (
           <>
-            <StepReview values={values} fullName={authUser?.full_name ?? ''} email={authUser?.email ?? ''} />
+            <StepVideoIntro
+              resumeUrl={profile?.resume_url ?? null}
+              existingIntroVideoUrl={profile?.intro_video_url ?? null}
+              onRecorded={invalidateProfile}
+            />
+
+            <Pressable style={styles.checkboxRow} onPress={() => setDeclarationAgreed((v) => !v)}>
+              <FontAwesome6
+                name={declarationAgreed ? 'square-check' : 'square'}
+                size={18}
+                color={declarationAgreed ? theme.primary : theme.textSecondary}
+              />
+              <ThemedText style={styles.declarationText}>
+                I declare that the information provided in this application is true and accurate to the best of my
+                knowledge.
+              </ThemedText>
+            </Pressable>
+
+            {!canSave
+              ? missingRequirements.map((reason) => (
+                  <ThemedText key={reason} type="small" style={{ color: theme.danger }}>
+                    {reason}
+                  </ThemedText>
+                ))
+              : null}
+
             <Button
               title={saved ? 'Saved' : 'Save Profile'}
               icon={saved ? 'check' : undefined}
               loading={saveMutation.isPending}
+              disabled={!canSave}
               onPress={onSave}
             />
           </>
-        ) : null}
-        {stepIndex === VIDEO_STEP ? (
-          <StepVideoIntro
-            resumeUrl={profile?.resume_url ?? null}
-            existingIntroVideoUrl={profile?.intro_video_url ?? null}
-            onRecorded={invalidateProfile}
-          />
         ) : null}
 
         {saveError ? (
@@ -423,4 +455,6 @@ const styles = StyleSheet.create({
   },
   navButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 4 },
   navButtonDisabled: { opacity: 0.4 },
+  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  declarationText: { flex: 1 },
 });

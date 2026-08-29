@@ -57,6 +57,8 @@ export interface AssessmentResponseInput {
   text: string | null;
   hasRecording: boolean;
   selectedIdx: number | null;
+  // R2 URL of an uploaded voice/video recording, if any (premium_assessment_models.py).
+  recordingUrl?: string | null;
 }
 
 export interface FinishAssessmentInput {

@@ -10,15 +10,19 @@ import {
   ScheduleInterviewModal,
   type ScheduleInterviewContext,
 } from '@/components/schedule-interview-modal';
+import { SelectField } from '@/components/select-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api/client';
+import { listMyJobs } from '@/lib/api/recruiter';
 import {
   analyzeResume,
   checkDetailedAnalysisAccess,
+  downloadBasicReport,
   downloadDetailedReport,
+  startDetailedAnalysis,
   type ResumeAnalysisResult,
 } from '@/lib/api/resume-analysis';
 
@@ -35,11 +39,39 @@ export default function ResumeAnalysisScreen() {
   const [showQuestions, setShowQuestions] = useState(false);
   const [scheduleContext, setScheduleContext] = useState<ScheduleInterviewContext | null>(null);
   const [scheduled, setScheduled] = useState(false);
+  const [detailedJobId, setDetailedJobId] = useState('');
 
   const detailedAccessQuery = useQuery({
     queryKey: ['recruiter', 'detailed-analysis-access'],
     queryFn: checkDetailedAnalysisAccess,
     enabled: result != null,
+  });
+
+  const myJobsQuery = useQuery({
+    queryKey: ['recruiter', 'jobs', 'all'],
+    queryFn: () => listMyJobs({ pageSize: 200 }),
+    enabled: detailedAccessQuery.data?.data.accessible === true,
+  });
+  const jobOptions = (myJobsQuery.data?.data.jobs ?? []).map((j) => ({ label: j.job_title, value: j.id }));
+
+  const startDetailedMutation = useMutation({
+    mutationFn: () => {
+      const email = result?.insights.contact.emails[0];
+      if (!email) throw new Error("This resume has no email address — Detailed Analysis needs one to invite the candidate.");
+      if (!detailedJobId) throw new Error('Please select a job first.');
+      return startDetailedAnalysis({
+        jobId: detailedJobId,
+        candidateName: result?.insights.name || file?.name.replace(/\.[^.]+$/, '') || 'Candidate',
+        candidateEmail: email,
+        insights: result!.insights,
+      });
+    },
+    onSuccess: (res) => {
+      router.push({
+        pathname: '/(recruiter)/detailed-analysis/[requestId]',
+        params: { requestId: res.data.detailed_analysis_id },
+      });
+    },
   });
 
   const analyzeMutation = useMutation({
@@ -54,6 +86,20 @@ export default function ResumeAnalysisScreen() {
     mutationFn: () => {
       if (!result) throw new Error('Please run Analyse Resume first.');
       return downloadDetailedReport({
+        resume_filename: file?.name ?? 'resume',
+        insights: result.insights,
+        questions: result.questions,
+        source: result.source,
+        model: result.model,
+        reason: result.reason,
+      });
+    },
+  });
+
+  const downloadBasicMutation = useMutation({
+    mutationFn: () => {
+      if (!result) throw new Error('Please run Analyse Resume first.');
+      return downloadBasicReport({
         resume_filename: file?.name ?? 'resume',
         insights: result.insights,
         questions: result.questions,
@@ -257,6 +303,37 @@ export default function ResumeAnalysisScreen() {
 
             <ThemedView style={[styles.card, { borderColor: theme.border }]}>
               <View style={styles.detailedHeaderRow}>
+                <FontAwesome6 name="file-pdf" size={14} color={theme.primary} />
+                <ThemedText type="subtitle">Basic Report</ThemedText>
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">
+                Free summary PDF of the insights and questions above.
+              </ThemedText>
+              <Pressable
+                style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1 }]}
+                onPress={() => downloadBasicMutation.mutate()}
+                disabled={downloadBasicMutation.isPending}
+              >
+                {downloadBasicMutation.isPending ? (
+                  <ActivityIndicator size="small" color={theme.text} />
+                ) : (
+                  <FontAwesome6 name="file-arrow-down" size={13} color={theme.text} />
+                )}
+                <ThemedText type="small">
+                  {downloadBasicMutation.isPending ? 'Preparing report…' : 'Download Basic Report'}
+                </ThemedText>
+              </Pressable>
+              {downloadBasicMutation.isError ? (
+                <ThemedText type="small" style={{ color: theme.danger }}>
+                  {downloadBasicMutation.error instanceof ApiError
+                    ? downloadBasicMutation.error.message
+                    : 'Failed to download the report. Please try again.'}
+                </ThemedText>
+              ) : null}
+            </ThemedView>
+
+            <ThemedView style={[styles.card, { borderColor: theme.border }]}>
+              <View style={styles.detailedHeaderRow}>
                 <FontAwesome6 name="crown" size={14} color={theme.primary} />
                 <ThemedText type="subtitle">Detailed Analysis</ThemedText>
               </View>
@@ -284,6 +361,43 @@ export default function ResumeAnalysisScreen() {
                       {downloadReportMutation.error instanceof ApiError
                         ? downloadReportMutation.error.message
                         : 'Failed to download the report. Please try again.'}
+                    </ThemedText>
+                  ) : null}
+
+                  <View style={[styles.detailedDivider, { borderColor: theme.border }]} />
+
+                  <ThemedText type="smallBold">Match Against a Job</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Invite this candidate to take the assessments configured for one of your jobs — once they
+                    finish, their resume insights and assessment scores are merged into one report.
+                  </ThemedText>
+                  <SelectField
+                    label="Job"
+                    searchable
+                    value={detailedJobId}
+                    options={jobOptions}
+                    onChange={setDetailedJobId}
+                    placeholder="Select a job"
+                  />
+                  <Pressable
+                    style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                    onPress={() => startDetailedMutation.mutate()}
+                    disabled={startDetailedMutation.isPending || !detailedJobId}
+                  >
+                    {startDetailedMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <FontAwesome6 name="paper-plane" size={13} color="#fff" />
+                    )}
+                    <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+                      {startDetailedMutation.isPending ? 'Starting…' : 'Start Detailed Analysis'}
+                    </ThemedText>
+                  </Pressable>
+                  {startDetailedMutation.isError ? (
+                    <ThemedText type="small" style={{ color: theme.danger }}>
+                      {startDetailedMutation.error instanceof ApiError || startDetailedMutation.error instanceof Error
+                        ? startDetailedMutation.error.message
+                        : 'Could not start detailed analysis. Please try again.'}
                     </ThemedText>
                   ) : null}
                 </>
@@ -388,4 +502,5 @@ const styles = StyleSheet.create({
   questionMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   difficultyBadge: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
   detailedHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  detailedDivider: { borderTopWidth: StyleSheet.hairlineWidth, marginVertical: 4 },
 });

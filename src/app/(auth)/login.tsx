@@ -44,6 +44,7 @@ export default function LoginScreen() {
   const [activeTab, setActiveTab] = useState<LoginTab>('email');
   const [mobileNumber, setMobileNumber] = useState('');
   const [mobileNotice, setMobileNotice] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const {
     control,
@@ -66,7 +67,7 @@ export default function LoginScreen() {
       if (user.has_multiple_roles) {
         setPendingSession({ tokens, user });
       } else {
-        await setSession(tokens, user);
+        await setSession(tokens, user, rememberMe);
       }
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
@@ -86,7 +87,7 @@ export default function LoginScreen() {
   const onSelectRole = async (role: Role) => {
     if (!pendingSession) return;
     if (role === pendingSession.user.role) {
-      await setSession(pendingSession.tokens, pendingSession.user);
+      await setSession(pendingSession.tokens, pendingSession.user, rememberMe);
       setPendingSession(null);
       return;
     }
@@ -97,9 +98,9 @@ export default function LoginScreen() {
       // token to attach until setSession runs, so seed it with the just-issued
       // login tokens first (still correct even though the active role is about
       // to change) before calling it.
-      await setSession(pendingSession.tokens, pendingSession.user);
+      await setSession(pendingSession.tokens, pendingSession.user, rememberMe);
       const switched = await switchRole(role);
-      await setSession({ accessToken: switched.access_token, refreshToken: switched.refresh_token }, switched.user);
+      await setSession({ accessToken: switched.access_token, refreshToken: switched.refresh_token }, switched.user, rememberMe);
       setPendingSession(null);
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : 'Could not switch role. Please try again.');
@@ -178,6 +179,15 @@ export default function LoginScreen() {
               />
             )}
           />
+
+          <Pressable style={styles.rememberRow} onPress={() => setRememberMe((v) => !v)}>
+            <FontAwesome6
+              name={rememberMe ? 'square-check' : 'square'}
+              size={18}
+              color={rememberMe ? theme.primary : theme.textSecondary}
+            />
+            <ThemedText type="small">Remember me</ThemedText>
+          </Pressable>
 
           {formError ? (
             <ThemedText type="small" style={{ color: theme.danger }}>
@@ -266,5 +276,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
     marginBottom: -2,
+  },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: -4,
   },
 });

@@ -1,4 +1,4 @@
-import { apiGet } from '@/lib/api/client';
+import { apiDelete, apiGet, apiPostJson } from '@/lib/api/client';
 
 // GET /dashboard/jobs is the truly-public, fully-documented listing endpoint
 // (also whitelisted in middleware/auth_middleware.py) — used instead of the
@@ -84,4 +84,17 @@ export function getJobsMatchScores(jobIds: string[]) {
 
 export function getJobMatchScore(id: string) {
   return apiGet<{ ok: boolean; data: JobMatchScoreDetail | null }>(`/applicant/jobs/${id}/match-score`);
+}
+
+// --- Saved jobs (bookmarks) --------------------------------------------------
+export function listSavedJobs() {
+  return apiGet<{ ok: boolean; data: { jobs: JobListItem[] } }>('/applicant/saved-jobs');
+}
+
+export function saveJob(jobId: string) {
+  return apiPostJson<{ ok: boolean; message: string }>(`/applicant/jobs/${jobId}/save`, {});
+}
+
+export function unsaveJob(jobId: string) {
+  return apiDelete<{ ok: boolean; message: string }>(`/applicant/jobs/${jobId}/save`);
 }

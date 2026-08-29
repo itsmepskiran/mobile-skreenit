@@ -8,7 +8,18 @@ export interface StoredTokens {
   refreshToken: string;
 }
 
-export async function saveTokens(tokens: StoredTokens): Promise<void> {
+// Both platforms currently keep every session alive indefinitely via rolling
+// refresh-token rotation, so "remember me" unchecked means session-only
+// instead: tokens still work for the current app run (held in the zustand
+// store in memory), but nothing is written to SecureStore, so a cold start
+// after force-quitting finds nothing to hydrate from and requires re-login.
+export async function saveTokens(tokens: StoredTokens, rememberMe = true): Promise<void> {
+  if (!rememberMe) {
+    // Also clears any previously-remembered tokens, so a stale persisted
+    // session can't survive under a new "don't remember me" choice.
+    await clearTokens();
+    return;
+  }
   await Promise.all([
     SecureStore.setItemAsync(ACCESS_TOKEN_KEY, tokens.accessToken),
     SecureStore.setItemAsync(REFRESH_TOKEN_KEY, tokens.refreshToken),

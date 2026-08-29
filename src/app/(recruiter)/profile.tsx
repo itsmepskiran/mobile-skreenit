@@ -2,7 +2,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,9 +31,13 @@ export default function RecruiterProfileScreen() {
   const authUser = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const queryClient = useQueryClient();
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  // Un-onboarded recruiters land here straight from login (see useProtectedRoute
+  // in app/_layout.tsx) with ?edit=true, so open directly into the edit form
+  // instead of the read-only view they'd otherwise see first.
+  const [isEditing, setIsEditing] = useState(edit === 'true');
 
   const profileQuery = useQuery({ queryKey: ['recruiter', 'profile'], queryFn: getRecruiterProfile });
   const statsQuery = useQuery({ queryKey: ['recruiter', 'stats'], queryFn: getRecruiterStats });

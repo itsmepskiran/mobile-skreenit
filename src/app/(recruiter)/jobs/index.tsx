@@ -2,20 +2,16 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { JobShareModal, jobUrl } from '@/components/job-share-modal';
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { deleteJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
-import { JOB_DETAILS_URL } from '@/lib/config';
 import { formatSalaryRange } from '@/lib/format';
-
-function jobUrl(jobId: string) {
-  return `${JOB_DETAILS_URL}?job_id=${jobId}`;
-}
 
 type StatusFilter = 'all' | 'active' | 'closed' | 'draft';
 
@@ -224,39 +220,7 @@ export default function MyJobsScreen() {
         )}
       </ScrollView>
 
-      <Modal visible={qrJob != null} transparent animationType="fade" onRequestClose={() => setQrJob(null)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setQrJob(null)}>
-          <Pressable style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
-            {qrJob ? (
-              <>
-                <ThemedText type="smallBold" style={styles.modalTitle} numberOfLines={2}>
-                  {qrJob.job_title}
-                </ThemedText>
-                <View style={styles.modalQrBox}>
-                  <QRCode value={jobUrl(qrJob.id)} size={220} />
-                </View>
-                <ThemedText type="small" themeColor="textSecondary" style={styles.modalHint}>
-                  Scan to view or apply to this job
-                </ThemedText>
-                <View style={styles.modalActions}>
-                  <Pressable
-                    style={[styles.actionButton, { borderColor: theme.border }]}
-                    onPress={() => Share.share({ message: jobUrl(qrJob.id) })}
-                  >
-                    <FontAwesome6 name="share-nodes" size={13} color={theme.primary} />
-                    <ThemedText type="small" themeColor="primary">
-                      Share link
-                    </ThemedText>
-                  </Pressable>
-                  <Pressable style={[styles.actionButton, { borderColor: theme.border }]} onPress={() => setQrJob(null)}>
-                    <ThemedText type="small">Close</ThemedText>
-                  </Pressable>
-                </View>
-              </>
-            ) : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <JobShareModal job={qrJob} onClose={() => setQrJob(null)} />
     </SafeAreaView>
   );
 }
@@ -319,23 +283,4 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingVertical: 9,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 320,
-    borderRadius: Radius.lg,
-    padding: 20,
-    gap: 14,
-    alignItems: 'center',
-  },
-  modalTitle: { textAlign: 'center' },
-  modalQrBox: { padding: 12, backgroundColor: '#fff', borderRadius: Radius.md },
-  modalHint: { textAlign: 'center' },
-  modalActions: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
 });

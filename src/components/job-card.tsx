@@ -14,12 +14,16 @@ export interface JobCardProps {
   // Personalized resume/JD match score (0-100) — informational only, never
   // gates applying. Omitted while unknown/loading; the badge just stays hidden.
   matchScore?: number;
+  // Bookmark icon only renders when both are provided (e.g. omitted for a
+  // signed-out visitor with nothing to save against).
+  saved?: boolean;
+  onToggleSave?: () => void;
 }
 
 // Matches sql-skreenit's jobs.html job-card exactly: header row with a job-type
 // pill badge, separate icon rows for location/salary/experience, truncated
 // description, skill chips, "Posted {date}" footer, green-gradient Apply button.
-export function JobCard({ job, onPress, matchScore }: JobCardProps) {
+export function JobCard({ job, onPress, matchScore, saved, onToggleSave }: JobCardProps) {
   const theme = useTheme();
   const salary = formatSalaryRange(job.salary_min, job.salary_max, job.currency);
   const skills = job.skills?.slice(0, 4) ?? [];
@@ -47,11 +51,18 @@ export function JobCard({ job, onPress, matchScore }: JobCardProps) {
             JRF: {job.jrf_number || '—'} &middot; Ref: {job.reference_no || '—'}
           </ThemedText>
         </View>
-        <LinearGradient colors={['#4f46e5', '#7c3aed']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.typeBadge}>
-          <ThemedText type="small" style={styles.typeBadgeText}>
-            {job.is_remote ? 'Remote' : job.job_type}
-          </ThemedText>
-        </LinearGradient>
+        <View style={styles.headerActions}>
+          <LinearGradient colors={['#4f46e5', '#7c3aed']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.typeBadge}>
+            <ThemedText type="small" style={styles.typeBadgeText}>
+              {job.is_remote ? 'Remote' : job.job_type}
+            </ThemedText>
+          </LinearGradient>
+          {onToggleSave ? (
+            <Pressable onPress={onToggleSave} hitSlop={8} style={styles.saveButton}>
+              <FontAwesome6 name="bookmark" size={16} color={saved ? theme.primary : theme.textSecondary} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {matchScore !== undefined ? (
@@ -137,6 +148,14 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: 2,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  saveButton: {
+    padding: 2,
   },
   typeBadge: {
     borderRadius: 20,

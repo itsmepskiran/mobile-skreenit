@@ -10,17 +10,26 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { TextField } from '@/components/text-field';
 import {
   analyzeJobDescription,
   browseAssessmentCatalog,
   saveAssessmentConfig,
+  uploadCustomAssessment,
   type AssessmentCatalogEntry,
+  type AssessmentSelectionItem,
   type JdRecommendedAssessment,
 } from '@/lib/api/position-assessments';
 import { listMyJobs } from '@/lib/api/recruiter';
 
 type Step = 1 | 2 | 3 | 4;
-type Tab = 'recommended' | 'browse';
+type Tab = 'recommended' | 'browse' | 'upload';
+
+// Selections are keyed "catalog:<key>" or "custom:<uploaded_assessment_id>" so
+// the same map can hold both kinds without collision, mirroring web's
+// selectionMapKey() in recruiter-dashboard.js.
+const catalogMapKey = (key: string) => `catalog:${key}`;
+const customMapKey = (id: string) => `custom:${id}`;
 
 interface Props {
   visible: boolean;
@@ -30,9 +39,8 @@ interface Props {
 
 // Ported from sql-skreenit's AI Assessment Wizard (dashboard/js/recruiter-dashboard.js).
 // Step 1: pick job. Step 2: optionally upload a JD for AI recommendations (skippable).
-// Step 3: select assessments (Recommended + Browse All tabs share one selection set).
-// Step 4: confirm and save. "Upload Your Own" custom-document tab is a deliberate
-// scope cut for this pass -- see position-assessments.ts's header comment.
+// Step 3: select assessments — Recommended, Browse All, and Upload Your Own tabs
+// all share one selection set. Step 4: confirm and save.
 export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
   const theme = useTheme();
   const [step, setStep] = useState<Step>(1);
@@ -41,8 +49,9 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
   const [recommended, setRecommended] = useState<JdRecommendedAssessment[]>([]);
   const [analyzed, setAnalyzed] = useState(false);
   const [search, setSearch] = useState('');
-  const [selections, setSelections] = useState<Map<string, string>>(new Map()); // key -> label
+  const [selections, setSelections] = useState<Map<string, string>>(new Map()); // mapKey -> label
   const [error, setError] = useState<string | null>(null);
+  const [customTitle, setCustomTitle] = useState('');
 
   const jobsQuery = useQuery({ queryKey: ['recruiter', 'jobs', 'all'], queryFn: () => listMyJobs({ pageSize: 200 }), enabled: visible });
   const jobOptions = useMemo(
@@ -72,16 +81,28 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
   });
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      saveAssessmentConfig(
-        jobId,
-        Array.from(selections.entries()).map(([key, label]) => ({ type: 'catalog' as const, key, label })),
-      ),
+    mutationFn: () => {
+      const items: AssessmentSelectionItem[] = Array.from(selections.entries()).map(([mapKey, label]) =>
+        mapKey.startsWith('custom:')
+          ? { type: 'custom', uploaded_assessment_id: mapKey.slice('custom:'.length), label }
+          : { type: 'catalog', key: mapKey.slice('catalog:'.length), label },
+      );
+      return saveAssessmentConfig(jobId, items);
+    },
     onSuccess: () => {
       reset();
       onSaved();
     },
     onError: () => setError('Could not save this assessment config. Please try again.'),
+  });
+
+  const uploadCustomMutation = useMutation({
+    mutationFn: (file: { uri: string; name: string; type: string }) =>
+      uploadCustomAssessment(jobId, file, customTitle.trim() || undefined),
+    onSuccess: (res) => {
+      toggleSelection(customMapKey(res.data.id), res.data.title);
+      setCustomTitle('');
+    },
   });
 
   const reset = () => {
@@ -93,6 +114,7 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
     setSearch('');
     setSelections(new Map());
     setError(null);
+    setCustomTitle('');
   };
 
   const close = () => {
@@ -117,6 +139,16 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
     if (picked.canceled) return;
     const asset = picked.assets[0];
     analyzeMutation.mutate({ uri: asset.uri, name: asset.name, type: asset.mimeType ?? 'application/octet-stream' });
+  };
+
+  const pickCustomAssessmentFile = async () => {
+    const picked = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
+      copyToCacheDirectory: true,
+    });
+    if (picked.canceled) return;
+    const asset = picked.assets[0];
+    uploadCustomMutation.mutate({ uri: asset.uri, name: asset.name, type: asset.mimeType ?? 'application/octet-stream' });
   };
 
   const skipToBrowse = () => {
@@ -221,6 +253,11 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
                     Browse All
                   </ThemedText>
                 </Pressable>
+                <Pressable style={styles.subTab} onPress={() => setTab('upload')}>
+                  <ThemedText type="small" themeColor={tab === 'upload' ? 'primary' : 'textSecondary'}>
+                    Upload Your Own
+                  </ThemedText>
+                </Pressable>
               </View>
 
               <ScrollView style={styles.scrollArea} contentContainerStyle={styles.content}>
@@ -235,12 +272,12 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
                         key={item.service_key}
                         item={item}
                         matchScore={item.match_score}
-                        selected={selections.has(item.service_key)}
-                        onToggle={() => toggleSelection(item.service_key, item.name)}
+                        selected={selections.has(catalogMapKey(item.service_key))}
+                        onToggle={() => toggleSelection(catalogMapKey(item.service_key), item.name)}
                       />
                     ))
                   )
-                ) : (
+                ) : tab === 'browse' ? (
                   <>
                     <TextInput
                       value={search}
@@ -258,11 +295,35 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
                           <CatalogRow
                             key={item.service_key}
                             item={item}
-                            selected={selections.has(item.service_key)}
-                            onToggle={() => toggleSelection(item.service_key, item.name)}
+                            selected={selections.has(catalogMapKey(item.service_key))}
+                            onToggle={() => toggleSelection(catalogMapKey(item.service_key), item.name)}
                           />
                         ))
                     )}
+                  </>
+                ) : (
+                  <>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Upload your own assessment document (PDF, DOC, DOCX, or TXT). The candidate-facing text is
+                      extracted automatically — this doesn&apos;t build discrete scored questions like catalog
+                      assessments do.
+                    </ThemedText>
+                    <TextField label="Title (optional)" value={customTitle} onChangeText={setCustomTitle} placeholder="e.g. Case Study Brief" />
+                    <Pressable style={[styles.dropzone, { borderColor: theme.border }]} onPress={pickCustomAssessmentFile}>
+                      {uploadCustomMutation.isPending ? (
+                        <ActivityIndicator color={theme.primary} />
+                      ) : (
+                        <FontAwesome6 name="file-arrow-up" size={20} color={theme.primary} />
+                      )}
+                      <ThemedText type="small">
+                        {uploadCustomMutation.isPending ? 'Uploading & extracting…' : 'Choose a document'}
+                      </ThemedText>
+                    </Pressable>
+                    {uploadCustomMutation.isError ? (
+                      <ThemedText type="small" style={{ color: theme.danger }}>
+                        Upload failed. Please try again.
+                      </ThemedText>
+                    ) : null}
                   </>
                 )}
 

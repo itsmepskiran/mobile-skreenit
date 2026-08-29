@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { SelectField } from '@/components/select-field';
 import { ThemedView } from '@/components/themed-view';
@@ -60,6 +61,30 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const countryOptions = (countriesQuery.data ?? []).map((c) => ({ label: c.name, value: String(c.id) }));
   const stateOptions = (statesQuery.data ?? []).map((s) => ({ label: s.name, value: String(s.id) }));
   const cityOptions = (citiesQuery.data ?? []).map((c) => ({ label: c.name, value: String(c.id) }));
+
+  // Callers that only persist place names (not ids) pass a name-only value —
+  // resolve it against each tier's options as they load so editing an
+  // existing profile pre-fills and cascades correctly instead of showing blank.
+  useEffect(() => {
+    if (value.countryId || !value.countryName || !countryOptions.length) return;
+    const match = countryOptions.find((o) => o.label.toLowerCase() === value.countryName!.toLowerCase());
+    if (match) onChange({ ...value, countryId: match.value });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.countryId, value.countryName, countryOptions]);
+
+  useEffect(() => {
+    if (value.stateId || !value.stateName || !stateOptions.length) return;
+    const match = stateOptions.find((o) => o.label.toLowerCase() === value.stateName!.toLowerCase());
+    if (match) onChange({ ...value, stateId: match.value });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.stateId, value.stateName, stateOptions]);
+
+  useEffect(() => {
+    if (value.cityId || !value.cityName || !cityOptions.length) return;
+    const match = cityOptions.find((o) => o.label.toLowerCase() === value.cityName!.toLowerCase());
+    if (match) onChange({ ...value, cityId: match.value });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.cityId, value.cityName, cityOptions]);
 
   return (
     <ThemedView style={{ gap: 12 }}>

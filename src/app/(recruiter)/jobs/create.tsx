@@ -7,6 +7,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { JobForm, type JobFormProps } from '@/components/job-form';
+import { JobShareModal } from '@/components/job-share-modal';
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -59,6 +60,9 @@ interface JdAutofillSource {
   contact_person_name?: string;
   contact_person_email?: string;
   skills?: string[];
+  location_city?: string;
+  location_state?: string;
+  location_country?: string;
 }
 
 // Reshapes a saved JD Writer record (structured generated_content + form_inputs) into
@@ -107,6 +111,7 @@ export default function CreateJobScreen() {
   const [parseStatus, setParseStatus] = useState<string | null>(null);
   const [initialValues, setInitialValues] = useState<JobFormProps['initialValues']>(undefined);
   const [jdModalVisible, setJdModalVisible] = useState(false);
+  const [publishedJob, setPublishedJob] = useState<{ id: string; job_title: string } | null>(null);
   const appliedJdIdRef = useRef<string | null>(null);
 
   const departmentsQuery = useQuery({ queryKey: ['reference', 'departments'], queryFn: getDepartments });
@@ -139,15 +144,29 @@ export default function CreateJobScreen() {
     contact_person_name: jd.contact_person_name,
     contact_person_email: jd.contact_person_email,
     skills: jd.skills,
+    // JD-parse returns free-text place names, not resolved location-table ids.
+    // LocationPicker (used by JobForm) auto-resolves a name-only value into ids
+    // itself once the country/state/city option lists load, so passing names
+    // straight through is enough — no separate resolution step needed here.
+    location:
+      jd.location_city || jd.location_state || jd.location_country
+        ? {
+            cityName: jd.location_city || undefined,
+            stateName: jd.location_state || undefined,
+            countryName: jd.location_country || undefined,
+          }
+        : undefined,
   });
 
   const createMutation = useMutation({
     mutationFn: createJob,
-    onSuccess: async () => {
+    onSuccess: async (res, variables) => {
       await queryClient.invalidateQueries({ queryKey: ['recruiter', 'jobs'] });
       await queryClient.invalidateQueries({ queryKey: ['recruiter', 'stats'] });
       await queryClient.invalidateQueries({ queryKey: ['recruiter', 'dashboard-jobs'] });
-      router.replace('/(recruiter)/jobs');
+      // Show the share/QR modal right after publishing, matching web — navigation
+      // to the jobs list happens once the recruiter closes it.
+      setPublishedJob({ id: res.data.id, job_title: variables.job_title });
     },
     onError: (err) => {
       setError(err instanceof ApiError ? err.message : 'Could not create this job posting. Please try again.');
@@ -163,9 +182,6 @@ export default function CreateJobScreen() {
         setParseStatus('Could not extract structured data from this document — please fill the form manually.');
         return;
       }
-      // Location isn't autofilled: jd.location_city/state/country are free-text
-      // names, and JobForm's LocationPicker needs resolved location-table ids —
-      // resolving those needs a cascading /locations search, deferred for now.
       const values = mapJdToInitialValues(jd);
       setInitialValues(values);
       const filledCount = countFilledFields(values);
@@ -340,6 +356,12 @@ export default function CreateJobScreen() {
           </View>
         </View>
       </Modal>
+
+      <JobShareModal
+        job={publishedJob}
+        hint="Your job is live — scan or share the link with candidates"
+        onClose={() => router.replace('/(recruiter)/jobs')}
+      />
     </SafeAreaView>
   );
 }

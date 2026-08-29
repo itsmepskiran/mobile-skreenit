@@ -1,6 +1,8 @@
 import { FontAwesome6 } from '@expo/vector-icons';
+import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 
+import { LocationPicker, type LocationValue } from '@/components/location-picker';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
@@ -32,6 +34,34 @@ export function StepPersonal({
   onPickResume,
 }: StepPersonalProps) {
   const theme = useTheme();
+
+  // WizardValues (and the backend) only persist place names, not ids — this
+  // local state holds the id/name pairs LocationPicker needs to drive its
+  // cascading queries, seeded from whatever names the loaded profile has.
+  const [currentLocation, setCurrentLocation] = useState<LocationValue>(() => ({
+    countryName: values.current_country || undefined,
+    stateName: values.current_state || undefined,
+    cityName: values.current_city || undefined,
+  }));
+  const [permanentLocation, setPermanentLocation] = useState<LocationValue>(() => ({
+    countryName: values.permanent_country || undefined,
+    stateName: values.permanent_state || undefined,
+    cityName: values.permanent_city || undefined,
+  }));
+
+  const onCurrentLocationChange = (loc: LocationValue) => {
+    setCurrentLocation(loc);
+    setValue('current_country', loc.countryName ?? '');
+    setValue('current_state', loc.stateName ?? '');
+    setValue('current_city', loc.cityName ?? '');
+  };
+
+  const onPermanentLocationChange = (loc: LocationValue) => {
+    setPermanentLocation(loc);
+    setValue('permanent_country', loc.countryName ?? '');
+    setValue('permanent_state', loc.stateName ?? '');
+    setValue('permanent_city', loc.cityName ?? '');
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -121,17 +151,7 @@ export function StepPersonal({
         value={values.current_address}
         onChangeText={(v) => setValue('current_address', v)}
       />
-      <View style={styles.row}>
-        <View style={styles.third}>
-          <TextField label="Country" value={values.current_country} onChangeText={(v) => setValue('current_country', v)} />
-        </View>
-        <View style={styles.third}>
-          <TextField label="State" value={values.current_state} onChangeText={(v) => setValue('current_state', v)} />
-        </View>
-        <View style={styles.third}>
-          <TextField label="City" value={values.current_city} onChangeText={(v) => setValue('current_city', v)} />
-        </View>
-      </View>
+      <LocationPicker value={currentLocation} onChange={onCurrentLocationChange} />
 
       <ThemedView style={styles.sectionHeading}>
         <FontAwesome6 name="house" size={13} color={theme.primary} />
@@ -147,6 +167,7 @@ export function StepPersonal({
             setValue('permanent_country', values.current_country);
             setValue('permanent_state', values.current_state);
             setValue('permanent_city', values.current_city);
+            setPermanentLocation(currentLocation);
           }
         }}
       >
@@ -168,17 +189,7 @@ export function StepPersonal({
             value={values.permanent_address}
             onChangeText={(v) => setValue('permanent_address', v)}
           />
-          <View style={styles.row}>
-            <View style={styles.third}>
-              <TextField label="Country" value={values.permanent_country} onChangeText={(v) => setValue('permanent_country', v)} />
-            </View>
-            <View style={styles.third}>
-              <TextField label="State" value={values.permanent_state} onChangeText={(v) => setValue('permanent_state', v)} />
-            </View>
-            <View style={styles.third}>
-              <TextField label="City" value={values.permanent_city} onChangeText={(v) => setValue('permanent_city', v)} />
-            </View>
-          </View>
+          <LocationPicker value={permanentLocation} onChange={onPermanentLocationChange} />
         </>
       ) : null}
     </ThemedView>
@@ -205,7 +216,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
-  third: { flex: 1 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 });

@@ -1,13 +1,12 @@
-import { apiGet, apiPostJson, apiPut, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, type UploadFile } from '@/lib/api/client';
 
 // Ported from mac-skreenit/routers/position_assessments.py + sql-skreenit's AI
 // Assessment Wizard (dashboard/js/recruiter-dashboard.js). Gated behind the
 // recruiter_plan subscription -- see (recruiter)/premium.tsx.
 //
-// Scope cut vs. web (deliberate): the wizard's third "Upload Your Own" tab
-// (POST /jobs/{id}/custom-assessment, recruiter uploads their own assessment
-// document) is not ported in this pass -- Recommended (JD-based) + Browse All
-// cover the primary flow. custom_questions authoring is also not ported.
+// custom_questions (question-by-question authoring) is not ported -- that lives
+// only in the separate /ats/ portal on web, a different product with its own
+// login, out of scope here.
 
 export interface AssessmentCatalogEntry {
   service_key: string;
@@ -47,16 +46,32 @@ export function analyzeJobDescription(jobId: string, file: UploadFile) {
   );
 }
 
-export interface AssessmentSelectionItem {
-  type: 'catalog';
-  key: string;
-  label: string;
-}
+export type AssessmentSelectionItem =
+  | { type: 'catalog'; key: string; label: string }
+  | { type: 'custom'; uploaded_assessment_id: string; label: string };
 
 export function saveAssessmentConfig(jobId: string, selections: AssessmentSelectionItem[]) {
   return apiPut<{ ok: boolean; data: unknown }>(`/recruiter/jobs/${jobId}/assessment-config`, {
     body: { selected_assessments: selections, status: 'published' },
   });
+}
+
+// Recruiter uploads their own assessment document (POST .../custom-assessment) —
+// the backend uploads it to R2, extracts its text, and returns an id/title to
+// reference from a saveAssessmentConfig() selection (type: 'custom'). No
+// discrete question extraction happens server-side, unlike catalog assessments.
+export interface UploadedAssessment {
+  id: string;
+  title: string;
+}
+
+export function uploadCustomAssessment(jobId: string, file: UploadFile, title?: string) {
+  return apiUploadNative<{ ok: boolean; data: UploadedAssessment }>(
+    `/recruiter/jobs/${jobId}/custom-assessment`,
+    file,
+    'file',
+    title ? { title } : {},
+  );
 }
 
 export function getAssessmentConfig(jobId: string) {
@@ -80,8 +95,10 @@ export function listAssessmentConfigs() {
 // --- Move-to-Assessment invite -----------------------------------------------
 // Ported from sql-skreenit's assets/assets/js/assessment-invite-modal.js. Always
 // generates a single dedicated one-time link for exactly one known candidate
-// (mode: 'per_candidate') -- the 'open'/'shared_gated' modes aren't used by any
-// current web call site, so not ported here either.
+// (mode: 'per_candidate') -- the quick single-candidate flow reused from
+// Applications review and Candidate Search. See generateAssessmentLink below
+// for the fuller open/gated/bulk-invite version (recruiter-dashboard.js's
+// "Configured Assessments" share-link modal).
 export function generateAssessmentInviteLink(jobId: string, invitee: { fullName: string; email: string }) {
   return apiPostJson<{
     ok: boolean;
@@ -90,4 +107,50 @@ export function generateAssessmentInviteLink(jobId: string, invitee: { fullName:
     mode: 'per_candidate',
     invitees: [{ full_name: invitee.fullName, email: invitee.email }],
   });
+}
+
+// --- Assessment link modes (open / per-candidate / shared-gated) ------------
+// Ported from sql-skreenit's dashboard/js/recruiter-dashboard.js
+// openLinkShareModal + generateOpenLink/generateInvites/loadInvitees/revoke.
+export type AssessmentLinkMode = 'open' | 'per_candidate' | 'shared_gated';
+
+export interface AssessmentLinkInviteeInput {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+}
+
+export type GenerateAssessmentLinkResult =
+  | { mode: 'open'; token: string }
+  | { mode: 'shared_gated'; token: string }
+  | { mode: 'per_candidate'; invitees: { email?: string; phone?: string; full_name?: string; token: string }[] };
+
+export function generateAssessmentLink(
+  jobId: string,
+  input: { mode: AssessmentLinkMode; invitees?: AssessmentLinkInviteeInput[] },
+) {
+  return apiPostJson<{ ok: boolean; data: GenerateAssessmentLinkResult }>(`/recruiter/jobs/${jobId}/assessment-link`, {
+    mode: input.mode,
+    invitees: input.invitees?.map((i) => ({ full_name: i.fullName, email: i.email, phone: i.phone })),
+  });
+}
+
+export interface AssessmentInvitee {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  full_name: string | null;
+  status: string; // 'invited' | 'used'
+  created_at: string;
+  used_at: string | null;
+  token: string;
+  link_type: string; // 'reusable' (open) | 'single_use' (per_candidate) | 'gated' (shared_gated)
+}
+
+export function listAssessmentInvitees(jobId: string) {
+  return apiGet<{ ok: boolean; data: AssessmentInvitee[] }>(`/recruiter/jobs/${jobId}/assessment-invitees`);
+}
+
+export function revokeAssessmentInvitee(jobId: string, inviteeId: string) {
+  return apiDelete<{ ok: boolean; message: string }>(`/recruiter/jobs/${jobId}/assessment-invitees/${inviteeId}`);
 }

@@ -57,8 +57,10 @@ export default function RecruiterLayout() {
           tabBarIcon: ({ color, size }) => <FontAwesome6 name="circle-user" size={size * 0.8} color={color} />,
         }}
       />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="purchase-history" options={{ href: null }} />
       <Tabs.Screen name="resume-analysis" options={{ href: null }} />
+      <Tabs.Screen name="detailed-analysis/[requestId]" options={{ href: null }} />
       <Tabs.Screen name="candidate-search" options={{ href: null }} />
       <Tabs.Screen name="interviews-calendar" options={{ href: null }} />
       <Tabs.Screen name="jd-writer" options={{ href: null }} />

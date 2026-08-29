@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { VideoIntroAssessment } from '@/components/assessment-taking/video-intro-assessment';
+import { VoiceExerciseRecorder } from '@/components/assessment-taking/voice-exercise-recorder';
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -41,7 +42,16 @@ const EXERCISE_TYPE_LABELS: Record<string, string> = {
   voice_scenario: 'Scenario Response',
 };
 
-type ResponseValue = { type: string; text?: string; selectedIdx?: number };
+type ResponseValue = { type: string; text?: string; selectedIdx?: number; recordingUrl?: string };
+
+const VOICE_EXERCISE_TYPES = new Set([
+  'vocabulary',
+  'read_aloud',
+  'repeat_sentence',
+  'qa_verbal',
+  'topic_speaking',
+  'voice_scenario',
+]);
 
 type Stage = 'loading' | 'error' | 'platform-select' | 'overview' | 'section-intro' | 'exercise' | 'submitting';
 
@@ -125,8 +135,9 @@ function GenericAssessment({ planId, jobId }: { planId: string; jobId?: string }
       questionId: key,
       type: val.type,
       text: val.text ?? null,
-      hasRecording: false,
+      hasRecording: !!val.recordingUrl,
       selectedIdx: val.selectedIdx ?? null,
+      recordingUrl: val.recordingUrl ?? null,
     }));
     try {
       const res = await finishAssessment({
@@ -408,9 +419,22 @@ function GenericAssessment({ planId, jobId }: { planId: string; jobId?: string }
           />
         </View>
       );
+    } else if (VOICE_EXERCISE_TYPES.has(section.exercise_type)) {
+      canNext = !!current?.recordingUrl;
+      body = (
+        <View style={styles.gap12}>
+          <ThemedText type="smallBold">{item.content}</ThemedText>
+          <VoiceExerciseRecorder
+            key={responseKey}
+            questionIndex={itemIdx}
+            question={item.content}
+            ttsText={section.exercise_type === 'repeat_sentence' ? item.content : undefined}
+            onRecorded={(recordingUrl) => setResponse({ type: section.exercise_type, recordingUrl })}
+          />
+        </View>
+      );
     } else {
-      // Voice-based exercise types aren't part of the free assessment set — show a
-      // graceful skip rather than nothing, matching the generic engine's `default` case.
+      // Unrecognized exercise type — show a graceful skip rather than nothing.
       canNext = true;
       body = (
         <ThemedText themeColor="textSecondary">{item.content}</ThemedText>

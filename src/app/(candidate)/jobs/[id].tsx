@@ -1,5 +1,5 @@
 import { FontAwesome6 } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { applyToJob, checkApplicationStatus } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
-import { getJob, getJobMatchScore } from '@/lib/api/jobs';
+import { getJob, getJobMatchScore, listSavedJobs, saveJob, unsaveJob } from '@/lib/api/jobs';
 import { Button } from '@/components/button';
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
@@ -38,6 +38,19 @@ export default function JobDetailScreen() {
     queryKey: ['jobMatchScore', id],
     queryFn: () => getJobMatchScore(id),
     retry: false,
+  });
+  // Same query key as (candidate)/jobs/index.tsx's saved-ids query — React
+  // Query dedupes/shares the cache, so this doesn't refetch if the list
+  // screen already loaded it.
+  const savedIdsQuery = useQuery({ queryKey: ['jobs', 'saved-ids'], queryFn: listSavedJobs });
+  const isSaved = (savedIdsQuery.data?.data.jobs ?? []).some((j) => j.id === id);
+
+  const toggleSaveMutation = useMutation({
+    mutationFn: () => (isSaved ? unsaveJob(id) : saveJob(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs', 'saved-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs', 'saved-list'] });
+    },
   });
 
   const job = jobQuery.data?.data;
@@ -100,7 +113,14 @@ export default function JobDetailScreen() {
       <Stack.Screen options={{ title: job.job_title }} />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView style={styles.header}>
-          <ThemedText type="subtitle">{job.job_title}</ThemedText>
+          <ThemedView style={styles.titleRow}>
+            <ThemedText type="subtitle" style={styles.titleText}>
+              {job.job_title}
+            </ThemedText>
+            <Pressable onPress={() => toggleSaveMutation.mutate()} hitSlop={10} disabled={toggleSaveMutation.isPending}>
+              <FontAwesome6 name="bookmark" size={20} color={isSaved ? theme.primary : theme.textSecondary} />
+            </Pressable>
+          </ThemedView>
           <ThemedText themeColor="primary">{job.company_name}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             JRF: {job.jrf_number || '—'} &middot; Ref: {job.reference_no || '—'}
@@ -302,6 +322,8 @@ const styles = StyleSheet.create({
   centerMessage: { padding: 40, alignItems: 'center' },
   content: { padding: 20, gap: 20 },
   header: { gap: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  titleText: { flex: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   highlightsGrid: {
     flexDirection: 'row',

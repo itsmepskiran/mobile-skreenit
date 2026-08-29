@@ -25,16 +25,18 @@ interface AuthState {
   status: AuthStatus;
   tokens: AuthTokens | null;
   user: AuthUser | null;
+  rememberMe: boolean;
   hydrate: () => Promise<void>;
-  setSession: (tokens: AuthTokens, user: AuthUser) => Promise<void>;
+  setSession: (tokens: AuthTokens, user: AuthUser, rememberMe?: boolean) => Promise<void>;
   updateTokens: (tokens: AuthTokens) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   status: 'loading',
   tokens: null,
   user: null,
+  rememberMe: true,
 
   hydrate: async () => {
     const tokens = await loadTokens();
@@ -56,19 +58,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  setSession: async (tokens, user) => {
-    await saveTokens(tokens);
-    set({ status: 'signedIn', tokens, user });
+  setSession: async (tokens, user, rememberMe = true) => {
+    await saveTokens(tokens, rememberMe);
+    set({ status: 'signedIn', tokens, user, rememberMe });
   },
 
   updateTokens: async (tokens) => {
-    await saveTokens(tokens);
+    await saveTokens(tokens, get().rememberMe);
     set({ tokens });
   },
 
   signOut: async () => {
     await clearTokens();
-    set({ status: 'signedOut', tokens: null, user: null });
+    set({ status: 'signedOut', tokens: null, user: null, rememberMe: true });
   },
 }));
 

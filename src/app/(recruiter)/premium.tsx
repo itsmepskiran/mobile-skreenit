@@ -2,7 +2,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AssessmentWizardModal } from '@/components/assessment-wizard-modal';
@@ -13,7 +13,6 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getProfile } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
-import { JOB_DETAILS_URL } from '@/lib/config';
 import { listAssessmentConfigs } from '@/lib/api/position-assessments';
 import {
   confirmSubscription,
@@ -174,10 +173,12 @@ export default function RecruiterPremiumScreen() {
                       <FontAwesome6 name="users" size={15} color={theme.primary} />
                     </Pressable>
                     <Pressable
-                      onPress={() => {
-                        const url = `${JOB_DETAILS_URL}?job_id=${row.job_id}`;
-                        Share.share({ message: url });
-                      }}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(recruiter)/jobs/[id]/assessment-links',
+                          params: { id: row.job_id, jobTitle: row.job_title },
+                        })
+                      }
                       hitSlop={10}
                       style={styles.configRowAction}
                     >

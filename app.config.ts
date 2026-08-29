@@ -28,7 +28,7 @@ function withoutPushEntitlement(appConfig: ExpoConfig): ExpoConfig {
 export default ({ config }: ConfigContext): ExpoConfig => {
   const appConfig: ExpoConfig = {
     ...config,
-    name: 'mobile-skreenit',
+    name: 'Skreenit',
     slug: 'mobile-skreenit',
     version: '1.0.0',
     orientation: 'portrait',

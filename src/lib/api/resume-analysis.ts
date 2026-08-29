@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
-import { ApiError, apiGet, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { ApiError, apiGet, apiPostJson, apiUploadNative, type UploadFile } from '@/lib/api/client';
 import { getSessionController } from '@/lib/auth/session-controller';
 import { API_V1 } from '@/lib/config';
 
@@ -10,14 +10,6 @@ import { API_V1 } from '@/lib/config';
 // and not gated behind the recruiter_plan subscription (only the "Detailed
 // Analysis" sub-feature below is). No client-side timeout override needed:
 // unlike the web client (15s default), this app's apiUploadNative has none.
-//
-// Scope cut vs. web (deliberate, not an oversight): the full "Detailed Analysis"
-// flow (POST /recruiter/detailed-analysis/start + polling report screen) is not
-// ported in this pass — it depends on the Recruiter Premium gate being built
-// first. Only checkDetailedAnalysisAccess() is wired here so the screen can show
-// a locked state; the actual start/report flow is a follow-up. The detailed PDF
-// *download* (below) is ported since it just renders the already-fetched
-// insights/questions server-side, same as the basic report.
 
 export interface InterviewQuestion {
   question: string;
@@ -82,6 +74,73 @@ export function checkDetailedAnalysisAccess() {
   return apiGet<{ ok: boolean; data: { accessible: boolean } }>('/recruiter/detailed-analysis/access');
 }
 
+// Detailed Analysis job-matching flow (routers/detailed_analysis.py): a recruiter
+// picks one of their jobs, we issue a per-candidate assessment invite link behind
+// the scenes, and once the candidate completes it, /status merges the resume
+// snapshot with their assessment results into merged_report.
+export interface DetailedAnalysisAssessmentResult {
+  session_id: string;
+  assessment_key: string;
+  assessment_title: string;
+  score: number;
+  summary: string;
+}
+
+export interface DetailedAnalysisRequest {
+  id: string;
+  job_id: string;
+  candidate_name: string;
+  candidate_email: string;
+  status: 'awaiting_assessment' | 'processing' | 'completed' | 'failed';
+  progress?: { all_completed?: boolean } | null;
+  merged_report?: {
+    resume_insights: ResumeInsights;
+    assessment_results: DetailedAnalysisAssessmentResult[];
+  } | null;
+  created_at?: string;
+}
+
+export function startDetailedAnalysis(input: {
+  jobId: string;
+  candidateName: string;
+  candidateEmail: string;
+  insights: ResumeInsights;
+}) {
+  return apiPostJson<{ ok: boolean; data: { detailed_analysis_id: string; assessment_token: string } }>(
+    '/recruiter/detailed-analysis/start',
+    {
+      job_id: input.jobId,
+      candidate_name: input.candidateName,
+      candidate_email: input.candidateEmail,
+      resume_insights_snapshot: input.insights,
+    },
+  );
+}
+
+export function getDetailedAnalysisStatus(requestId: string) {
+  return apiGet<{ ok: boolean; data: DetailedAnalysisRequest }>(`/recruiter/detailed-analysis/${requestId}/status`);
+}
+
+// Unlike the basic/detailed resume reports above, this is a GET, so
+// expo-file-system's downloadAsync (GET-only) can fetch it directly instead of
+// the manual fetch->base64 roundtrip those need for their POST bodies.
+export async function downloadDetailedAnalysisReport(requestId: string): Promise<void> {
+  const tokens = getSessionController().getTokens();
+  if (!tokens?.accessToken) throw new Error('Please log in to download reports.');
+
+  const localUri = `${FileSystem.cacheDirectory}detailed_analysis_${requestId}.pdf`;
+  const result = await FileSystem.downloadAsync(`${API_V1}/recruiter/detailed-analysis/${requestId}/download`, localUri, {
+    headers: { Authorization: `Bearer ${tokens.accessToken}` },
+  });
+
+  if (result.status !== 200) {
+    throw new ApiError(result.status, 'Detailed analysis is not ready yet.');
+  }
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(localUri, { mimeType: 'application/pdf', dialogTitle: 'Detailed Analysis Report' });
+  }
+}
+
 export interface DetailedReportPayload {
   resume_filename: string;
   insights: ResumeInsights;
@@ -91,21 +150,25 @@ export interface DetailedReportPayload {
   reason?: string;
 }
 
-// Backend route (routers/recruiter_new.py: POST /recruiter/analyze-resume-questions/detailed-report)
-// renders the cached insights/questions into a PDF via generate_deep_analysis_report() —
-// no re-analysis happens, this is just a fast PDF build off data the frontend already has.
-// Gated behind the same "detailed_report" paid feature as checkDetailedAnalysisAccess()
-// above; the backend returns 402 if the recruiter isn't subscribed.
+// Shared by downloadBasicReport/downloadDetailedReport below. Both backend routes
+// (routers/recruiter_new.py: POST /recruiter/analyze-resume-questions/{basic,detailed}-report)
+// render the already-fetched insights/questions into a PDF server-side — no
+// re-analysis happens, this is just a fast PDF build off data the frontend already has.
 //
-// Unlike downloadReportExport() in dashboard-metrics.ts, this endpoint is a POST with a
+// Unlike downloadReportExport() in dashboard-metrics.ts, these endpoints are POSTs with a
 // JSON body, and expo-file-system's downloadAsync only supports GET (no request body) —
 // so this fetches the PDF bytes directly, base64-encodes them, and writes them to a local
 // cache file before handing off to expo-sharing, instead of using downloadAsync.
-export async function downloadDetailedReport(payload: DetailedReportPayload): Promise<void> {
+async function downloadReportPdf(
+  endpointPath: string,
+  payload: DetailedReportPayload,
+  fileSuffix: string,
+  dialogTitle: string,
+): Promise<void> {
   const tokens = getSessionController().getTokens();
   if (!tokens?.accessToken) throw new Error('Please log in to download reports.');
 
-  const res = await fetch(`${API_V1}/recruiter/analyze-resume-questions/detailed-report`, {
+  const res = await fetch(`${API_V1}${endpointPath}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -129,12 +192,28 @@ export async function downloadDetailedReport(payload: DetailedReportPayload): Pr
   const base64 = arrayBufferToBase64(buffer);
 
   const safeName = (payload.resume_filename || 'resume').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const localUri = `${FileSystem.cacheDirectory}${safeName}_detailed_analysis_report.pdf`;
+  const localUri = `${FileSystem.cacheDirectory}${safeName}_${fileSuffix}.pdf`;
   await FileSystem.writeAsStringAsync(localUri, base64, { encoding: FileSystem.EncodingType.Base64 });
 
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(localUri, { mimeType: 'application/pdf', dialogTitle: 'Detailed Analysis Report' });
+    await Sharing.shareAsync(localUri, { mimeType: 'application/pdf', dialogTitle });
   }
+}
+
+// Free — no "detailed_report" feature gate, unlike downloadDetailedReport below.
+export function downloadBasicReport(payload: DetailedReportPayload): Promise<void> {
+  return downloadReportPdf('/recruiter/analyze-resume-questions/basic-report', payload, 'basic_report', 'Basic Report');
+}
+
+// Gated behind the "detailed_report" paid feature checked by checkDetailedAnalysisAccess()
+// above; the backend returns 402 if the recruiter isn't subscribed.
+export function downloadDetailedReport(payload: DetailedReportPayload): Promise<void> {
+  return downloadReportPdf(
+    '/recruiter/analyze-resume-questions/detailed-report',
+    payload,
+    'detailed_analysis_report',
+    'Detailed Analysis Report',
+  );
 }
 
 const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';

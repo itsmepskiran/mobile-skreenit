@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime } from '@/lib/format';
 import { getRecruiterStats, listRecentApplications, listRecentJobs } from '@/lib/api/recruiter';
+import { getUnreadCount } from '@/lib/api/notifications';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 
 export default function RecruiterDashboardScreen() {
@@ -25,10 +26,16 @@ export default function RecruiterDashboardScreen() {
     queryKey: ['recruiter', 'dashboard-applications'],
     queryFn: () => listRecentApplications({ pageSize: 4 }),
   });
+  const unreadQuery = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: getUnreadCount,
+    refetchInterval: 30000,
+  });
 
   const stats = statsQuery.data?.data;
   const jobs = jobsQuery.data?.data.jobs ?? [];
   const applications = applicationsQuery.data?.data.applications ?? [];
+  const unreadCount = unreadQuery.data?.data.unread_count ?? 0;
 
   if (statsQuery.isLoading) {
     return (
@@ -43,12 +50,24 @@ export default function RecruiterDashboardScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView style={styles.headerRow}>
           <ThemedText type="title">Dashboard</ThemedText>
-          <Pressable style={[styles.postButton, { backgroundColor: theme.primary }]} onPress={() => router.push('/(recruiter)/jobs/create')}>
-            <FontAwesome6 name="plus" size={13} color="#ffffff" />
-            <ThemedText type="smallBold" style={styles.postButtonText}>
-              Post Job
-            </ThemedText>
-          </Pressable>
+          <ThemedView style={styles.headerActions}>
+            <Pressable style={styles.bellButton} onPress={() => router.push('/(recruiter)/notifications')}>
+              <FontAwesome6 name="bell" size={20} color={theme.text} />
+              {unreadCount > 0 ? (
+                <View style={[styles.badge, { backgroundColor: theme.danger }]}>
+                  <ThemedText type="small" style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable style={[styles.postButton, { backgroundColor: theme.primary }]} onPress={() => router.push('/(recruiter)/jobs/create')}>
+              <FontAwesome6 name="plus" size={13} color="#ffffff" />
+              <ThemedText type="smallBold" style={styles.postButtonText}>
+                Post Job
+              </ThemedText>
+            </Pressable>
+          </ThemedView>
         </ThemedView>
 
         <ThemedView style={styles.statsGrid}>
@@ -136,6 +155,20 @@ const styles = StyleSheet.create({
   loader: { marginTop: 40 },
   content: { padding: 20, gap: 24 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  bellButton: { padding: 4 },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: { color: '#ffffff', fontSize: 10, lineHeight: 12 },
   postButton: {
     flexDirection: 'row',
     alignItems: 'center',
