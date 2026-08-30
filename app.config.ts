@@ -97,6 +97,17 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
     },
     owner: 'itsmepskiran',
+    // 'fingerprint' auto-detects when a change actually touches native code
+    // (a new native module, permission, config plugin, etc.) vs. a pure JS/TS
+    // change — only installs whose fingerprint matches a given OTA update's
+    // build will ever receive it, so a native change can never be
+    // misapplied as a JS-only patch.
+    runtimeVersion: {
+      policy: 'fingerprint',
+    },
+    updates: {
+      url: 'https://u.expo.dev/3b5ea64f-e099-43c3-a9b2-3ce8603602a3',
+    },
   };
 
   return skipIOSPush ? withoutPushEntitlement(appConfig) : appConfig;
