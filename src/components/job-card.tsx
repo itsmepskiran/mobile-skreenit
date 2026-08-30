@@ -28,7 +28,7 @@ export function JobCard({ job, onPress, matchScore, saved, onToggleSave }: JobCa
   const salary = formatSalaryRange(job.salary_min, job.salary_max, job.currency);
   const skills = job.skills?.slice(0, 4) ?? [];
   const extraSkillCount = (job.skills?.length ?? 0) - skills.length;
-  const description = job.description.length > 120 ? `${job.description.slice(0, 120)}…` : job.description;
+  const description = (job.description?.length ?? 0) > 120 ? `${job.description.slice(0, 120)}…` : (job.description ?? '');
   const matchColor =
     matchScore === undefined ? undefined : matchScore >= 70 ? '#16a34a' : matchScore >= 40 ? '#d97706' : '#dc2626';
 
