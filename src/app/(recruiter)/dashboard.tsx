@@ -13,6 +13,7 @@ import { formatRelativeTime } from '@/lib/format';
 import { getRecruiterStats, listRecentApplications, listRecentJobs } from '@/lib/api/recruiter';
 import { getUnreadCount } from '@/lib/api/notifications';
 import type { ApplicationStatus } from '@/lib/api/applicant';
+import { withBackTo } from '@/lib/navigation/smart-back';
 
 export default function RecruiterDashboardScreen() {
   const theme = useTheme();
@@ -101,7 +102,7 @@ export default function RecruiterDashboardScreen() {
               <Pressable
                 key={job.id}
                 style={[styles.row, { borderColor: theme.border }]}
-                onPress={() => router.push(`/(recruiter)/jobs/${job.id}/edit`)}
+                onPress={() => router.push(withBackTo(`/(recruiter)/jobs/${job.id}/edit`, '/(recruiter)/dashboard'))}
               >
                 <View style={styles.rowText}>
                   <ThemedText type="smallBold" numberOfLines={1}>
@@ -133,7 +134,7 @@ export default function RecruiterDashboardScreen() {
               <Pressable
                 key={app.id}
                 style={[styles.row, { borderColor: theme.border }]}
-                onPress={() => router.push(`/(recruiter)/applications/${app.id}`)}
+                onPress={() => router.push(withBackTo(`/(recruiter)/applications/${app.id}`, '/(recruiter)/dashboard'))}
               >
                 <View style={styles.rowText}>
                   <ThemedText type="small" themeColor="textSecondary">

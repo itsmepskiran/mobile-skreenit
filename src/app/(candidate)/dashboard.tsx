@@ -18,6 +18,7 @@ import { listPricingPlans } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
 import { buildCatalog } from '@/lib/assessment-catalog';
 import { formatRelativeTime } from '@/lib/format';
+import { withBackTo } from '@/lib/navigation/smart-back';
 
 export default function CandidateDashboardScreen() {
   const theme = useTheme();
@@ -143,7 +144,9 @@ export default function CandidateDashboardScreen() {
                   <Pressable
                     key={plan.id}
                     style={[styles.row, { borderColor: theme.border }]}
-                    onPress={() => router.push(`/(candidate)/assessments/take/${plan.service_key}`)}
+                    onPress={() =>
+                      router.push(withBackTo(`/(candidate)/assessments/take/${plan.service_key}`, '/(candidate)/dashboard'))
+                    }
                   >
                     <View style={[styles.assessmentIcon, { backgroundColor: theme.backgroundElement }]}>
                       <FontAwesome6 name="star" size={16} color={theme.primary} />
@@ -165,7 +168,9 @@ export default function CandidateDashboardScreen() {
                     <Pressable
                       key={item.id}
                       style={[styles.row, { borderColor: theme.border }]}
-                      onPress={() => router.push(`/(candidate)/assessments/take/${item.id}`)}
+                      onPress={() =>
+                        router.push(withBackTo(`/(candidate)/assessments/take/${item.id}`, '/(candidate)/dashboard'))
+                      }
                     >
                       <View style={[styles.assessmentIcon, { backgroundColor: pack?.bg ?? theme.backgroundElement }]}>
                         <FontAwesome6 name={pack?.icon ?? 'clipboard-check'} size={16} color={pack?.color ?? theme.primary} />
@@ -203,7 +208,7 @@ export default function CandidateDashboardScreen() {
               <Pressable
                 key={app.id}
                 style={[styles.row, { borderColor: theme.border }]}
-                onPress={() => router.push(`/(candidate)/jobs/${app.job_id}`)}
+                onPress={() => router.push(withBackTo(`/(candidate)/jobs/${app.job_id}`, '/(candidate)/dashboard'))}
               >
                 <View style={styles.rowText}>
                   <ThemedText type="smallBold" numberOfLines={1}>

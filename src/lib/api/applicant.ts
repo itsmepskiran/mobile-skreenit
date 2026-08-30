@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-import { apiGet, apiPostJson, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { apiGet, apiPostJson, apiUploadNative, pollAsyncJob, type UploadFile } from '@/lib/api/client';
 
 // Previous-experience entries beyond the current/latest role — freeform JSON
 // stored as-is (candidate_profiles.experience), shape matches what the real
@@ -264,16 +264,25 @@ function guessMimeType(filename: string): string {
 // from 'ArrayBuffer' and 'ArrayBufferView' are not supported" on Android);
 // routing through a local file uses the same {uri,name,type} upload path
 // that every other upload in this app already relies on.
-export async function generateInterviewQuestions(resumeUrl: string) {
+// The Ollama generation this triggers can run well past apiUploadNative's
+// unconfigurable OS-default timeout (its native upload transport has no
+// timeout override, unlike web's own per-call one) — submits to the async job
+// endpoint and polls instead of holding one request open.
+export async function generateInterviewQuestions(resumeUrl: string): Promise<{ ok: boolean; data: GeneratedQuestions }> {
   const name = resumeUrl.split('/').pop() || 'resume.pdf';
   const localUri = `${FileSystem.cacheDirectory}${name}`;
   const downloaded = await FileSystem.downloadAsync(resumeUrl, localUri);
 
-  return apiUploadNative<{ ok: boolean; data: GeneratedQuestions }>(
-    '/applicant/generate-interview-questions',
+  const submitRes = await apiUploadNative<{ ok: boolean; data: { job_id: string; status: string } }>(
+    '/applicant/generate-interview-questions/async',
     { uri: downloaded.uri, name, type: guessMimeType(name) },
     'resume',
   );
+  const jobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<GeneratedQuestions>(() =>
+    apiGet(`/applicant/generate-interview-questions/async/${jobId}`),
+  );
+  return { ok: true, data };
 }
 
 export interface VideoUploadResult {

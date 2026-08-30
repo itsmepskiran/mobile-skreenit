@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useColorScheme, View } from 'react-native';
 
 import { TopBrandBar } from '@/components/top-brand-bar';
+import { WelcomeScreen } from '@/components/welcome-screen';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useAuthStore } from '@/lib/auth/store';
 
@@ -65,6 +66,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -87,6 +89,10 @@ export default function RootLayout() {
   usePushNotifications();
 
   if (!isReady) return null;
+
+  if (showWelcome) {
+    return <WelcomeScreen onFinish={() => setShowWelcome(false)} />;
+  }
 
   // The (auth) screens (login/register/etc.) already carry their own brand
   // treatment via AuthScreenLayout — only show this persistent strip once

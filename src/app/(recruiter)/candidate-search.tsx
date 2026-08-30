@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { withBackTo } from '@/lib/navigation/smart-back';
 import {
   getTopCandidatesForJob,
   listMyJobs,
@@ -260,7 +261,11 @@ function CandidateCard({
       <View style={styles.actionRow}>
         <Pressable
           style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1, flex: 1 }]}
-          onPress={() => router.push(`/(recruiter)/applications/${candidate.application_id}`)}
+          onPress={() =>
+            router.push(
+              withBackTo(`/(recruiter)/applications/${candidate.application_id}`, '/(recruiter)/candidate-search'),
+            )
+          }
         >
           <FontAwesome6 name="eye" size={12} color={theme.text} />
           <ThemedText type="small">View</ThemedText>

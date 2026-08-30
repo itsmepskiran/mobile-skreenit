@@ -34,13 +34,24 @@ async function refreshAccessToken(): Promise<string | null> {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: body.toString(),
         });
-        if (!res.ok) throw new Error('refresh failed');
+        if (!res.ok) {
+          // Only a definitive rejection of the refresh token itself (401)
+          // means the session is actually over. A network blip, timeout, or
+          // 5xx from this call is transient — signing the user out for that
+          // would nuke a valid session over a hiccup unrelated to auth (this
+          // is what mirrors web's backend-client.js, which never force-logs-out
+          // on a failed refresh either). Just fail this one refresh attempt
+          // and let the original request surface its own error instead.
+          if (res.status === 401) await signOut();
+          return null;
+        }
         const json = await res.json();
         const newTokens = { accessToken: json.data.access_token as string, refreshToken: json.data.refresh_token as string };
         await updateTokens(newTokens);
         return newTokens.accessToken;
       } catch {
-        await signOut();
+        // Network-level failure reaching /refresh-token — transient, not a
+        // verdict on the refresh token's validity. Don't sign out.
         return null;
       } finally {
         refreshPromise = null;
@@ -187,4 +198,30 @@ export async function apiUploadNative<T>(
     throw new ApiError(result.status, detail);
   }
   return body as T;
+}
+
+// Shared polling loop for the backend's "submit now, poll later" job pattern
+// (utils_others/async_job_store.py). Needed because neither apiUploadNative
+// (FileSystem.uploadAsync has no timeout option at all) nor the plain fetch()
+// in rawRequest above (no AbortController) can be given a longer timeout the
+// way the web client does per-call — so any endpoint whose real work can run
+// past the OS's default request timeout returns a job_id immediately instead,
+// and callers poll GET .../async/{job_id} with this until it completes.
+export async function pollAsyncJob<T>(
+  getStatus: () => Promise<{ ok: boolean; data: { status: string } & Partial<T> }>,
+  opts: { intervalMs?: number; maxAttempts?: number } = {},
+): Promise<T> {
+  const intervalMs = opts.intervalMs ?? 4000;
+  const maxAttempts = opts.maxAttempts ?? 90; // ~6 minutes ceiling
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    const res = await getStatus();
+    if (res.data.status === 'completed') {
+      const { status: _status, ...result } = res.data;
+      return result as T;
+    }
+  }
+
+  throw new ApiError(0, 'This is taking longer than expected. Please try again.');
 }

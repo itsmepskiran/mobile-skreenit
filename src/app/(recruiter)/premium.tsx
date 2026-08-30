@@ -176,7 +176,7 @@ export default function RecruiterPremiumScreen() {
                       onPress={() =>
                         router.push({
                           pathname: '/(recruiter)/jobs/[id]/assessment-links',
-                          params: { id: row.job_id, jobTitle: row.job_title },
+                          params: { id: row.job_id, jobTitle: row.job_title, backTo: '/(recruiter)/premium' },
                         })
                       }
                       hitSlop={10}

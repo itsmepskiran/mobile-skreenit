@@ -20,6 +20,7 @@ import {
   type AssessmentInvitee,
   type AssessmentLinkMode,
 } from '@/lib/api/position-assessments';
+import { useSmartBack } from '@/lib/navigation/smart-back';
 
 function applyUrl(token: string) {
   return `${ASSESSMENT_INVITE_APPLY_URL}?token=${encodeURIComponent(token)}`;
@@ -47,6 +48,9 @@ export default function AssessmentLinksScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const { id: jobId, jobTitle } = useLocalSearchParams<{ id: string; jobTitle?: string }>();
+  // Pushed here only from Premium (a hidden tab outside this stack) today —
+  // see src/lib/navigation/smart-back.ts.
+  const { goBack } = useSmartBack();
   const [activeTab, setActiveTab] = useState<AssessmentLinkMode>('open');
   const [rows, setRows] = useState<InviteeRow[]>([{ ...EMPTY_ROW }]);
   const [sharedToken, setSharedToken] = useState<string | null>(null);
@@ -99,7 +103,7 @@ export default function AssessmentLinksScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={styles.headerRow}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={goBack} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
         <View style={{ flex: 1 }}>

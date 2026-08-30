@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, pollAsyncJob, type UploadFile } from '@/lib/api/client';
 
 // Ported from mac-skreenit/routers/position_assessments.py + sql-skreenit's AI
 // Assessment Wizard (dashboard/js/recruiter-dashboard.js). Gated behind the
@@ -38,12 +38,21 @@ export interface JdAnalysisResult {
   from_cache: boolean;
 }
 
-export function analyzeJobDescription(jobId: string, file: UploadFile) {
-  return apiUploadNative<{ ok: boolean; data: JdAnalysisResult }>(
-    `/recruiter/jobs/${jobId}/jd-analysis`,
+// The Ollama extraction this triggers can take 30-90s — apiUploadNative's
+// native upload transport has no timeout override to cover that, so this
+// submits to the async job endpoint and polls instead of holding one request
+// open (see routers/position_assessments.py's /jd-analysis/async pair).
+export async function analyzeJobDescription(jobId: string, file: UploadFile): Promise<{ ok: boolean; data: JdAnalysisResult }> {
+  const submitRes = await apiUploadNative<{ ok: boolean; data: { job_id: string; status: string } }>(
+    `/recruiter/jobs/${jobId}/jd-analysis/async`,
     file,
     'file',
   );
+  const asyncJobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<JdAnalysisResult>(() =>
+    apiGet(`/recruiter/jobs/${jobId}/jd-analysis/async/${asyncJobId}`),
+  );
+  return { ok: true, data };
 }
 
 export type AssessmentSelectionItem =
@@ -65,13 +74,25 @@ export interface UploadedAssessment {
   title: string;
 }
 
-export function uploadCustomAssessment(jobId: string, file: UploadFile, title?: string) {
-  return apiUploadNative<{ ok: boolean; data: UploadedAssessment }>(
-    `/recruiter/jobs/${jobId}/custom-assessment`,
+// Uploads to R2 then runs an Ollama extraction pass — same timeout risk as
+// analyzeJobDescription above, same fix: submit + poll instead of one long
+// held-open native upload.
+export async function uploadCustomAssessment(
+  jobId: string,
+  file: UploadFile,
+  title?: string,
+): Promise<{ ok: boolean; data: UploadedAssessment }> {
+  const submitRes = await apiUploadNative<{ ok: boolean; data: { job_id: string; status: string } }>(
+    `/recruiter/jobs/${jobId}/custom-assessment/async`,
     file,
     'file',
     title ? { title } : {},
   );
+  const asyncJobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<UploadedAssessment>(() =>
+    apiGet(`/recruiter/jobs/${jobId}/custom-assessment/async/${asyncJobId}`),
+  );
+  return { ok: true, data };
 }
 
 export function getAssessmentConfig(jobId: string) {

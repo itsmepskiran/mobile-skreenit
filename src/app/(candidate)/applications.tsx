@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { listApplications, type ApplicationListItem } from '@/lib/api/applicant';
 import { getJobsMatchScores } from '@/lib/api/jobs';
 import { formatRelativeTime } from '@/lib/format';
+import { withBackTo } from '@/lib/navigation/smart-back';
 
 export default function ApplicationsScreen() {
   const theme = useTheme();
@@ -58,7 +59,7 @@ export default function ApplicationsScreen() {
             <ApplicationRow
               item={item}
               matchScore={matchScores[item.job_id]?.match_score}
-              onPress={() => router.push(`/(candidate)/jobs/${item.job_id}`)}
+              onPress={() => router.push(withBackTo(`/(candidate)/jobs/${item.job_id}`, '/(candidate)/applications'))}
               onRecordInterview={() => router.push(`/(candidate)/interview-room/${item.id}`)}
             />
           )}

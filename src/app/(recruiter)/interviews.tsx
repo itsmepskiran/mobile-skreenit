@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 import { listRecruiterApplications } from '@/lib/api/recruiter';
 import { formatRelativeTime } from '@/lib/format';
+import { withBackTo } from '@/lib/navigation/smart-back';
 
 const PENDING_STATUSES = new Set(['interview_scheduled', 'interviewing']);
 
@@ -48,7 +49,7 @@ export default function PendingInterviewsScreen() {
             <Pressable
               key={app.id}
               style={[styles.card, { borderColor: theme.border }]}
-              onPress={() => router.push(`/(recruiter)/applications/${app.id}`)}
+              onPress={() => router.push(withBackTo(`/(recruiter)/applications/${app.id}`, '/(recruiter)/interviews'))}
             >
               <View style={styles.cardHeader}>
                 <View style={styles.cardText}>

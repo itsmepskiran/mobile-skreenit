@@ -14,6 +14,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api/client';
 import { saveIntroResponse, uploadIntroVideoResponse } from '@/lib/api/applicant';
 import { getVideoIntroQuestions, type VideoIntroQuestion } from '@/lib/api/assessment-taking';
+import { useSmartBack } from '@/lib/navigation/smart-back';
 
 const MAX_DURATION_SECONDS = 60;
 
@@ -25,6 +26,9 @@ type RecordingState = 'idle' | 'recording' | 'recorded' | 'uploading';
 // there's no results screen to navigate to afterward, matching web parity.
 export function VideoIntroAssessment() {
   const theme = useTheme();
+  // Pushed here from Dashboard (outside this stack) and Assessments' own
+  // catalog (this stack's index) — see src/lib/navigation/smart-back.ts.
+  const { goBack } = useSmartBack();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
 
@@ -56,7 +60,7 @@ export function VideoIntroAssessment() {
           <ThemedText type="small" style={{ color: theme.danger, textAlign: 'center' }}>
             {loadError}
           </ThemedText>
-          <Button title="Go back" variant="secondary" onPress={() => router.back()} />
+          <Button title="Go back" variant="secondary" onPress={goBack} />
         </View>
       </SafeAreaView>
     );

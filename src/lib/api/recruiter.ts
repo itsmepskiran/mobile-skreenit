@@ -1,10 +1,12 @@
-import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { apiDelete, apiGet, apiPostJson, apiPut, apiUploadNative, pollAsyncJob, type UploadFile } from '@/lib/api/client';
 
 // --- JD document upload -> autofill ------------------------------------------
 // Ported from sql-skreenit/recruiter/js/job-create.js's handleJdUpload/autofillFromJD.
-// The backend runs a full LLM extraction pass (30-120s observed on web) — no
-// client timeout override needed here since apiUploadNative has none (unlike
-// web's 150000ms override).
+// The backend runs a full LLM extraction pass (30-120s observed on web, web
+// raises its own client timeout to 150000ms for this call). apiUploadNative's
+// native upload transport has no equivalent timeout override, so this submits
+// to the async job endpoint and polls instead of holding one request open —
+// see routers/recruiter_new.py's /jobs/parse-jd/async pair.
 export interface ParsedJobDescription {
   available: boolean;
   job_title?: string;
@@ -31,8 +33,15 @@ export interface ParsedJobDescription {
   skills?: string[];
 }
 
-export function parseJobDescription(file: UploadFile) {
-  return apiUploadNative<{ ok: boolean; data: ParsedJobDescription }>('/recruiter/jobs/parse-jd', file, 'file');
+export async function parseJobDescription(file: UploadFile): Promise<{ ok: boolean; data: ParsedJobDescription }> {
+  const submitRes = await apiUploadNative<{ ok: boolean; data: { job_id: string; status: string } }>(
+    '/recruiter/jobs/parse-jd/async',
+    file,
+    'file',
+  );
+  const jobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<ParsedJobDescription>(() => apiGet(`/recruiter/jobs/parse-jd/async/${jobId}`));
+  return { ok: true, data };
 }
 
 // --- Job posting CRUD -------------------------------------------------------
@@ -346,11 +355,26 @@ export interface AiApplicationScore {
   hire_recommendation: string;
 }
 
-export function getApplicationAiScore(applicationId: string) {
-  return apiPostJson<{
-    ok: boolean;
-    data: { application_id: string; job_title: string; candidate: string; score: AiApplicationScore };
-  }>(`/recruiter/applications/${applicationId}/ai-score`, {});
+export interface AiApplicationScoreResult {
+  application_id: string;
+  job_title: string;
+  candidate: string;
+  score: AiApplicationScore;
+}
+
+// Runs one llama3 evaluation call server-side — a plain fetch() (apiPostJson/
+// apiGet) has no AbortController/timeout override, so this submits to the
+// async job endpoint and polls instead of holding one request open.
+export async function getApplicationAiScore(applicationId: string): Promise<{ ok: boolean; data: AiApplicationScoreResult }> {
+  const submitRes = await apiPostJson<{ ok: boolean; data: { job_id: string; status: string } }>(
+    `/recruiter/applications/${applicationId}/ai-score/async`,
+    {},
+  );
+  const jobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<AiApplicationScoreResult>(() =>
+    apiGet(`/recruiter/applications/${applicationId}/ai-score/async/${jobId}`),
+  );
+  return { ok: true, data };
 }
 
 // --- Candidate profile (for the Interview Schedules "View Profile" modal) ----

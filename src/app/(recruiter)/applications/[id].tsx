@@ -1,6 +1,6 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
@@ -28,6 +28,7 @@ import {
   type RecruiterApplicationStatus,
 } from '@/lib/api/recruiter';
 import type { ApplicationStatus } from '@/lib/api/applicant';
+import { useSmartBack } from '@/lib/navigation/smart-back';
 
 const STATUS_OPTIONS: { label: string; value: RecruiterApplicationStatus }[] = [
   { label: 'Reviewed', value: 'reviewed' },
@@ -45,6 +46,22 @@ export default function ApplicationReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const queryClient = useQueryClient();
+
+  // Pushed here from Dashboard, Interviews, and Candidate Search — all outside
+  // (or, for Candidate Search, entirely separate from) this screen's own
+  // Applications stack — so a plain router.back() would otherwise pop to that
+  // stack's own index (Applications) instead of the real previous screen. See
+  // src/lib/navigation/smart-back.ts for why.
+  const { backTo, goBack } = useSmartBack();
+  const headerBackOverride = backTo
+    ? {
+        headerLeft: () => (
+          <Pressable onPress={goBack} hitSlop={12} style={{ paddingRight: 12 }}>
+            <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
+          </Pressable>
+        ),
+      }
+    : undefined;
 
   const applicationsQuery = useQuery({
     queryKey: ['recruiter', 'applications', 'all'],
@@ -85,7 +102,7 @@ export default function ApplicationReviewScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['recruiter', 'applications'] });
-      router.back();
+      goBack();
     },
     onError: (err) => {
       setError(err instanceof ApiError ? err.message : 'Could not update this application. Please try again.');
@@ -95,6 +112,7 @@ export default function ApplicationReviewScreen() {
   if (applicationsQuery.isLoading || !application) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        {headerBackOverride ? <Stack.Screen options={headerBackOverride} /> : null}
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
@@ -114,6 +132,7 @@ export default function ApplicationReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      {headerBackOverride ? <Stack.Screen options={headerBackOverride} /> : null}
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView style={styles.headerRow}>
           <ThemedView style={styles.headerText}>

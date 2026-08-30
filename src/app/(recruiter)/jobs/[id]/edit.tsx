@@ -1,19 +1,34 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome6 } from '@expo/vector-icons';
 
 import { JobForm } from '@/components/job-form';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api/client';
 import { deleteJob, getMyJob, parseSkills, updateJob, type JobInput } from '@/lib/api/recruiter';
+import { useSmartBack } from '@/lib/navigation/smart-back';
 
 export default function EditJobScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+
+  // Pushed here from both Dashboard (outside this stack) and My Jobs (this
+  // stack's own index) — see src/lib/navigation/smart-back.ts.
+  const { backTo, goBack } = useSmartBack();
+  const headerBackOverride = backTo
+    ? {
+        headerLeft: () => (
+          <Pressable onPress={goBack} hitSlop={12} style={{ paddingRight: 12 }}>
+            <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
+          </Pressable>
+        ),
+      }
+    : undefined;
 
   const jobQuery = useQuery({ queryKey: ['recruiter', 'job', id], queryFn: () => getMyJob(id) });
 
@@ -22,7 +37,7 @@ export default function EditJobScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['recruiter', 'jobs'] });
       await queryClient.invalidateQueries({ queryKey: ['recruiter', 'job', id] });
-      router.back();
+      goBack();
     },
     onError: (err) => {
       setError(err instanceof ApiError ? err.message : 'Could not save this job posting. Please try again.');
@@ -47,6 +62,7 @@ export default function EditJobScreen() {
   if (jobQuery.isLoading || !jobQuery.data) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        {headerBackOverride ? <Stack.Screen options={headerBackOverride} /> : null}
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
@@ -56,6 +72,7 @@ export default function EditJobScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      {headerBackOverride ? <Stack.Screen options={headerBackOverride} /> : null}
       <JobForm
         submitLabel="Save Changes"
         submitting={updateMutation.isPending}

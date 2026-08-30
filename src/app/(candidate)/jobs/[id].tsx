@@ -16,11 +16,25 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime, formatSalaryRange } from '@/lib/format';
+import { useSmartBack } from '@/lib/navigation/smart-back';
 
 export default function JobDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
+
+  // Pushed here from Applications and Dashboard (outside this stack) as well
+  // as Jobs' own list (this stack's index) — see src/lib/navigation/smart-back.ts.
+  const { backTo, goBack } = useSmartBack();
+  const headerBackOverride = backTo
+    ? {
+        headerLeft: () => (
+          <Pressable onPress={goBack} hitSlop={12} style={{ paddingRight: 12 }}>
+            <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
+          </Pressable>
+        ),
+      }
+    : {};
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [coverLetterModalVisible, setCoverLetterModalVisible] = useState(false);
@@ -87,6 +101,7 @@ export default function JobDetailScreen() {
   if (jobQuery.isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <Stack.Screen options={headerBackOverride} />
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
@@ -95,6 +110,7 @@ export default function JobDetailScreen() {
   if (jobQuery.isError || !job) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <Stack.Screen options={headerBackOverride} />
         <ThemedView style={styles.centerMessage}>
           <ThemedText themeColor="textSecondary">Couldn&apos;t load this job.</ThemedText>
         </ThemedView>
@@ -110,7 +126,7 @@ export default function JobDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <Stack.Screen options={{ title: job.job_title }} />
+      <Stack.Screen options={{ title: job.job_title, ...headerBackOverride }} />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView style={styles.header}>
           <ThemedView style={styles.titleRow}>

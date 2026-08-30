@@ -20,6 +20,7 @@ import {
     type AssessmentSection,
 } from '@/lib/api/assessment-taking';
 import { ApiError } from '@/lib/api/client';
+import { useSmartBackHeader } from '@/lib/navigation/smart-back';
 
 const CODING_PLATFORMS = [
   { id: 'python', label: 'Python' },
@@ -67,6 +68,15 @@ export default function TakeAssessmentScreen() {
 
 function GenericAssessment({ planId, jobId }: { planId: string; jobId?: string }) {
   const theme = useTheme();
+  // Pushed here from Dashboard (outside this stack) and Assessments' own
+  // catalog (this stack's index) — see src/lib/navigation/smart-back.ts. Many
+  // early-return stages below, so the header back button is set imperatively
+  // once rather than repeating <Stack.Screen> in every branch.
+  useSmartBackHeader((goBack) => (
+    <Pressable onPress={goBack} hitSlop={12} style={{ paddingRight: 12 }}>
+      <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
+    </Pressable>
+  ));
   const needsPlatform = planId === 'gen_coding_basic';
 
   const [stage, setStage] = useState<Stage>(needsPlatform ? 'platform-select' : 'loading');

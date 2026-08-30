@@ -1,4 +1,4 @@
-import { apiGet, apiPostJson } from '@/lib/api/client';
+import { apiGet, apiPostJson, pollAsyncJob } from '@/lib/api/client';
 
 // Mirrors sql-skreenit/Assessments/js/assessment.js + routers/premium_assessment.py.
 
@@ -44,11 +44,28 @@ export interface AssessmentQuestions {
   mcq_token: string | null;
 }
 
-export function getAssessmentQuestions(planId: string, platform?: string, jobId?: string) {
+// Ollama generation here can take 60-180s — the plain fetch() behind apiGet
+// has no AbortController/timeout override the way web's client does, so this
+// submits to the async job endpoint and polls instead of holding one request
+// open (see routers/premium_assessment.py's /assessment-questions/async pair).
+export async function getAssessmentQuestions(
+  planId: string,
+  platform?: string,
+  jobId?: string,
+): Promise<{ ok: boolean; data: AssessmentQuestions }> {
   const params = new URLSearchParams({ planId, mode: planId });
   if (platform) params.set('platform', platform);
   if (jobId) params.set('job_id', jobId);
-  return apiGet<{ ok: boolean; data: AssessmentQuestions }>(`/premium/assessment-questions?${params.toString()}`);
+
+  const submitRes = await apiPostJson<{ ok: boolean; data: { job_id: string; status: string } }>(
+    `/premium/assessment-questions/async?${params.toString()}`,
+    {},
+  );
+  const asyncJobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<AssessmentQuestions>(() =>
+    apiGet(`/premium/assessment-questions/async/${asyncJobId}`),
+  );
+  return { ok: true, data };
 }
 
 export interface AssessmentResponseInput {

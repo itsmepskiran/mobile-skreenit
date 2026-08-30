@@ -1,15 +1,24 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
-import { ApiError, apiGet, apiPostJson, apiUploadNative, type UploadFile } from '@/lib/api/client';
+import { ApiError, apiGet, apiPostJson, apiUploadNative, pollAsyncJob, type UploadFile } from '@/lib/api/client';
 import { getSessionController } from '@/lib/auth/session-controller';
 import { API_V1 } from '@/lib/config';
 
 // Ported from sql-skreenit/recruiter/js/resume-analysis.js. Standalone, ad-hoc
 // resume upload -> AI analysis tool — not tied to any existing application/job,
 // and not gated behind the recruiter_plan subscription (only the "Detailed
-// Analysis" sub-feature below is). No client-side timeout override needed:
-// unlike the web client (15s default), this app's apiUploadNative has none.
+// Analysis" sub-feature below is).
+//
+// The actual analysis (parse + two sequential Ollama calls) can take up to
+// ~220s. Web copes by raising its request timeout to 240000ms per-call, but
+// apiUploadNative's native upload transport (expo-file-system's
+// FileSystem.uploadAsync) has no equivalent request-timeout override, and was
+// hitting the OS's shorter default before the backend finished — resume
+// analysis would appear to silently fail on mobile. So mobile submits to the
+// async job endpoint (routers/recruiter_new.py: POST .../analyze-resume-questions/async,
+// which returns a job_id almost immediately) and polls GET .../async/{job_id}
+// until it reports "completed", instead of holding one long request open.
 
 export interface InterviewQuestion {
   question: string;
@@ -62,12 +71,17 @@ export interface ResumeAnalysisResult {
   insights: ResumeInsights;
 }
 
-export function analyzeResume(file: UploadFile) {
-  return apiUploadNative<{ ok: boolean; data: ResumeAnalysisResult }>(
-    '/recruiter/analyze-resume-questions',
+export async function analyzeResume(file: UploadFile): Promise<{ ok: boolean; data: ResumeAnalysisResult }> {
+  const submitRes = await apiUploadNative<{ ok: boolean; data: { job_id: string; status: string } }>(
+    '/recruiter/analyze-resume-questions/async',
     file,
     'resume',
   );
+  const jobId = submitRes.data.job_id;
+  const data = await pollAsyncJob<ResumeAnalysisResult>(() =>
+    apiGet(`/recruiter/analyze-resume-questions/async/${jobId}`),
+  );
+  return { ok: true, data };
 }
 
 export function checkDetailedAnalysisAccess() {

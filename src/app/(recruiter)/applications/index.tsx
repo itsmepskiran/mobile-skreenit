@@ -51,6 +51,7 @@ export default function RecruiterApplicationsScreen() {
   const { jobId } = useLocalSearchParams<{ jobId?: string }>();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [jobTitleFilter, setJobTitleFilter] = useState('');
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatusModalOpen, setBulkStatusModalOpen] = useState(false);
@@ -63,10 +64,16 @@ export default function RecruiterApplicationsScreen() {
 
   const allApplications = useMemo(() => applicationsQuery.data?.data ?? [], [applicationsQuery.data]);
 
+  const jobTitleFilterOptions = useMemo(() => {
+    const titles = Array.from(new Set(allApplications.map((app) => app.job_title).filter(Boolean))).sort();
+    return [{ label: 'All jobs', value: '' }, ...titles.map((title) => ({ label: title, value: title }))];
+  }, [allApplications]);
+
   const applications = useMemo(() => {
     const q = search.trim().toLowerCase();
     return allApplications.filter((app) => {
       if (statusFilter && app.status !== statusFilter) return false;
+      if (jobTitleFilter && app.job_title !== jobTitleFilter) return false;
       if (
         q &&
         !(
@@ -78,7 +85,7 @@ export default function RecruiterApplicationsScreen() {
         return false;
       return true;
     });
-  }, [allApplications, search, statusFilter]);
+  }, [allApplications, search, statusFilter, jobTitleFilter]);
 
   const exitSelectMode = () => {
     setSelectMode(false);
@@ -149,6 +156,9 @@ export default function RecruiterApplicationsScreen() {
       <View style={styles.filterRow}>
         <View style={styles.statusSelectWrap}>
           <SelectField label="Status" value={statusFilter} options={STATUS_FILTER_OPTIONS} onChange={setStatusFilter} />
+        </View>
+        <View style={styles.statusSelectWrap}>
+          <SelectField label="Job Title" value={jobTitleFilter} options={jobTitleFilterOptions} onChange={setJobTitleFilter} />
         </View>
         <Pressable
           style={[styles.selectToggle, { borderColor: theme.border }, selectMode && { backgroundColor: theme.primary, borderColor: theme.primary }]}
