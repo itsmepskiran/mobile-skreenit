@@ -10,6 +10,7 @@ import { useColorScheme, View } from 'react-native';
 import { TopBrandBar } from '@/components/top-brand-bar';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useAtsStore } from '@/lib/auth/ats-store';
 import { useAuthStore } from '@/lib/auth/store';
 
 SplashScreen.preventAutoHideAsync();
@@ -18,17 +19,43 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1 } },
 });
 
+// The ATS Employer Console is a fully separate auth domain (its own JWT, its
+// own store — see lib/auth/ats-store.ts) from the candidate/recruiter session
+// below. Being signed into one has no bearing on the other, so route
+// protection branches entirely on whether the current segment belongs to the
+// ATS world before falling through to the candidate/recruiter checks.
+function useAtsProtectedRoute(group: string | undefined) {
+  const router = useRouter();
+  const status = useAtsStore((state) => state.status);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    const inAtsAuthGroup = group === '(ats-auth)';
+    const inAtsGroup = group === '(ats)' || inAtsAuthGroup;
+    if (!inAtsGroup) return;
+
+    if (status === 'signedOut' && !inAtsAuthGroup) {
+      router.replace('/(ats-auth)/login');
+    } else if (status === 'signedIn' && inAtsAuthGroup) {
+      router.replace('/(ats)/dashboard');
+    }
+  }, [status, group, router]);
+}
+
 function useProtectedRoute() {
   const segments = useSegments();
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
   const role = useAuthStore((state) => state.user?.role);
   const onboarded = useAuthStore((state) => state.user?.onboarded);
+  const group = segments[0];
+  const inAtsWorld = group === '(ats-auth)' || group === '(ats)';
+
+  useAtsProtectedRoute(group);
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === 'loading' || inAtsWorld) return;
 
-    const group = segments[0];
     const inAuthGroup = group === '(auth)';
     // Guest assessment-invite deep links (skreenit://assessment-invite?token=...)
     // are opened by people who, by definition, have no Skreenit account —
@@ -59,7 +86,7 @@ function useProtectedRoute() {
         router.replace(roleHome);
       }
     }
-  }, [status, role, onboarded, segments, router]);
+  }, [status, role, onboarded, group, inAtsWorld, router]);
 }
 
 export default function RootLayout() {
@@ -76,7 +103,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    useAuthStore.getState().hydrate().finally(() => setIsHydrated(true));
+    Promise.all([useAuthStore.getState().hydrate(), useAtsStore.getState().hydrate()]).finally(() => setIsHydrated(true));
   }, []);
 
   const isReady = isHydrated && fontsLoaded;
@@ -94,10 +121,10 @@ export default function RootLayout() {
     return <WelcomeScreen onFinish={() => setShowWelcome(false)} />;
   }
 
-  // The (auth) screens (login/register/etc.) already carry their own brand
-  // treatment via AuthScreenLayout — only show this persistent strip once
-  // the user is inside the candidate/recruiter app.
-  const showBrandBar = segments[0] !== '(auth)';
+  // The (auth) and (ats-auth) screens (login/register/etc.) already carry
+  // their own brand treatment via AuthScreenLayout — only show this
+  // persistent strip once the user is inside the candidate/recruiter/ATS app.
+  const showBrandBar = segments[0] !== '(auth)' && segments[0] !== '(ats-auth)';
 
   return (
     <QueryClientProvider client={queryClient}>

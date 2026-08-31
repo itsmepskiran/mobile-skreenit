@@ -1,9 +1,9 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { z } from 'zod';
 
 import { login, switchRole } from '@/lib/api/auth';
@@ -189,6 +189,10 @@ export default function LoginScreen() {
             <ThemedText type="small">Remember me</ThemedText>
           </Pressable>
 
+          <Text style={[styles.atsLink, { color: theme.primary }]} onPress={() => router.push('/(ats-auth)/login')}>
+            Corporate ATS Login. Please click here
+          </Text>
+
           {formError ? (
             <ThemedText type="small" style={{ color: theme.danger }}>
               {formError}
@@ -282,5 +286,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     marginTop: -4,
+  },
+  atsLink: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
