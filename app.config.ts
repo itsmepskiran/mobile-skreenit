@@ -7,9 +7,12 @@ const API_BASE_URL = process.env.API_BASE_URL ?? 'https://api.skreenit.com';
 // Apple's free "Personal Team" signing (no paid Developer Program membership)
 // cannot provision the Push Notifications capability at all — attempting to
 // build with it present fails signing outright. Push isn't functional yet
-// anyway (no EAS project ID configured), so skip it for local personal-team
-// iOS builds via SKIP_IOS_PUSH=1; Android and EAS/production builds are
-// unaffected since this only strips the plugin, not the capability itself.
+// anyway, so skip it for local personal-team iOS builds via SKIP_IOS_PUSH=1.
+// This must ONLY affect the entitlements (see withoutPushEntitlement below),
+// never the `plugins` array — the plugins array feeds the fingerprint-based
+// runtimeVersion, and SKIP_IOS_PUSH is set in the local .env but not on EAS
+// build servers, so a plugins-array diff here caused local/EAS fingerprint
+// mismatches that failed every Android production build.
 const skipIOSPush = process.env.SKIP_IOS_PUSH === '1';
 
 // @expo/prebuild-config auto-discovers expo-notifications/app.plugin.js via
@@ -84,7 +87,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       'expo-status-bar',
       'expo-web-browser',
       'expo-video',
-      ...(skipIOSPush ? [] : [['expo-notifications', { color: '#4F46E5' }] as [string, object]]),
+      ['expo-notifications', { color: '#4F46E5' }],
     ],
     experiments: {
       typedRoutes: true,
