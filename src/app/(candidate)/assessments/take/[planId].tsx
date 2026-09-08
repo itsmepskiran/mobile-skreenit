@@ -57,16 +57,20 @@ const VOICE_EXERCISE_TYPES = new Set([
 type Stage = 'loading' | 'error' | 'platform-select' | 'overview' | 'section-intro' | 'exercise' | 'submitting';
 
 export default function TakeAssessmentScreen() {
-  const { planId, job_id: jobId } = useLocalSearchParams<{ planId: string; job_id?: string }>();
+  const { planId, job_id: jobId, link_id: linkId } = useLocalSearchParams<{
+    planId: string;
+    job_id?: string;
+    link_id?: string;
+  }>();
 
   if (planId === 'gen_video_intro') {
     return <VideoIntroAssessment />;
   }
 
-  return <GenericAssessment planId={planId} jobId={jobId} />;
+  return <GenericAssessment planId={planId} jobId={jobId} linkId={linkId} />;
 }
 
-function GenericAssessment({ planId, jobId }: { planId: string; jobId?: string }) {
+function GenericAssessment({ planId, jobId, linkId }: { planId: string; jobId?: string; linkId?: string }) {
   const theme = useTheme();
   // Pushed here from Dashboard (outside this stack) and Assessments' own
   // catalog (this stack's index) — see src/lib/navigation/smart-back.ts. Many
@@ -155,6 +159,8 @@ function GenericAssessment({ planId, jobId }: { planId: string; jobId?: string }
         responses: responsePayload,
         timeTakenSeconds: elapsed,
         mcqToken: data.mcq_token,
+        jobId,
+        linkId,
       });
       router.replace(`/(candidate)/assessments/result/${res.data.session_id}`);
     } catch (err) {

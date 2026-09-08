@@ -83,6 +83,17 @@ export interface FinishAssessmentInput {
   responses: AssessmentResponseInput[];
   timeTakenSeconds: number;
   mcqToken: string | null;
+  // Only needed for a position-scoped (custom/uploaded) assessment taken by a real logged-in
+  // candidate — mirrors the job_id already threaded through getAssessmentQuestions above.
+  // Without it, routers/premium_assessment.py's entitlement check has no job to resolve for a
+  // non-guest user and 403s with "Missing job context for this assessment."
+  jobId?: string;
+  // The assessment_link_invitees row created when a recruiter moved this candidate to the
+  // assessment stage (see dashboard.tsx's assigned-assessments card, which is where jobId/linkId
+  // both come from). Without it, the backend can't mark that invite 'used', so it lingers as
+  // still-pending on both the candidate's assigned list and the recruiter's invitee view even
+  // after the assessment is actually done.
+  linkId?: string;
 }
 
 export function finishAssessment(input: FinishAssessmentInput) {
@@ -102,6 +113,8 @@ export function finishAssessment(input: FinishAssessmentInput) {
     responses: input.responses,
     timeTakenSeconds: input.timeTakenSeconds,
     mcqToken: input.mcqToken,
+    job_id: input.jobId,
+    link_id: input.linkId,
   });
 }
 
