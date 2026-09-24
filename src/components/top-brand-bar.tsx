@@ -31,10 +31,10 @@ export function TopBrandBar() {
 const styles = StyleSheet.create({
   safeArea: { backgroundColor: '#050206' },
   bar: {
-    height: 40,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#050206',
   },
-  logo: { height: 32, aspectRatio: 600 / 189 },
+  logo: { height: 48, aspectRatio: 600 / 189 },
 });

@@ -100,6 +100,36 @@ export interface DetailedAnalysisAssessmentResult {
   summary: string;
 }
 
+// ai_service.synthesize_hire_recommendation's output — the headline verdict.
+export interface DetailedAnalysisHireRecommendation {
+  available: boolean;
+  verdict: 'strong_fit' | 'fit' | 'weak_fit';
+  rationale: string;
+  suggested_next_step: string;
+  source: 'ai' | 'rule_based';
+}
+
+// ai_service.score_resume_vs_jd's parsed output — note jd_match.hire_recommendation is a
+// plain sentence from that prompt, distinct from the DetailedAnalysisHireRecommendation object.
+export interface DetailedAnalysisJdMatch {
+  match_score?: number;
+  matched_skills?: string[];
+  missing_skills?: string[];
+  experience_fit?: string;
+  education_fit?: string;
+  strengths?: string[];
+  concerns?: string[];
+  hire_recommendation?: string;
+}
+
+// ai_service.generate_questions_with_difficulty's output, biased toward the candidate's
+// identified weak areas — distinct from ResumeAnalysisResult['questions'].
+export interface DetailedAnalysisTargetedQuestion {
+  question: string;
+  difficulty: string;
+  category: string;
+}
+
 export interface DetailedAnalysisRequest {
   id: string;
   job_id: string;
@@ -110,6 +140,9 @@ export interface DetailedAnalysisRequest {
   merged_report?: {
     resume_insights: ResumeInsights;
     assessment_results: DetailedAnalysisAssessmentResult[];
+    jd_match?: DetailedAnalysisJdMatch | null;
+    hire_recommendation?: DetailedAnalysisHireRecommendation | null;
+    targeted_questions?: DetailedAnalysisTargetedQuestion[] | null;
   } | null;
   created_at?: string;
 }
