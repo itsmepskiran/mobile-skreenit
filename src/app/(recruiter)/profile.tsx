@@ -17,6 +17,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { deleteAccount } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import {
+    getCompanyQuotaStatus,
     getRecruiterProfile,
     getRecruiterStats,
     updateRecruiterProfile,
@@ -43,6 +44,10 @@ export default function RecruiterProfileScreen() {
   const statsQuery = useQuery({ queryKey: ['recruiter', 'stats'], queryFn: getRecruiterStats });
   const profile = profileQuery.data?.data && 'company_name' in profileQuery.data.data ? profileQuery.data.data : null;
   const stats = statsQuery.data?.data;
+  // 404s for a recruiter not on a multi-seat company plan — used only to decide whether to
+  // show "Company Quota" below (individual recruiters use Credits/coins instead).
+  const companyQuotaQuery = useQuery({ queryKey: ['recruiter', 'company-quota'], queryFn: getCompanyQuotaStatus, retry: false });
+  const isCompanyPlan = companyQuotaQuery.isSuccess;
 
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -312,6 +317,16 @@ export default function RecruiterProfileScreen() {
         </ThemedView>
 
         <RoleSwitcher />
+        {isCompanyPlan ? (
+          <Button
+            title="Company Quota"
+            variant="secondary"
+            icon="chart-pie"
+            onPress={() => router.push('/(recruiter)/company-quota')}
+          />
+        ) : (
+          <Button title="Credits" variant="secondary" icon="coins" onPress={() => router.push('/(recruiter)/credits')} />
+        )}
         <Button
           title="Purchase History"
           variant="secondary"

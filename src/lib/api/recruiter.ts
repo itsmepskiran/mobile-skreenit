@@ -474,6 +474,24 @@ export function uploadCompanyLogo(file: UploadFile) {
   return apiUploadNative<{ ok: boolean; data: { avatar_url: string } }>('/recruiter/profile/company-logo', file, 'file');
 }
 
+// Company-wide multi-seat recruitment-services plan (migration 057) — quarterly pooled quota
+// shared by a company's master + sub-login seats. 404s for a recruiter not on such a plan;
+// individual recruiters use the coins system instead (see lib/api/credits.ts).
+export interface CompanyQuota {
+  remaining: number;
+  pool: number;
+}
+
+export interface CompanyQuotaStatus {
+  plan_name: string | null;
+  seat_count: number | null;
+  quotas: Record<string, CompanyQuota>;
+}
+
+export function getCompanyQuotaStatus() {
+  return apiGet<{ ok: boolean; data: CompanyQuotaStatus }>('/recruiter/company/quota-status');
+}
+
 // --- Dashboard analytics -----------------------------------------------------
 export interface RecruiterStats {
   total_jobs: number;

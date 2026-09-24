@@ -300,6 +300,12 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(candidate)/resume-writing')}
           />
           <Button
+            title="Employability Report"
+            variant="secondary"
+            icon="file-shield"
+            onPress={() => router.push('/(candidate)/employability-report')}
+          />
+          <Button
             title="Purchase History"
             variant="secondary"
             icon="receipt"
