@@ -25,7 +25,7 @@ export default function EmployabilityReportScreen() {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.user);
   const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
-  const [needsCredit, setNeedsCredit] = useState(false);
+  const [needsCreditMessage, setNeedsCreditMessage] = useState<string | null>(null);
   const [needsResume, setNeedsResume] = useState<string | null>(null);
   const [checkoutOrder, setCheckoutOrder] = useState<{
     keyId: string;
@@ -58,7 +58,7 @@ export default function EmployabilityReportScreen() {
     onError: (err) => {
       if (err instanceof EmployabilityReportError) {
         if (err.kind === 'needs_credit') {
-          setNeedsCredit(true);
+          setNeedsCreditMessage(err.message);
           return;
         }
         if (err.kind === 'needs_resume') {
@@ -97,7 +97,7 @@ export default function EmployabilityReportScreen() {
       }),
     onSuccess: () => {
       setCheckoutOrder(null);
-      setNeedsCredit(false);
+      setNeedsCreditMessage(null);
       generateMutation.mutate();
     },
     onError: () => {
@@ -108,7 +108,7 @@ export default function EmployabilityReportScreen() {
 
   const onGeneratePress = () => {
     setStatus(null);
-    setNeedsCredit(false);
+    setNeedsCreditMessage(null);
     setNeedsResume(null);
     generateMutation.mutate();
   };
@@ -176,7 +176,7 @@ export default function EmployabilityReportScreen() {
           <ThemedView style={[styles.card, { borderColor: theme.border }]}>
             <ThemedText type="smallBold">Step 2: Generate Your Report</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Costs a credit per generation, or free with an active Career Pass.
+              Costs ₹49 per generation (or 10 coins from your balance), or free with an active Career Pass.
             </ThemedText>
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -195,30 +195,42 @@ export default function EmployabilityReportScreen() {
           </ThemedView>
         )}
 
-        {needsCredit ? (
+        {needsCreditMessage ? (
           <ThemedView style={[styles.lockedCard, { borderColor: '#f59e0b', backgroundColor: '#fffbeb' }]}>
-            <FontAwesome6 name="coins" size={18} color="#d97706" />
-            <View style={{ flex: 1 }}>
-              <ThemedText type="smallBold" style={{ color: '#92400e' }}>
-                You need a report credit
-              </ThemedText>
-              <ThemedText type="small" style={{ color: '#a16207' }}>
-                Each report costs a credit, or go unlimited with Career Pass.
-              </ThemedText>
-            </View>
-            <Pressable
-              style={[styles.buyButton, { backgroundColor: theme.primary }]}
-              onPress={() => startCheckoutMutation.mutate()}
-              disabled={startCheckoutMutation.isPending}
-            >
-              {startCheckoutMutation.isPending ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
-                  Buy Credit
+            <View style={styles.noticeRow}>
+              <FontAwesome6 name="coins" size={18} color="#d97706" />
+              <View style={{ flex: 1 }}>
+                <ThemedText type="smallBold" style={{ color: '#92400e' }}>
+                  You need a report credit or coins
                 </ThemedText>
-              )}
-            </Pressable>
+                <ThemedText type="small" style={{ color: '#a16207' }}>
+                  {needsCreditMessage}
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.lockedActionsRow}>
+              <Pressable
+                style={[styles.buyButton, { backgroundColor: theme.primary }]}
+                onPress={() => startCheckoutMutation.mutate()}
+                disabled={startCheckoutMutation.isPending}
+              >
+                {startCheckoutMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+                    Buy Credit — ₹49
+                  </ThemedText>
+                )}
+              </Pressable>
+              <Pressable
+                style={[styles.buyButton, { borderColor: theme.primary, borderWidth: 1 }]}
+                onPress={() => router.push('/(candidate)/my-purchases')}
+              >
+                <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>
+                  Top Up Coins
+                </ThemedText>
+              </Pressable>
+            </View>
           </ThemedView>
         ) : null}
 
@@ -256,6 +268,7 @@ const styles = StyleSheet.create({
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, paddingVertical: 12 },
   noticeRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  lockedCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  lockedCard: { borderWidth: 1, borderRadius: Radius.lg, padding: 14, gap: 12 },
+  lockedActionsRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   buyButton: { borderRadius: Radius.md, paddingHorizontal: 14, paddingVertical: 10 },
 });

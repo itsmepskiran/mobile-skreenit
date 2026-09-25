@@ -9,6 +9,15 @@ export const COIN_PACKS = [
   { planId: 'coin_pack_1000', coins: 1000, priceInr: 4299 },
 ] as const;
 
+// Candidate coin economy (migration 069 in mac-skreenit) — a fully separate balance from the
+// recruiter coins above, flat ₹5/coin with no bulk discount (10 coins is exactly one
+// welcome-offer unit, so the point is transparency, not upselling bigger packs).
+export const CANDIDATE_COIN_PACKS = [
+  { planId: 'candidate_coin_pack_10', coins: 10, priceInr: 50 },
+  { planId: 'candidate_coin_pack_30', coins: 30, priceInr: 150 },
+  { planId: 'candidate_coin_pack_60', coins: 60, priceInr: 300 },
+] as const;
+
 export function getCoinBalance() {
   return apiGet<{ ok: boolean; data: { balance: number } }>('/subscription/coins/balance');
 }

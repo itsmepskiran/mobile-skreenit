@@ -306,6 +306,12 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(candidate)/employability-report')}
           />
           <Button
+            title="My Purchases"
+            variant="secondary"
+            icon="coins"
+            onPress={() => router.push('/(candidate)/my-purchases')}
+          />
+          <Button
             title="Purchase History"
             variant="secondary"
             icon="receipt"

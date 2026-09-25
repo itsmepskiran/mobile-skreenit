@@ -13,6 +13,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { ApiError } from '@/lib/api/client';
 import {
   createResumeFromScratch,
   downloadRenderedResume,
@@ -249,9 +250,18 @@ function ImproveTab({ onQueued }: { onQueued: () => void }) {
       ) : null}
 
       {mutation.isError ? (
-        <ThemedText type="small" style={{ color: theme.danger }}>
-          Could not start resume improvement. Please try again.
-        </ThemedText>
+        <View style={styles.errorBox}>
+          <ThemedText type="small" style={{ color: theme.danger }}>
+            {mutation.error instanceof ApiError ? mutation.error.message : 'Could not start resume improvement. Please try again.'}
+          </ThemedText>
+          {mutation.error instanceof ApiError && mutation.error.status === 402 ? (
+            <Pressable onPress={() => router.push('/(candidate)/my-purchases')}>
+              <ThemedText type="small" themeColor="primary">
+                Top up coins or buy a credit
+              </ThemedText>
+            </Pressable>
+          ) : null}
+        </View>
       ) : null}
 
       {queued ? (
@@ -287,7 +297,8 @@ function ScratchTab({ onQueued }: { onQueued: () => void }) {
       setQueued(true);
       setTimeout(onQueued, 800);
     },
-    onError: () => setError('Could not start resume generation. Please try again.'),
+    onError: (err) =>
+      setError(err instanceof ApiError ? err.message : 'Could not start resume generation. Please try again.'),
   });
 
   const updateExperience = (index: number, patch: Partial<ResumeExperienceInput>) => {
@@ -434,6 +445,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   loadingBox: { alignItems: 'center', gap: 8, paddingVertical: 12 },
+  errorBox: { gap: 6 },
   entryBlock: { borderWidth: 1, borderRadius: Radius.md, padding: 12, gap: 8 },
   expRow: { flexDirection: 'row', gap: 12 },
   expField: { flex: 1 },
