@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native';
 import { z } from 'zod';
 
 import { forgotPassword } from '@/lib/api/auth';
+import { AuthFooter } from '@/components/auth-footer';
 import { AuthScreenLayout } from '@/components/auth-screen-layout';
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
@@ -37,10 +38,13 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <AuthScreenLayout>
-      <ThemedView style={styles.titleRow}>
-        <FontAwesome6 name="envelope-open-text" size={20} color={theme.text} />
-        <ThemedText type="subtitle">Reset Password</ThemedText>
+    <AuthScreenLayout showAtsBanner>
+      <ThemedView style={styles.header}>
+        <ThemedView style={styles.titleRow}>
+          <FontAwesome6 name="envelope-open-text" size={20} color={theme.text} />
+          <ThemedText type="subtitle" style={styles.title}>Reset Password</ThemedText>
+        </ThemedView>
+        <ThemedText themeColor="textSecondary" style={styles.centered}>Enter your email to receive a password reset link</ThemedText>
       </ThemedView>
 
       {sent ? (
@@ -49,15 +53,12 @@ export default function ForgotPasswordScreen() {
         </ThemedText>
       ) : (
         <>
-          <ThemedView>
-            <ThemedText themeColor="textSecondary">Enter your email and we&apos;ll send you a reset link.</ThemedText>
-          </ThemedView>
           <Controller
             control={control}
             name="email"
             render={({ field }) => (
               <TextField
-                label="Email"
+                label="Registered Email*"
                 icon="envelope"
                 placeholder="Enter your registered email"
                 autoCapitalize="none"
@@ -80,16 +81,22 @@ export default function ForgotPasswordScreen() {
           </ThemedText>
         </ThemedView>
       </Link>
+
+      <AuthFooter action="resetting" />
     </AuthScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  header: { gap: 4 },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
+  title: { fontSize: 24, lineHeight: 30 },
+  centered: { textAlign: 'center' },
   link: { alignItems: 'center', marginTop: 4 },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

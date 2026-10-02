@@ -18,8 +18,14 @@ export const CANDIDATE_COIN_PACKS = [
   { planId: 'candidate_coin_pack_60', coins: 60, priceInr: 300 },
 ] as const;
 
+// Unspent welcome-offer coins (100 free on sign-up) and when they lapse — null once spent/expired.
+export interface WelcomeExpiring {
+  coins: number;
+  expires_at: string;
+}
+
 export function getCoinBalance() {
-  return apiGet<{ ok: boolean; data: { balance: number } }>('/subscription/coins/balance');
+  return apiGet<{ ok: boolean; data: { balance: number; welcome_expiring: WelcomeExpiring | null } }>('/subscription/coins/balance');
 }
 
 // recruiter_paid_actions.feature_key values a recruiter can spend coins on — see
@@ -32,7 +38,7 @@ export interface CoinFeatureUsage {
 }
 
 export interface CoinTransaction {
-  event_type: 'purchase' | 'recruiter_pro_grant' | 'unused_conversion' | 'consume';
+  event_type: 'purchase' | 'recruiter_pro_grant' | 'unused_conversion' | 'consume' | 'welcome_grant' | 'expiry';
   amount_coins: number;
   balance_after: number;
   amount_inr: number | null;
@@ -43,7 +49,12 @@ export interface CoinTransaction {
 export function getCoinSummary() {
   return apiGet<{
     ok: boolean;
-    data: { balance: number; usage_by_feature: CoinFeatureUsage[]; recent_transactions: CoinTransaction[] };
+    data: {
+      balance: number;
+      welcome_expiring: WelcomeExpiring | null;
+      usage_by_feature: CoinFeatureUsage[];
+      recent_transactions: CoinTransaction[];
+    };
   }>('/subscription/coins/summary');
 }
 

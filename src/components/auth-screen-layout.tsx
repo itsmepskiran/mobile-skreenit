@@ -1,31 +1,34 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AtsBanner } from '@/components/ats-banner';
 import { BrandHeader } from '@/components/brand-header';
 import { Radius } from '@/constants/theme';
 
 export interface AuthScreenLayoutProps {
   children: ReactNode;
+  /** The "Hiring for your company? ATS Login" strip web shows above the brand banner on login,
+   *  registration and forgot-password. Off for the ATS login screen itself. */
+  showAtsBanner?: boolean;
 }
 
-// Matches sql-skreenit's .auth-page-body (gradient-primary) + .auth-wrapper
-// (floating white card, radius-lg, shadow-xl) so the mobile login pages read
+// Matches sql-skreenit's .auth-page-body (gradient-primary) + .auth-wrapper at phone width
+// (floating white card, radius-lg, shadow-xl; ATS banner -> brand banner -> centered title -> form) so the mobile login pages read
 // as the same product as the web ones, regardless of device dark/light mode.
-export function AuthScreenLayout({ children }: AuthScreenLayoutProps) {
+export function AuthScreenLayout({ children, showAtsBanner = false }: AuthScreenLayoutProps) {
   return (
     <LinearGradient colors={['#667eea', '#764ba2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.card}>
-              <Image
-                source={require('@/assets/images/logo.webp')}
-                style={styles.iconLogo}
-                resizeMode="contain"
-                accessibilityLabel="Skreenit"
-              />
+              {showAtsBanner ? (
+                <View style={styles.atsWrap}>
+                  <AtsBanner />
+                </View>
+              ) : null}
               <BrandHeader />
               <View style={styles.cardBody}>{children}</View>
             </View>
@@ -63,10 +66,8 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 16,
   },
-  iconLogo: {
-    width: 72,
-    height: 72,
-    alignSelf: 'center',
-    marginTop: 20,
+  atsWrap: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
 });

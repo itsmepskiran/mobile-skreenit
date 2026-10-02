@@ -10,11 +10,13 @@ export type Role = 'candidate' | 'recruiter';
 
 export interface RoleToggleProps {
   label: string;
+  /** Override the visible option names, e.g. registration says "Job Seeker" for candidate. */
+  optionLabels?: Partial<Record<Role, string>>;
   value: Role;
   onChange: (role: Role) => void;
 }
 
-export function RoleToggle({ label, value, onChange }: RoleToggleProps) {
+export function RoleToggle({ label, optionLabels, value, onChange }: RoleToggleProps) {
   const theme = useTheme();
 
   return (
@@ -41,7 +43,7 @@ export function RoleToggle({ label, value, onChange }: RoleToggleProps) {
                 color={selected ? '#ffffff' : theme.textSecondary}
               />
               <ThemedText themeColor={selected ? undefined : 'textSecondary'} style={selected && styles.textSelected}>
-                {role === 'candidate' ? 'Candidate' : 'Recruiter'}
+                {optionLabels?.[role] ?? (role === 'candidate' ? 'Candidate' : 'Recruiter')}
               </ThemedText>
             </Pressable>
           );

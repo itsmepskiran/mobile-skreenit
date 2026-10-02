@@ -71,7 +71,7 @@ export default function RegisterScreen() {
 
   if (registeredEmail) {
     return (
-      <AuthScreenLayout>
+      <AuthScreenLayout showAtsBanner>
         <ThemedText type="subtitle">Check your email</ThemedText>
         <ThemedText>
           We sent a confirmation link to {registeredEmail}. Open it on this device to verify your account, then sign
@@ -79,6 +79,9 @@ export default function RegisterScreen() {
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           Please check your spam/junk folder if it doesn&apos;t arrive shortly.
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Add noreply@skreenit.com to your contacts to ensure future emails reach your inbox.
         </ThemedText>
         <Button
           title={resendState === 'sent' ? 'Email sent' : 'Resend confirmation email'}
@@ -107,15 +110,21 @@ export default function RegisterScreen() {
       <ThemedView style={styles.header}>
         <ThemedView style={styles.titleRow}>
           <FontAwesome6 name="user-plus" size={20} color={theme.text} />
-          <ThemedText type="subtitle">Create an Account</ThemedText>
+          <ThemedText type="subtitle" style={styles.title}>Create an Account</ThemedText>
         </ThemedView>
-        <ThemedText themeColor="textSecondary">Please enter your details to register</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.centered}>Please enter your details to register</ThemedText>
+        <ThemedView style={[styles.offerBanner, { backgroundColor: '#fef9c3', borderColor: '#fde68a' }]}>
+          <FontAwesome6 name="gift" size={14} color="#b45309" />
+          <ThemedText type="small" style={{ color: '#854d0e', flex: 1 }}>
+            Get <ThemedText type="smallBold" style={{ color: '#854d0e' }}>100 free coins</ThemedText> (worth ₹500) when you sign up. Valid for 3 months.
+          </ThemedText>
+        </ThemedView>
       </ThemedView>
 
       <Controller
         control={control}
         name="role"
-        render={({ field }) => <RoleToggle label="Register as" value={field.value} onChange={field.onChange} />}
+        render={({ field }) => <RoleToggle label="Register as*" optionLabels={{ candidate: 'Job Seeker' }} value={field.value} onChange={field.onChange} />}
       />
 
       <Controller
@@ -123,7 +132,7 @@ export default function RegisterScreen() {
         name="fullName"
         render={({ field }) => (
           <TextField
-            label="Full Name"
+            label="Full Name*"
             placeholder="Enter your name"
             value={field.value}
             onChangeText={field.onChange}
@@ -136,7 +145,7 @@ export default function RegisterScreen() {
         name="mobile"
         render={({ field }) => (
           <TextField
-            label="Mobile"
+            label="Mobile*"
             placeholder="Enter mobile number"
             keyboardType="phone-pad"
             value={field.value}
@@ -150,7 +159,7 @@ export default function RegisterScreen() {
         name="email"
         render={({ field }) => (
           <TextField
-            label="Email"
+            label="Email*"
             placeholder="Enter your email"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -165,7 +174,7 @@ export default function RegisterScreen() {
         name="location"
         render={({ field }) => (
           <TextField
-            label="Location"
+            label="Location*"
             placeholder="Enter location"
             value={field.value}
             onChangeText={field.onChange}
@@ -178,7 +187,7 @@ export default function RegisterScreen() {
         name="password"
         render={({ field }) => (
           <TextField
-            label="Password"
+            label="Password*"
             isPassword
             placeholder="Create password"
             value={field.value}
@@ -192,7 +201,7 @@ export default function RegisterScreen() {
         name="confirmPassword"
         render={({ field }) => (
           <TextField
-            label="Confirm Password"
+            label="Confirm Password*"
             isPassword
             placeholder="Confirm password"
             value={field.value}
@@ -211,7 +220,7 @@ export default function RegisterScreen() {
         </ThemedText>
       ) : null}
 
-      <Button title="Create Account" icon="user-plus" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
+      <Button title="Create Account & Get 100 Coins" icon="gift" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
 
       <ThemedText style={styles.link}>
         Already have an account?{' '}
@@ -228,6 +237,7 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  offerBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 6 },
   header: {
     marginBottom: 8,
     gap: 4,
@@ -235,8 +245,11 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
+  title: { fontSize: 24, lineHeight: 30 },
+  centered: { textAlign: 'center' },
   link: {
     textAlign: 'center',
     marginTop: 4,

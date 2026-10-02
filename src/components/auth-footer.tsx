@@ -8,14 +8,15 @@ const TERMS_URL = 'https://support.skreenit.com/legal/terms-conditions.html';
 const PRIVACY_URL = 'https://support.skreenit.com/legal/privacy-policy.html';
 
 export interface AuthFooterProps {
-  action: 'logging in to' | 'creating';
+  action: 'logging in to' | 'creating' | 'resetting';
 }
 
-// Matches sql-skreenit's .auth-form-footer on login.html / registration.html.
+// Matches sql-skreenit's .auth-form-footer on login.html / registration.html / forgot-password.html.
+// ('resetting' reads "By resetting your password" on web; the others "...your account".)
 export function AuthFooter({ action }: AuthFooterProps) {
   return (
     <ThemedText type="small" themeColor="textSecondary" style={styles.text}>
-      By {action} your account, you agree to our{' '}
+      By {action} your {action === 'resetting' ? 'password' : 'account'}, you agree to our{' '}
       <Text style={styles.link} onPress={() => Linking.openURL(TERMS_URL)}>
         Terms & Conditions
       </Text>{' '}

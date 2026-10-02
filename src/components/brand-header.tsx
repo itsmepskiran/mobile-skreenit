@@ -1,14 +1,14 @@
 import { Image, StyleSheet, View } from 'react-native';
 
-// Same lockup as sql-skreenit's .auth-header.has-image — the real
-// logobanner.webp banner, used as-is. That file has an opaque near-black
-// background baked in (~#050206), so the container is colored to match
-// rather than sitting behind it as a mismatched light strip.
+// Same lockup as sql-skreenit's .auth-header.has-image: the transparent logo-banner.webp,
+// full card width, sitting directly on the white card (no coloured strip behind it). The
+// older logobanner.webp has an opaque near-black background baked in and is no longer used
+// on the auth pages.
 export function BrandHeader() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('@/assets/images/logobanner.webp')}
+        source={require('@/assets/images/logo-banner.webp')}
         style={styles.image}
         resizeMode="contain"
         accessibilityLabel="Skreenit"
@@ -19,13 +19,10 @@ export function BrandHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    backgroundColor: '#050206',
+    width: '100%',
   },
   image: {
-    height: 90,
-    aspectRatio: 600 / 189,
+    width: '100%',
+    aspectRatio: 2520 / 678,
   },
 });

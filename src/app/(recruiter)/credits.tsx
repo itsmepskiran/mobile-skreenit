@@ -28,6 +28,8 @@ const EVENT_LABELS: Record<string, { label: string; icon: React.ComponentProps<t
   recruiter_pro_grant: { label: 'Premium Bonus Grant', icon: 'gift', kind: 'grant' },
   unused_conversion: { label: 'Unused Balance Refunded', icon: 'rotate-left', kind: 'grant' },
   consume: { label: 'Coins Spent', icon: 'minus', kind: 'spend' },
+  welcome_grant: { label: 'Welcome Offer', icon: 'gift', kind: 'grant' },
+  expiry: { label: 'Welcome Coins Expired', icon: 'hourglass-end', kind: 'spend' },
 };
 
 const bestValuePlanId = COIN_PACKS.reduce((best, pack) =>
@@ -113,6 +115,11 @@ export default function CreditsScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               Coin Balance
             </ThemedText>
+            {summary?.welcome_expiring ? (
+              <ThemedText type="small" style={{ color: '#b45309', textAlign: 'center' }}>
+                {summary.welcome_expiring.coins} free welcome coins expire on {formatDate(summary.welcome_expiring.expires_at)}
+              </ThemedText>
+            ) : null}
             <Pressable
               style={[styles.topUpButton, { backgroundColor: theme.primary }]}
               onPress={() => {

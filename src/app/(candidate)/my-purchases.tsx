@@ -25,6 +25,7 @@ import { useAuthStore } from '@/lib/auth/store';
 const EVENT_LABELS: Record<string, string> = {
   purchase: 'Purchase',
   welcome_grant: 'Welcome Offer',
+  expiry: 'Welcome Coins Expired',
 };
 
 function formatDate(iso: string | null): string {
@@ -192,6 +193,11 @@ export default function MyPurchasesScreen() {
             <ThemedText type="small" style={{ color: '#a16207' }}>
               {summary?.coin_balance ?? 0} coins &middot; 1 coin = ₹5 &middot; 10 coins = 1 use of either service below
             </ThemedText>
+            {summary?.welcome_expiring ? (
+              <ThemedText type="small" style={{ color: '#b45309' }}>
+                {summary.welcome_expiring.coins} free welcome coins expire on {formatDate(summary.welcome_expiring.expires_at)}
+              </ThemedText>
+            ) : null}
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.primary, alignSelf: 'flex-start' }]}
               onPress={() => setShowPacks((v) => !v)}
@@ -327,7 +333,7 @@ function TransactionRow({ tx }: { tx: CandidateCoinTransaction }) {
   return (
     <View style={[styles.historyRow, { borderColor: theme.border }]}>
       <View style={styles.historyMain}>
-        <FontAwesome6 name={tx.event_type === 'welcome_grant' ? 'gift' : 'cart-shopping'} size={14} color="#2f855a" />
+        <FontAwesome6 name={tx.event_type === 'welcome_grant' ? 'gift' : tx.event_type === 'expiry' ? 'hourglass-end' : 'cart-shopping'} size={14} color={tx.event_type === 'expiry' ? '#c53030' : '#2f855a'} />
         <View>
           <ThemedText type="small">
             {tx.feature_key === 'candidate_coins' ? 'Coins' : tx.feature_key} — {eventLabel}
@@ -338,8 +344,9 @@ function TransactionRow({ tx }: { tx: CandidateCoinTransaction }) {
           </ThemedText>
         </View>
       </View>
-      <ThemedText type="smallBold" style={{ color: '#2f855a' }}>
-        +{tx.amount_coins}
+      <ThemedText type="smallBold" style={{ color: tx.amount_coins < 0 ? '#c53030' : '#2f855a' }}>
+        {tx.amount_coins < 0 ? '' : '+'}
+        {tx.amount_coins}
       </ThemedText>
     </View>
   );
