@@ -41,6 +41,14 @@ export function JobCard({ job, onPress, matchScore, saved, onToggleSave }: JobCa
         pressed && styles.pressed,
       ]}
     >
+      {job.is_featured ? (
+        <View style={styles.featuredBadge}>
+          <FontAwesome6 name="star" size={10} color="#b45309" />
+          <ThemedText type="small" style={{ color: '#b45309', fontWeight: '700' }}>
+            Featured
+          </ThemedText>
+        </View>
+      ) : null}
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
           <ThemedText type="smallBold" numberOfLines={2}>
@@ -130,6 +138,17 @@ export function JobCard({ job, onPress, matchScore, saved, onToggleSave }: JobCa
 }
 
 const styles = StyleSheet.create({
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    backgroundColor: '#fef3c7',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
   card: {
     borderWidth: 1,
     borderRadius: Radius.lg,

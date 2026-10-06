@@ -101,7 +101,12 @@ export default function RecruiterPremiumScreen() {
   });
 
   const profile = profileQuery.data?.data;
-  const plans = plansQuery.data?.data ?? [];
+  // Only the self-serve subscriptions: Recruiter Pro (monthly / yearly) and the Candidate DB add-on.
+  // The rest of the recruiter_plan rows are per-action prices (invites, analyses, featured jobs),
+  // coin packs, or company plans that staff activate.
+  const plans = (plansQuery.data?.data ?? [])
+    .filter((p) => ['recruiter_pro', 'recruiter_pro_yearly', 'candidate_db_access'].includes(p.service_key))
+    .sort((a, b) => a.price_inr - b.price_inr);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -204,6 +209,11 @@ export default function RecruiterPremiumScreen() {
                 plans.map((plan) => (
                   <ThemedView key={plan.id} style={[styles.card, { borderColor: theme.border }]}>
                     <ThemedText type="smallBold">{plan.name}</ThemedText>
+                    {plan.monthly_coins ? (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {plan.monthly_coins} coins credited every month, automatically.
+                      </ThemedText>
+                    ) : null}
                     {plan.description ? (
                       <ThemedText type="small" themeColor="textSecondary">
                         {plan.description}

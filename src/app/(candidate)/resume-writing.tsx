@@ -10,6 +10,7 @@ import { Button } from '@/components/button';
 import { SkillTagInput } from '@/components/skill-tag-input';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -65,7 +66,7 @@ export default function ResumeWritingScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(candidate)/profile')} hitSlop={12}>
+        <Pressable onPress={() => router.replace('/(candidate)/premium-services')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
         <ThemedText type="title">Resume Writing</ThemedText>
@@ -193,6 +194,7 @@ function DraftCard({ draft }: { draft: ResumeWritingDraft }) {
 
 function ImproveTab({ onQueued }: { onQueued: () => void }) {
   const theme = useTheme();
+  const { confirmSpend, consentModal } = useCoinConsent();
   const [file, setFile] = useState<{ uri: string; name: string; type: string } | null>(null);
   const [queued, setQueued] = useState(false);
 
@@ -217,11 +219,17 @@ function ImproveTab({ onQueued }: { onQueued: () => void }) {
     const asset = picked.assets[0];
     const pickedFile = { uri: asset.uri, name: asset.name, type: asset.mimeType ?? 'application/octet-stream' };
     setFile(pickedFile);
+    // First rewrite is free; every later one deducts coins/credit -- confirm before charging.
+    if (!(await confirmSpend({ action: 'resume_writing' }))) {
+      setFile(null);
+      return;
+    }
     mutation.mutate(pickedFile);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      {consentModal}
       <ThemedText type="small" themeColor="textSecondary">
         Upload your resume — AI will rewrite your summary, experience bullets, and skills for impact.
       </ThemedText>
@@ -282,6 +290,7 @@ function emptyEducation(): ResumeEducationInput {
 
 function ScratchTab({ onQueued }: { onQueued: () => void }) {
   const theme = useTheme();
+  const { confirmSpend, consentModal } = useCoinConsent();
   const [fullName, setFullName] = useState('');
   const [targetRole, setTargetRole] = useState('');
   const [experience, setExperience] = useState<ResumeExperienceInput[]>([emptyExperience(), emptyExperience()]);
@@ -308,7 +317,7 @@ function ScratchTab({ onQueued }: { onQueued: () => void }) {
     setEducation((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
   };
 
-  const submit = () => {
+  const submit = async () => {
     const cleanedExperience = experience.filter((e) => e.company?.trim() || e.position?.trim());
     const cleanedEducation = education.filter((e) => e.degree?.trim() || e.institution?.trim());
     const achievements = achievementsText.split('\n').map((s) => s.trim()).filter(Boolean);
@@ -318,6 +327,7 @@ function ScratchTab({ onQueued }: { onQueued: () => void }) {
       return;
     }
     setError(null);
+    if (!(await confirmSpend({ action: 'resume_writing' }))) return;
     mutation.mutate({
       fullName: fullName.trim() || undefined,
       targetRole: targetRole.trim() || undefined,
@@ -330,6 +340,7 @@ function ScratchTab({ onQueued }: { onQueued: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      {consentModal}
       <ThemedText type="small" themeColor="textSecondary">
         Answer a few questions and AI will draft a full resume for you — no existing file needed.
       </ThemedText>

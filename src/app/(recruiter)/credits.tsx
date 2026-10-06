@@ -23,6 +23,13 @@ const FEATURE_LABELS: Record<string, { label: string; icon: React.ComponentProps
   ai_interview_analysis: { label: 'AI Interview Analyses', icon: 'video' },
 };
 
+// Names the service a 'consume' ledger row paid for (its reference_type).
+const SPEND_LABELS: Record<string, string> = {
+  assessment_invite: 'Assessment Invite',
+  detailed_analysis: 'Detailed Analysis',
+  ai_interview_analysis: 'AI Interview Analysis',
+};
+
 const EVENT_LABELS: Record<string, { label: string; icon: React.ComponentProps<typeof FontAwesome6>['name']; kind: 'grant' | 'spend' }> = {
   purchase: { label: 'Coin Pack Purchase', icon: 'cart-shopping', kind: 'grant' },
   recruiter_pro_grant: { label: 'Premium Bonus Grant', icon: 'gift', kind: 'grant' },
@@ -235,6 +242,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
         <View>
           <ThemedText type="small">
             {meta.label}
+            {tx.event_type === 'consume' && tx.reference_type && SPEND_LABELS[tx.reference_type] ? ` — ${SPEND_LABELS[tx.reference_type]}` : ''}
             {tx.amount_inr ? ` — ₹${tx.amount_inr}` : ''}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">

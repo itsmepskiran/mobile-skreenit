@@ -13,6 +13,16 @@ export interface PricingPlan {
   trial_days: number | null;
   duration: string | null;
   features: string | string[] | null;
+  sort_order?: number | null;
+  // Mock Interview plans (service_key 'interview_plan_*'): null limit = unlimited.
+  interview_limit?: number | null;
+  interview_max_minutes?: number | null;
+  interview_daily_limit?: number | null;
+  // Recruiter plans (public fields used by the pricing screens).
+  coin_cost?: number | null;
+  free_quota?: number | null;
+  monthly_coins?: number | null;
+  seat_count?: number | null;
 }
 
 export function listPricingPlans(serviceType = 'applicant_plan') {

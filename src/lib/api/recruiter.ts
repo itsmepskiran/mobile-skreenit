@@ -95,6 +95,8 @@ export interface RecruiterJobListItem {
   location_state: string | null;
   location_country: string | null;
   is_remote: boolean;
+  // Featured Job boost: pinned first on the jobs board until this time (null = not featured).
+  featured_until?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -167,6 +169,15 @@ export function listMyJobs(params: { page?: number; pageSize?: number; status?: 
     if (!params.status) return res;
     return { ...res, data: { ...res.data, jobs: res.data.jobs.filter((j) => j.status === params.status) } };
   });
+}
+
+// Featured Job boost (7 days). Charged in coins (individual) or on the company invoice — confirm
+// with useCoinConsent({ action: 'featured_job', jobId }) first.
+export function featureJob(id: string) {
+  return apiPostJson<{ ok: boolean; data: { featured_until: string; charge_type: string; coins_charged: number } }>(
+    `/recruiter/jobs/${id}/feature`,
+    {},
+  );
 }
 
 export function getMyJob(id: string) {

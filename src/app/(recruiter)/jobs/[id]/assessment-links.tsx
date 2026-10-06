@@ -8,6 +8,7 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -73,6 +74,8 @@ export default function AssessmentLinksScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  const { confirmSpend, consentModal } = useCoinConsent();
+
   const inviteMutation = useMutation({
     mutationFn: (mode: AssessmentLinkMode) =>
       generateAssessmentLink(jobId, {
@@ -102,6 +105,7 @@ export default function AssessmentLinksScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      {consentModal}
       <View style={styles.headerRow}>
         <Pressable onPress={goBack} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
@@ -179,7 +183,12 @@ export default function AssessmentLinksScreen() {
             ) : null}
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.primary }]}
-              onPress={() => inviteMutation.mutate(activeTab)}
+              onPress={async () => {
+                // Invitees past the job's free quota are charged in coins -- confirm up front.
+                const count = rows.filter((r) => r.fullName.trim() || r.email.trim()).length;
+                if (count > 0 && !(await confirmSpend({ action: 'assessment_invite', jobId, count }))) return;
+                inviteMutation.mutate(activeTab);
+              }}
               disabled={inviteMutation.isPending}
             >
               {inviteMutation.isPending ? (

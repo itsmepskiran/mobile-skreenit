@@ -12,6 +12,7 @@ import {
 } from '@/components/schedule-interview-modal';
 import { SelectField } from '@/components/select-field';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -53,6 +54,8 @@ export default function ResumeAnalysisScreen() {
     enabled: detailedAccessQuery.data?.data.accessible === true,
   });
   const jobOptions = (myJobsQuery.data?.data.jobs ?? []).map((j) => ({ label: j.job_title, value: j.id }));
+
+  const { confirmSpend, consentModal } = useCoinConsent();
 
   const startDetailedMutation = useMutation({
     mutationFn: () => {
@@ -152,6 +155,7 @@ export default function ResumeAnalysisScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      {consentModal}
       <View style={styles.headerRow}>
         <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
@@ -381,7 +385,10 @@ export default function ResumeAnalysisScreen() {
                   />
                   <Pressable
                     style={[styles.actionButton, { backgroundColor: theme.primary }]}
-                    onPress={() => startDetailedMutation.mutate()}
+                    onPress={async () => {
+                      if (!detailedJobId) return startDetailedMutation.mutate();
+                      if (await confirmSpend({ action: 'detailed_analysis', jobId: detailedJobId })) startDetailedMutation.mutate();
+                    }}
                     disabled={startDetailedMutation.isPending || !detailedJobId}
                   >
                     {startDetailedMutation.isPending ? (

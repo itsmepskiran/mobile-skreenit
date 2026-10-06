@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -151,6 +152,7 @@ function ReportCard({ report, onPress }: { report: CandidateAnalysisReport; onPr
 function AnalysisDetailModal({ report, onClose }: { report: CandidateAnalysisReport | null; onClose: () => void }) {
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const { confirmSpend, consentModal } = useCoinConsent();
   const reanalyzeMutation = useMutation({
     mutationFn: (applicationId: string) => reanalyzeApplication(applicationId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recruiter', 'analysis-reports'] }),
@@ -264,8 +266,13 @@ function AnalysisDetailModal({ report, onClose }: { report: CandidateAnalysisRep
               variant="secondary"
               icon="rotate"
               loading={reanalyzeMutation.isPending}
-              onPress={() => reanalyzeMutation.mutate(report.application_id)}
+              onPress={async () => {
+                if (await confirmSpend({ action: 'ai_interview_analysis', applicationId: report.application_id })) {
+                  reanalyzeMutation.mutate(report.application_id);
+                }
+              }}
             />
+            {consentModal}
           </ScrollView>
         </ThemedView>
       </View>

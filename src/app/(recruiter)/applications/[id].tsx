@@ -14,6 +14,7 @@ import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { bulkAnalyzeResponses } from '@/lib/api/analytics';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
@@ -75,6 +76,7 @@ export default function ApplicationReviewScreen() {
   const [error, setError] = useState<string | null>(null);
   const [inviteContext, setInviteContext] = useState<AssessmentInviteContext | null>(null);
 
+  const { confirmSpend, consentModal } = useCoinConsent();
   const analyzeMutation = useMutation({
     mutationFn: () => bulkAnalyzeResponses([id]),
   });
@@ -132,6 +134,7 @@ export default function ApplicationReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      {consentModal}
       {headerBackOverride ? <Stack.Screen options={headerBackOverride} /> : null}
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView style={styles.headerRow}>
@@ -256,7 +259,9 @@ export default function ApplicationReviewScreen() {
               variant="secondary"
               icon="chart-simple"
               loading={analyzeMutation.isPending}
-              onPress={() => analyzeMutation.mutate()}
+              onPress={async () => {
+                if (await confirmSpend({ action: 'ai_interview_analysis', applicationId: id })) analyzeMutation.mutate();
+              }}
             />
             {analyzeMutation.isSuccess ? (
               <Pressable onPress={() => router.push('/(recruiter)/analysis-reports')}>

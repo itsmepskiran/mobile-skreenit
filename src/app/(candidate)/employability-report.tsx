@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,10 +18,12 @@ import {
   generateEmployabilityReport,
   getOwnResumeAnalysis,
 } from '@/lib/api/employability-report';
+import { describeRate, getCandidateRates } from '@/lib/api/service-rates';
 import { getPaymentConfig } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
 
 export default function EmployabilityReportScreen() {
+  const { confirmSpend, consentModal } = useCoinConsent();
   const theme = useTheme();
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.user);
@@ -37,6 +40,8 @@ export default function EmployabilityReportScreen() {
     priceInr: number;
   } | null>(null);
 
+  const ratesQuery = useQuery({ queryKey: ['subscription', 'candidate-rates'], queryFn: getCandidateRates });
+  const rates = ratesQuery.data?.data;
   const analysisQuery = useQuery({ queryKey: ['candidate', 'resume-analysis'], queryFn: getOwnResumeAnalysis });
   const hasAnalysis = !!analysisQuery.data?.data;
 
@@ -106,17 +111,20 @@ export default function EmployabilityReportScreen() {
     },
   });
 
-  const onGeneratePress = () => {
+  const onGeneratePress = async () => {
     setStatus(null);
     setNeedsCreditMessage(null);
     setNeedsResume(null);
+    // Say what this will cost and get an explicit yes before anything is charged.
+    if (!(await confirmSpend({ action: 'employability_report' }))) return;
     generateMutation.mutate();
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      {consentModal}
       <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(candidate)/profile')} hitSlop={12}>
+        <Pressable onPress={() => router.replace('/(candidate)/premium-services')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
         <ThemedText type="title">Employability Report</ThemedText>
@@ -176,7 +184,7 @@ export default function EmployabilityReportScreen() {
           <ThemedView style={[styles.card, { borderColor: theme.border }]}>
             <ThemedText type="smallBold">Step 2: Generate Your Report</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Costs ₹49 per generation (or 10 coins from your balance), or free with an active Career Pass.
+              {describeRate(rates?.employability_report) || 'Your first report is free.'} — unlimited with an active Career Pass.
             </ThemedText>
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -218,7 +226,7 @@ export default function EmployabilityReportScreen() {
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
-                    Buy Credit — ₹49
+                    Buy Credit — ₹{rates?.employability_report?.price_inr ?? 49}
                   </ThemedText>
                 )}
               </Pressable>

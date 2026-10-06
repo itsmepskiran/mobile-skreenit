@@ -8,6 +8,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { LatestIntroAnalysis } from '@/components/latest-intro-analysis';
 import { ProfileView } from '@/components/profile-wizard/profile-view';
 import { StepEducation } from '@/components/profile-wizard/step-education';
 import { StepExperience } from '@/components/profile-wizard/step-experience';
@@ -293,17 +294,12 @@ export default function ProfileScreen() {
             }}
           />
           <RoleSwitcher />
+          <LatestIntroAnalysis />
           <Button
-            title="Resume Writing Services"
+            title="Premium Services"
             variant="secondary"
-            icon="pen-nib"
-            onPress={() => router.push('/(candidate)/resume-writing')}
-          />
-          <Button
-            title="Employability Report"
-            variant="secondary"
-            icon="file-shield"
-            onPress={() => router.push('/(candidate)/employability-report')}
+            icon="crown"
+            onPress={() => router.push('/(candidate)/premium-services')}
           />
           <Button
             title="My Purchases"

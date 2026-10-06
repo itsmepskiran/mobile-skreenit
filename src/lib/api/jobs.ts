@@ -24,6 +24,8 @@ export interface JobListItem {
   status: string;
   company_name: string;
   skills: string[];
+  // Recruiter-boosted job (Featured Job): listed first by the backend; show a badge.
+  is_featured?: boolean;
   created_at: string;
 }
 

@@ -5,13 +5,15 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CareerPassModal } from '@/components/career-pass-modal';
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { getCandidateCreditsSummary, type CandidateCoinTransaction } from '@/lib/api/candidate-credits';
+import { getCandidateCreditsSummary, type CandidateCoinTransaction, type CandidateServiceUsage } from '@/lib/api/candidate-credits';
 import { ApiError } from '@/lib/api/client';
+import { describeRate, getCandidateRates } from '@/lib/api/service-rates';
 import { CANDIDATE_COIN_PACKS, confirmCreditPurchase, createCreditOrder } from '@/lib/api/credits';
 import {
   confirmSubscription,
@@ -26,7 +28,32 @@ const EVENT_LABELS: Record<string, string> = {
   purchase: 'Purchase',
   welcome_grant: 'Welcome Offer',
   expiry: 'Welcome Coins Expired',
+  consume: 'Used',
 };
+
+const SERVICE_LABELS: Record<string, string> = {
+  resume_writing: 'AI Resume Writing',
+  employability_report: 'Employability Report',
+  video_analysis: 'Intro Video Analysis',
+  mock_interview: 'Mock Interview Practice',
+};
+
+// Rows of the "How coins are charged" list; prices come from /subscription/coins/rates.
+const RATE_ROWS: { key: 'resume_writing' | 'employability_report' | 'video_analysis' | 'mock_interview'; icon: React.ComponentProps<typeof FontAwesome6>['name']; title: string; unit: string }[] = [
+  { key: 'resume_writing', icon: 'pen-nib', title: 'AI Resume Writing', unit: 'Per rewrite' },
+  { key: 'employability_report', icon: 'file-contract', title: 'Employability Report', unit: 'Per report' },
+  { key: 'video_analysis', icon: 'brain', title: 'Intro Video Analysis', unit: 'Per analysis' },
+  { key: 'mock_interview', icon: 'video', title: 'Mock Interview Practice', unit: 'Per interview, report included' },
+];
+
+// "3 uses · 20 coins spent · 1 credit used" — empty string when the service hasn't been used.
+function usageSummary(usage?: CandidateServiceUsage): string {
+  if (!usage || !usage.uses) return '';
+  const parts = [`${usage.uses} ${usage.uses === 1 ? 'use' : 'uses'}`];
+  if (usage.coins_spent) parts.push(`${usage.coins_spent} coins spent`);
+  if (usage.credits_used) parts.push(`${usage.credits_used} ${usage.credits_used === 1 ? 'credit' : 'credits'} used`);
+  return parts.join(' \u00b7 ');
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';
@@ -52,9 +79,17 @@ export default function MyPurchasesScreen() {
   const [showPacks, setShowPacks] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkoutOrder, setCheckoutOrder] = useState<CheckoutOrder | null>(null);
+  const [passModalOpen, setPassModalOpen] = useState(false);
 
   const summaryQuery = useQuery({ queryKey: ['candidate', 'credits-summary'], queryFn: getCandidateCreditsSummary });
   const summary = summaryQuery.data?.data;
+  const ratesQuery = useQuery({ queryKey: ['subscription', 'candidate-rates'], queryFn: getCandidateRates });
+  const rates = ratesQuery.data?.data;
+  const plansQuery = useQuery({ queryKey: ['subscription', 'plans', 'candidate_addon'], queryFn: () => listPricingPlans('candidate_addon') });
+  const passPlan = plansQuery.data?.data.find((p) => p.service_key === 'career_pass');
+  const passPrice = passPlan
+    ? `₹${passPlan.price_inr}${/year|annual/i.test(passPlan.billing_cycle ?? '') ? ' / year' : /month/i.test(passPlan.billing_cycle ?? '') ? ' / month' : ''}`
+    : '';
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['candidate', 'credits-summary'] });
 
@@ -78,8 +113,14 @@ export default function MyPurchasesScreen() {
         subscriptionId: sub.data.subscription_id,
       };
     },
-    onSuccess: setCheckoutOrder,
-    onError: (err) => setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not start checkout. Please try again.'),
+    onSuccess: (order) => {
+      setPassModalOpen(false);
+      setCheckoutOrder(order);
+    },
+    onError: (err) => {
+      setPassModalOpen(false);
+      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not start checkout. Please try again.');
+    },
   });
 
   const startCreditMutation = useMutation({
@@ -162,23 +203,18 @@ export default function MyPurchasesScreen() {
             <ThemedText type="small" style={{ color: careerPass?.active ? '#15803d' : '#4f46e5' }}>
               {careerPass?.active
                 ? careerPass.expiry_date
-                  ? `Unlimited AI Resume Writing & Employability Reports until ${formatDate(careerPass.expiry_date)}`
-                  : 'Unlimited AI Resume Writing & Employability Reports'
-                : '₹399/year for unlimited AI Resume Writing rewrites and Employability Reports'}
+                  ? `Resume writing, reports & video analysis unlimited until ${formatDate(careerPass.expiry_date)}`
+                  : 'Resume writing, reports & video analysis, unlimited'
+                : 'Unlimited resume writing, reports & video analysis'}
             </ThemedText>
             {!careerPass?.active ? (
               <Pressable
                 style={[styles.actionButton, { backgroundColor: theme.primary, alignSelf: 'flex-start' }]}
-                onPress={() => startCareerPassMutation.mutate()}
-                disabled={startCareerPassMutation.isPending}
+                onPress={() => setPassModalOpen(true)}
               >
-                {startCareerPassMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
-                    Get Career Pass
-                  </ThemedText>
-                )}
+                <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
+                  Get Career Pass
+                </ThemedText>
               </Pressable>
             ) : null}
           </ThemedView>
@@ -191,7 +227,7 @@ export default function MyPurchasesScreen() {
               </ThemedText>
             </View>
             <ThemedText type="small" style={{ color: '#a16207' }}>
-              {summary?.coin_balance ?? 0} coins &middot; 1 coin = ₹5 &middot; 10 coins = 1 use of either service below
+              {summary?.coin_balance ?? 0} coins &middot; see the rates below
             </ThemedText>
             {summary?.welcome_expiring ? (
               <ThemedText type="small" style={{ color: '#b45309' }}>
@@ -234,39 +270,54 @@ export default function MyPurchasesScreen() {
           ) : null}
 
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Credit Balances
+            How Coins Are Charged
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Each report/rewrite is ₹49 per use (or 10 coins from your balance above) unless you hold Career Pass.
+            Coins are only spent when you use a service below. Career Pass covers resume writing, reports and video analysis; mock
+            interviews are included in their own plans.
           </ThemedText>
-
-          <CreditCard
-            icon="pen-nib"
-            title="AI Resume Writing"
-            balance={summary?.resume_writing_credits ?? 0}
-            onBuy={() => startCreditMutation.mutate('ai_resume_writing_repeat')}
-            loading={startCreditMutation.isPending}
-          />
-          <CreditCard
-            icon="file-contract"
-            title="Employability Report"
-            balance={summary?.employability_report_credits ?? 0}
-            onBuy={() => startCreditMutation.mutate('employability_report')}
-            loading={startCreditMutation.isPending}
-          />
+          {RATE_ROWS.map((row) => {
+            const used = usageSummary(summary?.usage?.[row.key]);
+            return (
+              <ThemedView key={row.key} style={[styles.card, { borderColor: theme.border }]}>
+                <View style={styles.creditRow}>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <View style={styles.cardTitleRow}>
+                      <FontAwesome6 name={row.icon} size={14} color={theme.primary} />
+                      <ThemedText type="smallBold">{row.title}</ThemedText>
+                    </View>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {row.unit} · {used ? `Used: ${used}` : 'Not used yet'}
+                    </ThemedText>
+                  </View>
+                  <ThemedText type="smallBold" style={{ color: '#b45309', maxWidth: 140, textAlign: 'right' }}>
+                    {describeRate(rates?.[row.key]) || '–'}
+                  </ThemedText>
+                </View>
+              </ThemedView>
+            );
+          })}
 
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             Recent Activity
           </ThemedText>
           {!summary?.recent_transactions.length ? (
             <ThemedText type="small" themeColor="textSecondary">
-              No purchases yet.
+              No activity yet.
             </ThemedText>
           ) : (
             summary.recent_transactions.map((tx, i) => <TransactionRow key={i} tx={tx} />)
           )}
         </ScrollView>
       )}
+
+      <CareerPassModal
+        visible={passModalOpen}
+        priceLabel={passPrice}
+        loading={startCareerPassMutation.isPending}
+        onContinue={() => startCareerPassMutation.mutate()}
+        onClose={() => setPassModalOpen(false)}
+      />
 
       {checkoutOrder ? (
         <RazorpayCheckout
@@ -286,57 +337,26 @@ export default function MyPurchasesScreen() {
   );
 }
 
-function CreditCard({
-  icon,
-  title,
-  balance,
-  onBuy,
-  loading,
-}: {
-  icon: React.ComponentProps<typeof FontAwesome6>['name'];
-  title: string;
-  balance: number;
-  onBuy: () => void;
-  loading: boolean;
-}) {
-  const theme = useTheme();
-  return (
-    <ThemedView style={[styles.card, { borderColor: theme.border }]}>
-      <View style={styles.creditRow}>
-        <View style={{ flex: 1 }}>
-          <View style={styles.cardTitleRow}>
-            <FontAwesome6 name={icon} size={14} color={theme.primary} />
-            <ThemedText type="smallBold">{title}</ThemedText>
-          </View>
-          <ThemedText type="title">{balance}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            unused credits
-          </ThemedText>
-        </View>
-        <Pressable
-          style={[styles.actionButton, { borderColor: theme.primary, borderWidth: 1 }]}
-          onPress={onBuy}
-          disabled={loading}
-        >
-          <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>
-            Buy Credit
-          </ThemedText>
-        </Pressable>
-      </View>
-    </ThemedView>
-  );
-}
-
 function TransactionRow({ tx }: { tx: CandidateCoinTransaction }) {
   const theme = useTheme();
   const eventLabel = EVENT_LABELS[tx.event_type] ?? tx.event_type;
+  const isUse = tx.event_type === 'consume';
+  // A use is attributed to the service it paid for; everything else keeps its feature label.
+  const subject = isUse && tx.reference_type
+    ? SERVICE_LABELS[tx.reference_type] ?? tx.reference_type
+    : tx.feature_key === 'candidate_coins' ? 'Coins' : tx.feature_key;
+  const paidWith = isUse
+    ? tx.feature_key === 'candidate_coins'
+      ? tx.amount_coins === 0 ? ' (free)' : ` (${Math.abs(tx.amount_coins)} coins)`
+      : ' (1 credit)'
+    : '';
   return (
     <View style={[styles.historyRow, { borderColor: theme.border }]}>
       <View style={styles.historyMain}>
-        <FontAwesome6 name={tx.event_type === 'welcome_grant' ? 'gift' : tx.event_type === 'expiry' ? 'hourglass-end' : 'cart-shopping'} size={14} color={tx.event_type === 'expiry' ? '#c53030' : '#2f855a'} />
+        <FontAwesome6 name={isUse ? 'receipt' : tx.event_type === 'welcome_grant' ? 'gift' : tx.event_type === 'expiry' ? 'hourglass-end' : 'cart-shopping'} size={14} color={tx.event_type === 'expiry' || isUse ? '#c53030' : '#2f855a'} />
         <View>
           <ThemedText type="small">
-            {tx.feature_key === 'candidate_coins' ? 'Coins' : tx.feature_key} — {eventLabel}
+            {subject} — {eventLabel}{paidWith}
             {tx.amount_inr ? ` — ₹${tx.amount_inr}` : ''}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">

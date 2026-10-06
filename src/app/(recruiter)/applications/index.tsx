@@ -9,6 +9,7 @@ import { bulkAnalyzeResponses } from '@/lib/api/analytics';
 import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
+import { useCoinConsent } from '@/components/coin-consent-modal';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { ApplicationStatus } from '@/lib/api/applicant';
@@ -121,6 +122,7 @@ export default function RecruiterApplicationsScreen() {
     },
   });
 
+  const { confirmSpend, consentModal } = useCoinConsent();
   const bulkAnalyzeMutation = useMutation({
     mutationFn: () => bulkAnalyzeResponses(Array.from(selectedIds), jobId),
     onSuccess: () => {
@@ -142,6 +144,7 @@ export default function RecruiterApplicationsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {consentModal}
       <View style={[styles.searchRow, { borderColor: theme.border }]}>
         <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
         <TextInput
@@ -254,7 +257,11 @@ export default function RecruiterApplicationsScreen() {
             </Pressable>
             <Pressable
               style={[styles.bulkButton, { backgroundColor: theme.primary }]}
-              onPress={() => bulkAnalyzeMutation.mutate()}
+              onPress={async () => {
+                if (await confirmSpend({ action: 'ai_interview_analysis', applicationId: Array.from(selectedIds)[0], jobId, count: selectedIds.size })) {
+                  bulkAnalyzeMutation.mutate();
+                }
+              }}
               disabled={bulkAnalyzeMutation.isPending}
             >
               {bulkAnalyzeMutation.isPending ? (
