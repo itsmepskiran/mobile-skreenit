@@ -13,6 +13,7 @@ import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-ch
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
+import { useOrderReview } from '@/hooks/use-order-review';
 import { useTheme } from '@/hooks/use-theme';
 import {
   downloadSessionReport,
@@ -27,9 +28,7 @@ import {
 } from '@/lib/api/interview';
 import {
   confirmSubscription,
-  createRazorpayOrder,
   createSubscription,
-  getPaymentConfig,
   listPricingPlans,
   type PricingPlan,
 } from '@/lib/api/subscription';
@@ -63,6 +62,7 @@ type Checkout = { keyId: string; orderId: string; amount: number; currency: stri
 export default function MockInterviewScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const { reviewOrder, reviewElement } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const { confirmSpend, consentModal } = useCoinConsent();
 
@@ -177,20 +177,16 @@ export default function MockInterviewScreen() {
   const buyPlan = useMutation({
     mutationFn: async (plan: PricingPlan) => {
       const sub = await createSubscription(plan.id);
-      const [order, config] = await Promise.all([
-        createRazorpayOrder({ amount: plan.price_inr, subscriptionId: sub.data.subscription_id, serviceType: plan.service_type }),
-        getPaymentConfig(),
-      ]);
-      return {
-        keyId: config.data.key_id,
-        orderId: order.data.order_id,
-        amount: order.data.amount,
-        currency: order.data.currency,
-        name: plan.name,
+      return reviewOrder({
         subscriptionId: sub.data.subscription_id,
-      };
+        name: plan.name,
+        priceInr: plan.price_inr,
+        serviceType: plan.service_type,
+      });
     },
-    onSuccess: setCheckout,
+    onSuccess: (next) => {
+      if (next) setCheckout(next);
+    },
     onError: (err) => setError(err instanceof Error && err.message ? err.message : 'Could not start checkout.'),
   });
 
@@ -449,6 +445,7 @@ export default function MockInterviewScreen() {
       </ScrollView>
 
       {consentModal}
+      {reviewElement}
       {checkout ? (
         <RazorpayCheckout
           visible

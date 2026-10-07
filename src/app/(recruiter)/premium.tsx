@@ -11,16 +11,15 @@ import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
+import { useOrderReview } from '@/hooks/use-order-review';
 import { useTheme } from '@/hooks/use-theme';
 import { getProfile } from '@/lib/api/applicant';
 import { ApiError } from '@/lib/api/client';
 import { listAssessmentConfigs } from '@/lib/api/position-assessments';
 import {
   confirmSubscription,
-  createRazorpayOrder,
   createSubscription,
   getActiveSubscriptions,
-  getPaymentConfig,
   listPricingPlans,
   type PricingPlan,
 } from '@/lib/api/subscription';
@@ -32,6 +31,7 @@ import { useAuthStore } from '@/lib/auth/store';
 export default function RecruiterPremiumScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const { reviewOrder, reviewElement } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [checkoutOrder, setCheckoutOrder] = useState<{
@@ -65,21 +65,25 @@ export default function RecruiterPremiumScreen() {
   const startCheckoutMutation = useMutation({
     mutationFn: async (plan: PricingPlan) => {
       const sub = await createSubscription(plan.id);
-      const subscriptionId = sub.data.subscription_id;
-      const [order, config] = await Promise.all([
-        createRazorpayOrder({ amount: plan.price_inr, subscriptionId, serviceType: plan.service_type }),
-        getPaymentConfig(),
-      ]);
+      const reviewed = await reviewOrder({
+        subscriptionId: sub.data.subscription_id,
+        name: plan.name,
+        priceInr: plan.price_inr,
+        serviceType: plan.service_type,
+      });
+      if (!reviewed) return null;
       return {
-        keyId: config.data.key_id,
-        orderId: order.data.order_id,
-        amount: order.data.amount,
-        currency: order.data.currency,
-        subscriptionId,
+        keyId: reviewed.keyId,
+        orderId: reviewed.orderId,
+        amount: reviewed.amount,
+        currency: reviewed.currency,
+        subscriptionId: reviewed.subscriptionId,
         plan,
       };
     },
-    onSuccess: setCheckoutOrder,
+    onSuccess: (next) => {
+      if (next) setCheckoutOrder(next);
+    },
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Could not start checkout. Please try again.'),
   });
 
@@ -253,6 +257,8 @@ export default function RecruiterPremiumScreen() {
           queryClient.invalidateQueries({ queryKey: ['recruiter', 'assessment-configs'] });
         }}
       />
+
+      {reviewElement}
 
       {checkoutOrder ? (
         <RazorpayCheckout

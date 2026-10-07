@@ -9,13 +9,13 @@ import { PurchaseHistoryRow } from '@/components/purchase-history-row';
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useOrderReview } from '@/hooks/use-order-review';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api/client';
 import {
     confirmSubscription,
-    createRazorpayOrder,
-    getPaymentConfig,
     getPurchaseHistory,
+    getSubscriptionOrder,
     type PurchaseHistoryItem,
 } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
@@ -38,6 +38,7 @@ export function PurchaseHistoryScreen({ backTo }: { backTo: Href }) {
   const authUser = useAuthStore((state) => state.user);
   const [checkout, setCheckout] = useState<CheckoutState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { reviewOrder, reviewElement } = useOrderReview();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['subscription', 'history'],
@@ -48,25 +49,19 @@ export function PurchaseHistoryScreen({ backTo }: { backTo: Href }) {
 
   const retryMutation = useMutation({
     mutationFn: async (item: PurchaseHistoryItem) => {
-      const [order, config] = await Promise.all([
-        createRazorpayOrder({
-          amount: item.amount_paid ?? 0,
-          subscriptionId: item.subscription_id,
-          serviceType: item.service_type,
-        }),
-        getPaymentConfig(),
-      ]);
-      return {
-        keyId: config.data.key_id,
-        orderId: order.data.order_id,
-        amount: order.data.amount,
-        currency: order.data.currency,
+      // Retrying an unpaid order also goes through the review step, so a coupon can be applied.
+      // amount_paid is 0 until payment lands, so read the plan price from the order itself.
+      const order = await getSubscriptionOrder(item.subscription_id);
+      return reviewOrder({
         subscriptionId: item.subscription_id,
-      };
+        name: item.plan_name,
+        priceInr: Number(order.data.amount ?? 0),
+        serviceType: item.service_type,
+      });
     },
     onSuccess: (result) => {
       setError(null);
-      setCheckout(result);
+      if (result) setCheckout(result);
     },
     onError: (err) => {
       setError(err instanceof ApiError ? err.message : 'Could not start payment. Please try again.');
@@ -137,6 +132,8 @@ export function PurchaseHistoryScreen({ backTo }: { backTo: Href }) {
           }
         />
       )}
+
+      {reviewElement}
 
       {checkout ? (
         <RazorpayCheckout

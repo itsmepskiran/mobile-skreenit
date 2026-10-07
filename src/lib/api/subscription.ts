@@ -51,12 +51,33 @@ export interface RazorpayOrder {
   currency: string;
 }
 
-export function createRazorpayOrder(input: { amount: number; subscriptionId: string; serviceType: string }) {
+export function createRazorpayOrder(input: { amount: number; subscriptionId: string; serviceType: string; couponCode?: string | null }) {
   return apiPostJson<{ ok: boolean; data: RazorpayOrder }>('/subscription/create-order', {
     amount: input.amount,
     currency: 'INR',
     subscription_id: input.subscriptionId,
     service_type: input.serviceType,
+    coupon_code: input.couponCode ?? null,
+  });
+}
+
+// A subscription order's current plan price (₹) — what a retried, still-unpaid order will cost.
+export function getSubscriptionOrder(subscriptionId: string) {
+  return apiGet<{ ok: boolean; data: { planLabel: string | null; amount: number | null } }>(`/subscription/${subscriptionId}`);
+}
+
+export interface CouponQuote {
+  code: string;
+  original_amount: number;
+  discount_amount: number;
+  final_amount: number;
+}
+
+// Prices a coupon against a pending order without redeeming it (redemption happens on payment).
+export function validateCoupon(input: { subscriptionId: string; code: string }) {
+  return apiPostJson<{ ok: boolean; data: CouponQuote }>('/subscription/coupon/validate', {
+    subscription_id: input.subscriptionId,
+    code: input.code,
   });
 }
 

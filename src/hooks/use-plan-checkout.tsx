@@ -2,13 +2,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
-import {
-  confirmSubscription,
-  createRazorpayOrder,
-  createSubscription,
-  getPaymentConfig,
-  type PricingPlan,
-} from '@/lib/api/subscription';
+import { useOrderReview } from '@/hooks/use-order-review';
+import { confirmSubscription, createSubscription, type PricingPlan } from '@/lib/api/subscription';
 import { useAuthStore } from '@/lib/auth/store';
 
 type Order = { keyId: string; orderId: string; amount: number; currency: string; name: string; subscriptionId: string };
@@ -20,24 +15,22 @@ export function usePlanCheckout(onPaid?: () => void) {
   const authUser = useAuthStore((state) => state.user);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { reviewOrder, reviewElement } = useOrderReview();
 
   const start = useMutation({
-    mutationFn: async (plan: PricingPlan): Promise<Order> => {
+    mutationFn: async (plan: PricingPlan): Promise<Order | null> => {
       const sub = await createSubscription(plan.id);
-      const [rzp, config] = await Promise.all([
-        createRazorpayOrder({ amount: plan.price_inr, subscriptionId: sub.data.subscription_id, serviceType: plan.service_type }),
-        getPaymentConfig(),
-      ]);
-      return {
-        keyId: config.data.key_id,
-        orderId: rzp.data.order_id,
-        amount: rzp.data.amount,
-        currency: rzp.data.currency,
-        name: plan.name,
+      // Review step: coupon entry + effective price, then the order is created at the final amount.
+      return reviewOrder({
         subscriptionId: sub.data.subscription_id,
-      };
+        name: plan.name,
+        priceInr: plan.price_inr,
+        serviceType: plan.service_type,
+      });
     },
-    onSuccess: setOrder,
+    onSuccess: (next) => {
+      if (next) setOrder(next);
+    },
     onError: (err) => setError(err instanceof Error && err.message ? err.message : 'Could not start checkout. Please try again.'),
   });
 
@@ -61,7 +54,7 @@ export function usePlanCheckout(onPaid?: () => void) {
     },
   });
 
-  const checkoutElement = order ? (
+  const razorpayElement = order ? (
     <RazorpayCheckout
       visible
       keyId={order.keyId}
@@ -75,6 +68,13 @@ export function usePlanCheckout(onPaid?: () => void) {
       onDismiss={() => setOrder(null)}
     />
   ) : null;
+
+  const checkoutElement = (
+    <>
+      {reviewElement}
+      {razorpayElement}
+    </>
+  );
 
   return {
     buy: (plan: PricingPlan) => {

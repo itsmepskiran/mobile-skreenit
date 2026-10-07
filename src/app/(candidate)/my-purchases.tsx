@@ -10,6 +10,7 @@ import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-ch
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
+import { useOrderReview } from '@/hooks/use-order-review';
 import { useTheme } from '@/hooks/use-theme';
 import { getCandidateCreditsSummary, type CandidateCoinTransaction, type CandidateServiceUsage } from '@/lib/api/candidate-credits';
 import { ApiError } from '@/lib/api/client';
@@ -17,7 +18,6 @@ import { describeRate, getCandidateRates } from '@/lib/api/service-rates';
 import { CANDIDATE_COIN_PACKS, confirmCreditPurchase, createCreditOrder } from '@/lib/api/credits';
 import {
   confirmSubscription,
-  createRazorpayOrder,
   createSubscription,
   getPaymentConfig,
   listPricingPlans,
@@ -75,6 +75,7 @@ type CheckoutOrder = {
 export default function MyPurchasesScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const { reviewOrder, reviewElement } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const [showPacks, setShowPacks] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,23 +100,28 @@ export default function MyPurchasesScreen() {
       const plan = plans.data.find((p) => p.service_key === 'career_pass');
       if (!plan) throw new Error('Career Pass is not available right now.');
       const sub = await createSubscription(plan.id);
-      const [order, config] = await Promise.all([
-        createRazorpayOrder({ amount: plan.price_inr, subscriptionId: sub.data.subscription_id, serviceType: plan.service_type }),
-        getPaymentConfig(),
-      ]);
-      return {
-        keyId: config.data.key_id,
-        orderId: order.data.order_id,
-        amount: order.data.amount,
-        currency: order.data.currency,
-        name: plan.name,
-        kind: 'subscription' as const,
+      // The Career Pass explainer closes first so the review sheet isn't stacked on top of it.
+      setPassModalOpen(false);
+      const reviewed = await reviewOrder({
         subscriptionId: sub.data.subscription_id,
+        name: plan.name,
+        priceInr: plan.price_inr,
+        serviceType: plan.service_type,
+      });
+      if (!reviewed) return null;
+      return {
+        keyId: reviewed.keyId,
+        orderId: reviewed.orderId,
+        amount: reviewed.amount,
+        currency: reviewed.currency,
+        name: reviewed.name,
+        kind: 'subscription' as const,
+        subscriptionId: reviewed.subscriptionId,
       };
     },
     onSuccess: (order) => {
       setPassModalOpen(false);
-      setCheckoutOrder(order);
+      if (order) setCheckoutOrder(order);
     },
     onError: (err) => {
       setPassModalOpen(false);
@@ -316,6 +322,8 @@ export default function MyPurchasesScreen() {
         onContinue={() => startCareerPassMutation.mutate()}
         onClose={() => setPassModalOpen(false)}
       />
+
+      {reviewElement}
 
       {checkoutOrder ? (
         <RazorpayCheckout
