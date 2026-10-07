@@ -25,7 +25,7 @@ const DEFAULT_STYLE = { label: 'Unknown', bg: '#f1f5f9', fg: '#475569' };
 // seminar/training registrations pay through their own /seminars/create-order
 // and /training/create-order endpoints instead, which this screen doesn't
 // call yet. Hide Retry for them rather than offer an action that 404s.
-const RETRYABLE_SERVICE_TYPES = new Set(['applicant_plan', 'assessment_bundle', 'recruiter_subscription', 'recruiter_plan']);
+const RETRYABLE_SERVICE_TYPES = new Set(['general_plan', 'assessment_bundle', 'recruiter_subscription', 'recruiter_plan']);
 
 interface PurchaseHistoryRowProps {
   item: PurchaseHistoryItem;

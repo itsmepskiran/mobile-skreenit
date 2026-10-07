@@ -25,7 +25,7 @@ export interface PricingPlan {
   seat_count?: number | null;
 }
 
-export function listPricingPlans(serviceType = 'applicant_plan') {
+export function listPricingPlans(serviceType = 'general_plan') {
   return apiGet<{ ok: boolean; data: PricingPlan[] }>(
     `/subscription/pricing/plans?service_type=${encodeURIComponent(serviceType)}`,
     { auth: false },

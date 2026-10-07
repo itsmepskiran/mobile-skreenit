@@ -52,7 +52,7 @@ export function buildCatalog(byIndustry: Record<string, CatalogEntry[]>): {
   for (const [industryLabel, items] of Object.entries(byIndustry)) {
     if (industryLabel === 'General') continue; // free/general assessments render separately
 
-    const individual = items.filter((i) => i.service_type === 'applicant_plan');
+    const individual = items.filter((i) => i.service_type !== 'assessment_bundle');
     const bundle = items.find((i) => i.service_type === 'assessment_bundle');
     const industryKey = bundle?.industry_key || individual[0]?.industry_key || slugify(industryLabel);
 

@@ -131,7 +131,7 @@ export default function AtsJobsScreen() {
     [requisitionsQuery.data],
   );
   const catalogOptions = useMemo(
-    () => (catalogQuery.data?.data ?? []).map((c) => ({ label: c.name, value: c.service_key })),
+    () => (catalogQuery.data?.data ?? []).map((c) => ({ label: c.industry_label ? `${c.industry_label} — ${c.name}` : c.name, value: c.service_key })),
     [catalogQuery.data],
   );
 

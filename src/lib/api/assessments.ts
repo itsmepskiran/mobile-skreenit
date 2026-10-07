@@ -2,7 +2,7 @@ import { apiGet } from '@/lib/api/client';
 
 export interface CatalogEntry {
   service_key: string;
-  service_type: 'general_plan' | 'assessment_bundle' | 'applicant_plan';
+  service_type: 'general_plan' | 'assessment_bundle';
   name: string;
   description: string | null;
   assessment_format: string | null;
