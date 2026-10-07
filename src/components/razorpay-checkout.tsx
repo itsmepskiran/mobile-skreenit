@@ -1,10 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Modal, StyleSheet } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { reconcilePayments } from '@/lib/api/subscription';
 import { API_V1 } from '@/lib/config';
 
 export interface RazorpaySuccess {
@@ -84,11 +86,26 @@ function buildHtml(props: Omit<RazorpayCheckoutProps, 'visible' | 'onSuccess' | 
 </html>`;
 }
 
-export function RazorpayCheckout({ visible, onSuccess, onDismiss, ...rest }: RazorpayCheckoutProps) {
+export function RazorpayCheckout({ visible, onSuccess, onDismiss: onDismissProp, ...rest }: RazorpayCheckoutProps) {
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
 
   if (!visible) return null;
+
+  // Closing without a success message doesn't prove nothing was paid (the redirect/handler can be
+  // missed after a UPI/card/OTP step), so ask the server to settle anything Razorpay says is paid.
+  const onDismiss = () => {
+    onDismissProp();
+    reconcilePayments()
+      .then((res) => {
+        const confirmed = res.data.confirmed;
+        if (confirmed.length === 0) return;
+        Alert.alert('Payment received', `Your payment for ${confirmed[0].plan_name ?? 'your purchase'} went through and is now active.`);
+        queryClient.invalidateQueries();
+      })
+      .catch(() => {});
+  };
 
   const onMessage = (event: WebViewMessageEvent) => {
     let payload: { type: string; [key: string]: unknown };
@@ -100,6 +117,10 @@ export function RazorpayCheckout({ visible, onSuccess, onDismiss, ...rest }: Raz
     if (payload.type === 'success') {
       onSuccess(payload as unknown as RazorpaySuccess);
     } else {
+      if (payload.type === 'error') {
+        const description = (payload.error as { description?: string } | undefined)?.description;
+        Alert.alert('Payment not completed', description || 'The payment could not be completed. You have not been charged.');
+      }
       onDismiss();
     }
   };

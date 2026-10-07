@@ -38,7 +38,7 @@ export function PurchaseHistoryScreen({ backTo }: { backTo: Href }) {
   const authUser = useAuthStore((state) => state.user);
   const [checkout, setCheckout] = useState<CheckoutState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { reviewOrder, reviewElement } = useOrderReview();
+  const { reviewOrder, reviewElement, showReceipt } = useOrderReview();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['subscription', 'history'],
@@ -76,13 +76,15 @@ export function PurchaseHistoryScreen({ backTo }: { backTo: Href }) {
         transactionId: success.razorpay_payment_id,
         amountPaid: checkout!.amount / 100,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, success) => {
       setCheckout(null);
+      showReceipt(success, 'confirmed');
       queryClient.invalidateQueries({ queryKey: ['subscription', 'history'] });
     },
-    onError: (err) => {
-      setError(err instanceof ApiError ? err.message : 'Payment succeeded but confirmation failed. Contact support.');
+    onError: (_err, success) => {
       setCheckout(null);
+      showReceipt(success, 'unconfirmed');
+      queryClient.invalidateQueries({ queryKey: ['subscription', 'history'] });
     },
   });
 

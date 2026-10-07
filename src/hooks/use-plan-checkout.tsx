@@ -15,7 +15,7 @@ export function usePlanCheckout(onPaid?: () => void) {
   const authUser = useAuthStore((state) => state.user);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { reviewOrder, reviewElement } = useOrderReview();
+  const { reviewOrder, reviewElement, showReceipt } = useOrderReview();
 
   const start = useMutation({
     mutationFn: async (plan: PricingPlan): Promise<Order | null> => {
@@ -44,13 +44,14 @@ export function usePlanCheckout(onPaid?: () => void) {
         amountPaid: order.amount / 100,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, success) => {
       setOrder(null);
+      showReceipt(success, 'confirmed');
       onPaid?.();
     },
-    onError: () => {
+    onError: (_err, success) => {
       setOrder(null);
-      setError('Payment succeeded but confirmation failed. Contact support.');
+      showReceipt(success, 'unconfirmed');
     },
   });
 

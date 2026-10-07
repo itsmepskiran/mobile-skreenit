@@ -62,7 +62,7 @@ type Checkout = { keyId: string; orderId: string; amount: number; currency: stri
 export default function MockInterviewScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const { reviewOrder, reviewElement } = useOrderReview();
+  const { reviewOrder, reviewElement, showReceipt } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const { confirmSpend, consentModal } = useCoinConsent();
 
@@ -200,13 +200,14 @@ export default function MockInterviewScreen() {
         amountPaid: checkout.amount / 100,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, success) => {
       setCheckout(null);
+      showReceipt(success, 'confirmed');
       refreshAll();
     },
-    onError: () => {
+    onError: (_err, success) => {
       setCheckout(null);
-      setError('Payment succeeded but confirmation failed. Contact support.');
+      showReceipt(success, 'unconfirmed');
     },
   });
 

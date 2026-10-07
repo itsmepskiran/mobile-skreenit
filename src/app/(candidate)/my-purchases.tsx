@@ -75,7 +75,7 @@ type CheckoutOrder = {
 export default function MyPurchasesScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const { reviewOrder, reviewElement } = useOrderReview();
+  const { reviewOrder, reviewElement, showReceipt } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const [showPacks, setShowPacks] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,13 +167,18 @@ export default function MyPurchasesScreen() {
         razorpaySignature: success.razorpay_signature,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, success) => {
+      const wasSubscription = checkoutOrder?.kind === 'subscription';
       setCheckoutOrder(null);
+      if (wasSubscription) showReceipt(success, 'confirmed');
       invalidate();
     },
-    onError: () => {
+    onError: (_err, success) => {
+      const wasSubscription = checkoutOrder?.kind === 'subscription';
       setCheckoutOrder(null);
-      setError('Payment succeeded but confirmation failed. Contact support.');
+      if (wasSubscription) showReceipt(success, 'unconfirmed');
+      else setError('Payment succeeded but confirmation failed. Contact support.');
+      invalidate();
     },
   });
 

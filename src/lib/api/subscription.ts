@@ -61,6 +61,19 @@ export function createRazorpayOrder(input: { amount: number; subscriptionId: str
   });
 }
 
+export interface ReconciledPayment {
+  subscription_id: string;
+  plan_name: string | null;
+  amount_paid: number;
+  payment_id: string;
+}
+
+// Asks the server to check the caller's unpaid orders with Razorpay and activate any that were in
+// fact paid — covers a payment whose success message / webhook never reached the server.
+export function reconcilePayments() {
+  return apiPostJson<{ ok: boolean; data: { confirmed: ReconciledPayment[] } }>('/subscription/reconcile', {});
+}
+
 // A subscription order's current plan price (₹) — what a retried, still-unpaid order will cost.
 export function getSubscriptionOrder(subscriptionId: string) {
   return apiGet<{ ok: boolean; data: { planLabel: string | null; amount: number | null } }>(`/subscription/${subscriptionId}`);

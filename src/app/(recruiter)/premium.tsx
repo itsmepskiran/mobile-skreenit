@@ -31,7 +31,7 @@ import { useAuthStore } from '@/lib/auth/store';
 export default function RecruiterPremiumScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const { reviewOrder, reviewElement } = useOrderReview();
+  const { reviewOrder, reviewElement, showReceipt } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [checkoutOrder, setCheckoutOrder] = useState<{
@@ -95,13 +95,14 @@ export default function RecruiterPremiumScreen() {
         transactionId: success.razorpay_payment_id,
         amountPaid: checkoutOrder!.amount / 100,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, success) => {
       setCheckoutOrder(null);
+      showReceipt(success, 'confirmed');
       queryClient.invalidateQueries({ queryKey: ['subscription', 'active'] });
     },
-    onError: (err) => {
-      setError(err instanceof ApiError ? err.message : 'Payment succeeded but confirmation failed. Contact support.');
+    onError: (_err, success) => {
       setCheckoutOrder(null);
+      showReceipt(success, 'unconfirmed');
     },
   });
 

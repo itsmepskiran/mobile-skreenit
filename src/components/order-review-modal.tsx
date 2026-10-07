@@ -23,6 +23,9 @@ export interface ReviewedOrder {
   currency: string;
   name: string;
   subscriptionId: string;
+  priceInr: number;
+  discountInr: number;
+  couponCode: string | null;
 }
 
 const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`;
@@ -85,6 +88,9 @@ export function OrderReviewModal({ input, onDone }: { input: ReviewInput; onDone
         currency: order.data.currency,
         name: input.name,
         subscriptionId: input.subscriptionId,
+        priceInr: input.priceInr,
+        discountInr: coupon?.discount_amount ?? 0,
+        couponCode: coupon?.code ?? null,
       });
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : 'Could not start payment. Please try again.');
