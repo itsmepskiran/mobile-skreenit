@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Platform, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { Button } from '@/components/button';
 import { SelectField } from '@/components/select-field';

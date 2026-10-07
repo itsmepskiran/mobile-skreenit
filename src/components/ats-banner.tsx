@@ -1,6 +1,6 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 // Matches sql-skreenit's .ats-banner (login / registration / forgot-password): a tinted strip at
 // the top of the auth card that sends corporate users straight to the ATS console login. Colours

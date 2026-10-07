@@ -1,12 +1,14 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { ThemedView } from '@/components/themed-view';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getAssessmentCatalog, listMyAssessments } from '@/lib/api/assessments';
 import { listPricingPlans } from '@/lib/api/subscription';
@@ -53,9 +55,7 @@ export default function AssessmentsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <ThemedText type="title">Assessments</ThemedText>
-      </View>
+      <PageHeader title="Assessments" subtitle="Free skill tests and industry assessments" icon="clipboard-list" colors={['#8b5cf6', '#ec4899']} />
 
       <View style={[styles.tabRow, { borderColor: theme.border }]}>
         <Pressable style={styles.tabButton} onPress={() => setTab('browse')}>
@@ -74,7 +74,7 @@ export default function AssessmentsScreen() {
 
       {tab === 'browse' ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText type="subtitle">Free Assessments</ThemedText>
+          <ThemedText type="subtitle" style={styles.sectionHeading}>Free Assessments</ThemedText>
           {freePlansQuery.isLoading ? (
             <ActivityIndicator color={theme.primary} />
           ) : freePlans.length === 0 ? (
@@ -85,7 +85,7 @@ export default function AssessmentsScreen() {
             freePlans.map((plan) => (
               <Pressable
                 key={plan.id}
-                style={[styles.freeCard, { borderColor: theme.border }]}
+                style={[styles.freeCard, cardSurface(theme), { borderColor: theme.border }]}
                 onPress={() => router.push(`/(candidate)/assessments/take/${plan.service_key}`)}
               >
                 <View style={styles.cardHeader}>
@@ -113,7 +113,7 @@ export default function AssessmentsScreen() {
             ))
           )}
 
-          <ThemedText type="subtitle" style={styles.paidHeading}>
+          <ThemedText type="subtitle" style={[styles.sectionHeading, styles.paidHeading]}>
             Industry Assessments
           </ThemedText>
 
@@ -206,7 +206,7 @@ export default function AssessmentsScreen() {
               return (
                 <View
                   key={session.session_id}
-                  style={[styles.card, { borderColor: theme.border }]}
+                  style={[styles.card, cardSurface(theme), { borderColor: theme.border }]}
                 >
                   <View style={styles.cardHeader}>
                     <ThemedText type="smallBold" style={styles.cardTitle} numberOfLines={2}>
@@ -322,7 +322,7 @@ function IndustryPackCard({
   const theme = useTheme();
 
   return (
-    <View style={[styles.packCard, { borderColor: theme.border }]}>
+    <ThemedView style={[styles.packCard, { borderColor: theme.border }]}>
       <View style={styles.packHeader}>
         <View style={[styles.packIcon, { backgroundColor: pack.bg }]}>
           <FontAwesome6 name={pack.icon} size={16} color={pack.color} />
@@ -339,11 +339,11 @@ function IndustryPackCard({
       </ThemedText>
       <View style={styles.packButtonRow}>
         <Pressable style={[styles.actionButton, { borderColor: theme.border, borderWidth: 1, flex: 1 }]} onPress={onBrowse}>
-          <FontAwesome6 name="magnifying-glass" size={12} color={theme.text} />
+          <FontAwesome6 name="magnifying-glass" size={12} color="#6B7280" />
           <ThemedText type="small">{browseLabel}</ThemedText>
         </Pressable>
       </View>
-    </View>
+    </ThemedView>
   );
 }
 
@@ -354,6 +354,7 @@ const styles = StyleSheet.create({
   tabButton: { paddingBottom: 10, gap: 8 },
   tabIndicator: { height: 2, borderRadius: 1 },
   content: { padding: 20, gap: 12 },
+  sectionHeading: { fontSize: 17, lineHeight: 24 },
   paidHeading: { marginTop: 12 },
   filterRow: { gap: 8, paddingVertical: 4 },
   filterChip: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },

@@ -1,10 +1,11 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
+import { ActivityIndicator, StyleSheet, type PressableProps } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useOnGradient } from '@/components/on-gradient';
+import { useBaseTheme } from '@/hooks/use-theme';
 
 export interface ButtonProps extends PressableProps {
   title: string;
@@ -14,7 +15,8 @@ export interface ButtonProps extends PressableProps {
 }
 
 export function Button({ title, loading, variant = 'primary', icon, disabled, style, ...rest }: ButtonProps) {
-  const theme = useTheme();
+  const theme = useBaseTheme();
+  const onGradient = useOnGradient();
   const isSecondary = variant === 'secondary';
   const textColor = isSecondary ? theme.primary : '#ffffff';
 
@@ -40,11 +42,11 @@ export function Button({ title, loading, variant = 'primary', icon, disabled, st
       {...rest}
     >
       {isSecondary ? (
-        <View style={[styles.base, styles.secondary, { borderColor: theme.primary }]}>{content}</View>
+        <View style={[styles.base, styles.secondary, { borderColor: theme.primary, backgroundColor: theme.backgroundSelected }]}>{content}</View>
       ) : (
         // Matches sql-skreenit's --gradient-secondary used on .btn-primary.
         <LinearGradient
-          colors={['#4f46e5', '#7c3aed']}
+          colors={onGradient ? ['#f59e0b', '#d97706'] : ['#4f46e5', '#7c3aed']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.base}
@@ -64,8 +66,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   contentRow: {
     flexDirection: 'row',

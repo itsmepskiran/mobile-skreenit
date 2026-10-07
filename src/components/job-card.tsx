@@ -1,9 +1,10 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { ThemedView } from '@/components/themed-view';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { JobListItem } from '@/lib/api/jobs';
 import { formatRelativeTime, formatSalaryRange } from '@/lib/format';
@@ -37,6 +38,7 @@ export function JobCard({ job, onPress, matchScore, saved, onToggleSave }: JobCa
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
+        cardSurface(theme),
         { borderColor: theme.border },
         pressed && styles.pressed,
       ]}
@@ -74,11 +76,11 @@ export function JobCard({ job, onPress, matchScore, saved, onToggleSave }: JobCa
       </View>
 
       {matchScore !== undefined ? (
-        <View style={[styles.matchBadge, { borderColor: matchColor }]}>
+        <ThemedView style={[styles.matchBadge, { borderColor: matchColor }]}>
           <ThemedText type="small" style={{ color: matchColor, fontWeight: '600' }}>
             {matchScore}% Match
           </ThemedText>
-        </View>
+        </ThemedView>
       ) : null}
 
       {!job.is_remote && job.location ? (

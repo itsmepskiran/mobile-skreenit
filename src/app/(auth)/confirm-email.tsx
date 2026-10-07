@@ -1,4 +1,4 @@
-import { FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome6 } from '@/components/scoped';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';

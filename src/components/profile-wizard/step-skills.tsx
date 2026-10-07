@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Pressable, TextInput, View } from '@/components/scoped';
 
 import { SkillTagInput } from '@/components/skill-tag-input';
 import { ThemedText } from '@/components/themed-text';

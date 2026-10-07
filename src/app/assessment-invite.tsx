@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';

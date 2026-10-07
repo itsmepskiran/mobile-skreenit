@@ -1,13 +1,14 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Share, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { SkillTagInput } from '@/components/skill-tag-input';
 import { TextField } from '@/components/text-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -64,12 +65,7 @@ export default function JdWriterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">JD Section</ThemedText>
-      </View>
+      <PageHeader title="JD Section" subtitle="Write and manage job descriptions" icon="pen-nib" backTo="/(recruiter)/ats-services" colors={['#6366f1', '#8b5cf6']} />
 
       <View style={[styles.tabRow, { borderColor: theme.border }]}>
         <Pressable style={styles.tabButton} onPress={() => setTab('available')}>

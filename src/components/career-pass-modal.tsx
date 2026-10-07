@@ -1,5 +1,5 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';

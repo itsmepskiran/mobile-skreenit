@@ -1,10 +1,10 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AssessmentInviteModal, type AssessmentInviteContext } from '@/components/assessment-invite-modal';

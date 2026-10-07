@@ -1,5 +1,5 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, TextInput, View } from '@/components/scoped';
 
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,7 +19,7 @@ export function AtsSearchBar({
 
   return (
     <View style={[styles.row, { borderColor: theme.border }]}>
-      <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
+      <FontAwesome6 name="magnifying-glass" size={14} color="#6B7280" />
       <TextInput
         value={value}
         onChangeText={onChangeText}

@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
@@ -127,7 +127,7 @@ export default function EmployabilityReportScreen() {
         <Pressable onPress={() => router.replace('/(candidate)/premium-services')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
-        <ThemedText type="title">Employability Report</ThemedText>
+        <ThemedText type="subtitle">Employability Report</ThemedText>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>

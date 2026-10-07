@@ -11,7 +11,7 @@ export const Colors = {
   light: {
     text: '#1F2937',
     textSecondary: '#6B7280',
-    background: '#F8FAFC',
+    background: '#F1F5F9',
     backgroundElement: '#FFFFFF',
     backgroundSelected: '#EEF2FF',
     primary: '#4F46E5',
@@ -69,3 +69,15 @@ export const Radius = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+// Raised white surface for list cards (applied as an extra style entry; bordered cards on the tinted page).
+export function cardSurface(theme: { backgroundElement: string }) {
+  return {
+    backgroundColor: theme.backgroundElement,
+    shadowColor: '#1e1b4b',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  } as const;
+}

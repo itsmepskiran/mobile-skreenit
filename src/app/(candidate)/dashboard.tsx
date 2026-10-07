@@ -1,11 +1,16 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HighlightTile } from '@/components/highlight-tile';
+import { ProfileChecklist } from '@/components/profile-checklist';
+import { WalletCard } from '@/components/wallet-card';
+import { CardScope, GradientScreen } from '@/components/on-gradient';
+import { cardSurface } from '@/constants/theme';
+import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -67,15 +72,14 @@ export default function CandidateDashboardScreen() {
   }
 
   return (
+    <GradientScreen>
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <View>
-            <ThemedText type="title">Dashboard</ThemedText>
-            <ThemedText themeColor="textSecondary">Welcome back, {user?.full_name}</ThemedText>
-        </View>
-          <Pressable style={styles.bellButton} onPress={() => router.push('/(candidate)/notifications')}>
-            <FontAwesome6 name="bell" size={20} color={theme.text} />
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Welcome back, ${user?.full_name ?? ''}`}
+        icon="house"
+        right={<Pressable style={styles.bellButton} onPress={() => router.push('/(candidate)/notifications')}>
+            <FontAwesome6 name="bell" size={20} color="#fff" />
             {unreadCount > 0 ? (
               <View style={[styles.badge, { backgroundColor: theme.danger }]}>
                 <ThemedText type="small" style={styles.badgeText}>
@@ -83,8 +87,11 @@ export default function CandidateDashboardScreen() {
                 </ThemedText>
               </View>
             ) : null}
-          </Pressable>
-        </View>
+          </Pressable>}
+      />
+      <ScrollView contentContainerStyle={styles.content}>
+
+        <WalletCard />
 
         <View style={styles.statsGrid}>
           <HighlightTile icon="file-lines" label="Applications" value={String(stats?.total_applications ?? 0)} colors={['#667eea', '#764ba2']} />
@@ -99,8 +106,10 @@ export default function CandidateDashboardScreen() {
           />
         </View>
 
+        <ProfileChecklist />
+
         {assignedJobs.length > 0 ? (
-          <Pressable style={[styles.assignedBanner, { borderColor: theme.border }]} onPress={() => setAssignedModalOpen(true)}>
+          <Pressable style={[styles.assignedBanner, cardSurface(theme), { borderColor: theme.border }]} onPress={() => setAssignedModalOpen(true)}><CardScope>
             <View style={[styles.assignedIcon, { backgroundColor: theme.backgroundElement }]}>
               <FontAwesome6 name="clipboard-check" size={16} color={theme.primary} />
             </View>
@@ -113,7 +122,7 @@ export default function CandidateDashboardScreen() {
               </ThemedText>
             </View>
             <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
-          </Pressable>
+          </CardScope></Pressable>
         ) : null}
 
         <View style={styles.section}>
@@ -126,15 +135,15 @@ export default function CandidateDashboardScreen() {
             </Pressable>
           </View>
           <Pressable
-            style={[styles.assessmentsToggle, { borderColor: theme.border }]}
+            style={[styles.assessmentsToggle, cardSurface(theme), { borderColor: theme.border }]}
             onPress={() => setAssessmentsExpanded((expanded) => !expanded)}
-          >
+          ><CardScope>
             <FontAwesome6 name="clipboard-list" size={14} color={theme.primary} />
             <ThemedText type="small" themeColor="textSecondary" style={styles.assessmentsToggleText}>
               {assessmentsExpanded ? 'Tap to hide assessments' : 'Tap to view all assessments — free for everyone'}
             </ThemedText>
             <FontAwesome6 name={assessmentsExpanded ? 'chevron-up' : 'chevron-down'} size={12} color={theme.textSecondary} />
-          </Pressable>
+          </CardScope></Pressable>
           {assessmentsExpanded ? (
             freePlansQuery.isLoading ? (
               <ActivityIndicator color={theme.primary} />
@@ -143,11 +152,11 @@ export default function CandidateDashboardScreen() {
                 {freePlans.map((plan) => (
                   <Pressable
                     key={plan.id}
-                    style={[styles.row, { borderColor: theme.border }]}
+                    style={[styles.row, cardSurface(theme), { borderColor: theme.border }]}
                     onPress={() =>
                       router.push(withBackTo(`/(candidate)/assessments/take/${plan.service_key}`, '/(candidate)/dashboard'))
                     }
-                  >
+                  ><CardScope>
                     <View style={[styles.assessmentIcon, { backgroundColor: theme.backgroundElement }]}>
                       <FontAwesome6 name="star" size={16} color={theme.primary} />
                     </View>
@@ -160,18 +169,18 @@ export default function CandidateDashboardScreen() {
                       </ThemedText>
                     </View>
                     <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
-                  </Pressable>
+                  </CardScope></Pressable>
                 ))}
                 {catalogData.map((item) => {
                   const pack = industryPacks.find((i) => i.value === item.industry);
                   return (
                     <Pressable
                       key={item.id}
-                      style={[styles.row, { borderColor: theme.border }]}
+                      style={[styles.row, cardSurface(theme), { borderColor: theme.border }]}
                       onPress={() =>
                         router.push(withBackTo(`/(candidate)/assessments/take/${item.id}`, '/(candidate)/dashboard'))
                       }
-                    >
+                    ><CardScope>
                       <View style={[styles.assessmentIcon, { backgroundColor: pack?.bg ?? theme.backgroundElement }]}>
                         <FontAwesome6 name={pack?.icon ?? 'clipboard-check'} size={16} color={pack?.color ?? theme.primary} />
                       </View>
@@ -184,7 +193,7 @@ export default function CandidateDashboardScreen() {
                         </ThemedText>
                       </View>
                       <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
-                    </Pressable>
+                    </CardScope></Pressable>
                   );
                 })}
               </>
@@ -207,9 +216,9 @@ export default function CandidateDashboardScreen() {
             applications.map((app) => (
               <Pressable
                 key={app.id}
-                style={[styles.row, { borderColor: theme.border }]}
+                style={[styles.row, cardSurface(theme), { borderColor: theme.border }]}
                 onPress={() => router.push(withBackTo(`/(candidate)/jobs/${app.job_id}`, '/(candidate)/dashboard'))}
-              >
+              ><CardScope>
                 <View style={styles.rowText}>
                   <ThemedText type="smallBold" numberOfLines={1}>
                     {app.job_title ?? 'Job'}
@@ -222,7 +231,7 @@ export default function CandidateDashboardScreen() {
                   </ThemedText>
                 </View>
                 <StatusBadge status={app.status as ApplicationStatus} />
-              </Pressable>
+              </CardScope></Pressable>
             ))
           )}
         </View>
@@ -277,6 +286,7 @@ export default function CandidateDashboardScreen() {
         </Pressable>
       </Modal>
     </SafeAreaView>
+    </GradientScreen>
   );
 }
 
@@ -298,7 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: { color: '#ffffff', fontSize: 10, lineHeight: 12 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, rowGap: 20 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 20 },
   section: { gap: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   row: {

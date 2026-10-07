@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, TextInput, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnalysisCards } from '@/components/analysis-cards';
@@ -66,7 +66,15 @@ export default function MockInterviewScreen() {
   const authUser = useAuthStore((state) => state.user);
   const { confirmSpend, consentModal } = useCoinConsent();
 
-  const [session, setSession] = useState<InterviewSession | null>(null);
+  // undefined = untouched: show the session named by ?session=<id> (from the Practice screen), if any.
+  const { session: sessionParam } = useLocalSearchParams<{ session?: string }>();
+  const [local, setSession] = useState<InterviewSession | null | undefined>(undefined);
+  const paramSession = useQuery({
+    queryKey: ['candidate', 'mock-session', sessionParam],
+    queryFn: () => getMockSession(sessionParam as string),
+    enabled: !!sessionParam,
+  });
+  const session = local === undefined ? (paramSession.data?.data ?? null) : local;
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -226,7 +234,7 @@ export default function MockInterviewScreen() {
       >
         <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
       </Pressable>
-      <ThemedText type="title">Mock Interview</ThemedText>
+      <ThemedText type="subtitle">Mock Interview</ThemedText>
     </View>
   );
 
@@ -316,7 +324,7 @@ export default function MockInterviewScreen() {
             style={[styles.input, { borderColor: theme.border, color: theme.text }]}
           />
           {roleFocused ? (
-            <View style={[styles.dropdown, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+            <ThemedView style={[styles.dropdown, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
               {matches.map((r) => (
                 <Pressable
                   key={r.job_id}
@@ -340,7 +348,7 @@ export default function MockInterviewScreen() {
                   No open roles right now — type your own.
                 </ThemedText>
               ) : null}
-            </View>
+            </ThemedView>
           ) : null}
           <ThemedText type="small" themeColor="textSecondary">
             Roles come from jobs open on Skreenit — your questions are based on the job posting. Or type any role.
@@ -390,10 +398,10 @@ export default function MockInterviewScreen() {
             <ThemedView key={p.id} style={[styles.plan, { borderColor: current ? '#4338ca' : theme.border }]}>
               <View style={styles.planTop}>
                 <ThemedText type="subtitle">{p.name}</ThemedText>
-                {current ? <ThemedText type="small" style={{ color: '#4338ca', fontWeight: '700' }}>Your plan</ThemedText> : null}
+                {current ? <ThemedText type="small" style={{ color: '#4338ca', fontWeight: '700' }}>Your plan</ThemedText> : p.service_key === 'interview_plan_popular' ? <ThemedText type="small" style={{ color: '#b45309', fontWeight: '700' }}>Most popular</ThemedText> : null}
               </View>
               <ThemedText type="title">
-                {free ? 'Free' : `₹${p.price_inr}`}
+                {free ? 'Free' : `₹${Number(p.price_inr).toLocaleString('en-IN')}`}
                 {!free ? <ThemedText type="small" themeColor="textSecondary">{` / ${cycleLabel(p)}`}</ThemedText> : null}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">✓ {countText}</ThemedText>

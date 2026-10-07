@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CareerPassModal } from '@/components/career-pass-modal';
@@ -179,7 +179,7 @@ export default function MyPurchasesScreen() {
         <Pressable onPress={() => router.replace('/(candidate)/profile')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
-        <ThemedText type="title">My Purchases</ThemedText>
+        <ThemedText type="subtitle">My Purchases</ThemedText>
       </View>
 
       {summaryQuery.isLoading ? (
@@ -205,7 +205,7 @@ export default function MyPurchasesScreen() {
                 ? careerPass.expiry_date
                   ? `Resume writing, reports & video analysis unlimited until ${formatDate(careerPass.expiry_date)}`
                   : 'Resume writing, reports & video analysis, unlimited'
-                : 'Unlimited resume writing, reports & video analysis'}
+                : `Unlimited resume writing, reports & video analysis${passPrice ? ` · ${passPrice}` : ''}`}
             </ThemedText>
             {!careerPass?.active ? (
               <Pressable
@@ -280,18 +280,16 @@ export default function MyPurchasesScreen() {
             const used = usageSummary(summary?.usage?.[row.key]);
             return (
               <ThemedView key={row.key} style={[styles.card, { borderColor: theme.border }]}>
-                <View style={styles.creditRow}>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <View style={styles.cardTitleRow}>
-                      <FontAwesome6 name={row.icon} size={14} color={theme.primary} />
-                      <ThemedText type="smallBold">{row.title}</ThemedText>
-                    </View>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {row.unit} · {used ? `Used: ${used}` : 'Not used yet'}
-                    </ThemedText>
+                <View style={{ gap: 4 }}>
+                  <View style={styles.cardTitleRow}>
+                    <FontAwesome6 name={row.icon} size={14} color={theme.primary} />
+                    <ThemedText type="smallBold">{row.title}</ThemedText>
                   </View>
-                  <ThemedText type="smallBold" style={{ color: '#b45309', maxWidth: 140, textAlign: 'right' }}>
+                  <ThemedText type="smallBold" style={{ color: '#b45309' }}>
                     {describeRate(rates?.[row.key]) || '–'}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {row.unit} · {used ? `Used: ${used}` : 'Not used yet'}
                   </ThemedText>
                 </View>
               </ThemedView>
@@ -351,7 +349,7 @@ function TransactionRow({ tx }: { tx: CandidateCoinTransaction }) {
       : ' (1 credit)'
     : '';
   return (
-    <View style={[styles.historyRow, { borderColor: theme.border }]}>
+    <View style={[styles.historyRow, { borderColor: theme.border, backgroundColor: theme.backgroundElement, borderRadius: 12, borderTopWidth: 0, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 8 }]}>
       <View style={styles.historyMain}>
         <FontAwesome6 name={isUse ? 'receipt' : tx.event_type === 'welcome_grant' ? 'gift' : tx.event_type === 'expiry' ? 'hourglass-end' : 'cart-shopping'} size={14} color={tx.event_type === 'expiry' || isUse ? '#c53030' : '#2f855a'} />
         <View>
@@ -365,8 +363,7 @@ function TransactionRow({ tx }: { tx: CandidateCoinTransaction }) {
         </View>
       </View>
       <ThemedText type="smallBold" style={{ color: tx.amount_coins < 0 ? '#c53030' : '#2f855a' }}>
-        {tx.amount_coins < 0 ? '' : '+'}
-        {tx.amount_coins}
+        {tx.event_type === 'consume' && tx.amount_coins === 0 ? 'Free' : `${tx.amount_coins < 0 ? '' : '+'}${tx.amount_coins}`}
       </ThemedText>
     </View>
   );

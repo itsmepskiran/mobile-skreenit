@@ -1,16 +1,18 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { bulkAnalyzeResponses } from '@/lib/api/analytics';
 import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
+import { PageHeader } from '@/components/page-header';
+import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { useCoinConsent } from '@/components/coin-consent-modal';
-import { Radius } from '@/constants/theme';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 import {
@@ -136,25 +138,17 @@ export default function RecruiterApplicationsScreen() {
 
   if (applicationsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ActivityIndicator style={styles.loader} color={theme.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       {consentModal}
-      <View style={[styles.searchRow, { borderColor: theme.border }]}>
-        <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search by candidate name or email..."
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
-        />
-      </View>
+      <PageHeader title="Applications" subtitle="Review and move candidates forward" icon="users" colors={['#8b5cf6', '#4f46e5']} />
+      <SearchBar value={search} onChangeText={setSearch} placeholder="Search by candidate name or email" />
 
       <View style={styles.filterRow}>
         <View style={styles.statusSelectWrap}>
@@ -164,10 +158,10 @@ export default function RecruiterApplicationsScreen() {
           <SelectField label="Job Title" value={jobTitleFilter} options={jobTitleFilterOptions} onChange={setJobTitleFilter} />
         </View>
         <Pressable
-          style={[styles.selectToggle, { borderColor: theme.border }, selectMode && { backgroundColor: theme.primary, borderColor: theme.primary }]}
+          style={[styles.selectToggle, { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: '#ffffff' }, selectMode && { backgroundColor: theme.primary, borderColor: theme.primary }]}
           onPress={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
         >
-          <ThemedText type="small" style={{ color: selectMode ? '#ffffff' : theme.text }}>
+          <ThemedText type="small" style={{ color: selectMode ? '#ffffff' : '#1F2937', fontWeight: '600' }}>
             {selectMode ? 'Cancel' : 'Select'}
           </ThemedText>
         </Pressable>
@@ -204,7 +198,7 @@ export default function RecruiterApplicationsScreen() {
             return (
               <Pressable
                 key={app.id}
-                style={[styles.card, { borderColor: theme.border }, selected && { borderColor: theme.primary }]}
+                style={[styles.card, cardSurface(theme), { borderColor: theme.border }, selected && { borderColor: theme.primary }]}
                 onPress={() => (selectMode ? toggleSelected(app.id) : router.push(`/(recruiter)/applications/${app.id}`))}
               >
                 <View style={styles.cardHeader}>

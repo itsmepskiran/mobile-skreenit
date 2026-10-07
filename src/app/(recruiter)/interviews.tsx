@@ -1,12 +1,13 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StatusBadge } from '@/components/status-badge';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 import { listRecruiterApplications } from '@/lib/api/recruiter';
@@ -37,9 +38,9 @@ export default function PendingInterviewsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <PageHeader title="Pending Interviews" subtitle="Candidates waiting for your review" icon="video" colors={['#ec4899', '#8b5cf6']} />
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText type="title">Pending Interviews</ThemedText>
-
+        
         {pending.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.empty}>
             No interviews pending right now.
@@ -48,7 +49,7 @@ export default function PendingInterviewsScreen() {
           pending.map((app) => (
             <Pressable
               key={app.id}
-              style={[styles.card, { borderColor: theme.border }]}
+              style={[styles.card, cardSurface(theme), { borderColor: theme.border }]}
               onPress={() => router.push(withBackTo(`/(recruiter)/applications/${app.id}`, '/(recruiter)/interviews'))}
             >
               <View style={styles.cardHeader}>

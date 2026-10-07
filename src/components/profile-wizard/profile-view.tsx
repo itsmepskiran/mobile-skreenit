@@ -1,11 +1,14 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { Image, Linking, StyleSheet, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { Image, Linking, StyleSheet } from 'react-native';
+import { FontAwesome6, View } from '@/components/scoped';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { ThemedView } from '@/components/themed-view';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CandidateProfile } from '@/lib/api/applicant';
+import { apiGet } from '@/lib/api/client';
 import { toArray } from '@/lib/format';
 
 export interface ProfileViewProps {
@@ -18,10 +21,34 @@ export interface ProfileViewProps {
 // Read-only profile display, matching the real web's candidate-profile.html
 // (a dedicated view page with an "Edit Profile" button that opens the
 // multi-step wizard) rather than always landing straight in edit mode.
+const isId = (v: string | null | undefined) => !!v && /^\d+$/.test(v);
+
+function useLocationNames(city: string | null, state: string | null, country: string | null): string {
+  const countries = useQuery({
+    queryKey: ['locations', 'countries'],
+    queryFn: () => apiGet<{ id: number; name: string }[]>('/locations/countries', { auth: false }),
+    enabled: isId(country),
+  });
+  const states = useQuery({
+    queryKey: ['locations', 'states', country],
+    queryFn: () => apiGet<{ id: number; name: string }[]>(`/locations/states?country_id=${country}`, { auth: false }),
+    enabled: isId(state) && isId(country),
+  });
+  const cities = useQuery({
+    queryKey: ['locations', 'cities', state],
+    queryFn: () => apiGet<{ id: number; name: string }[]>(`/locations/cities?state_id=${state}&limit=500`, { auth: false }),
+    enabled: isId(city) && isId(state),
+  });
+  const pick = (v: string | null, list?: { id: number; name: string }[]) =>
+    isId(v) ? list?.find((x) => String(x.id) === v)?.name : v;
+  return [pick(city, cities.data), pick(state, states.data), pick(country, countries.data)].filter(Boolean).join(', ');
+}
+
 export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewProps) {
   const theme = useTheme();
 
-  const location = [profile.current_city, profile.current_state, profile.current_country].filter(Boolean).join(', ');
+  // The profile stores state/country (and sometimes city) as numeric reference IDs — show names.
+  const location = useLocationNames(profile.current_city, profile.current_state, profile.current_country);
   const degrees = toArray(profile.education).filter((e) => e.degree || e.institution);
   const certifications = toArray(profile.certifications).filter((c) => c.name || c.issuer || c.year);
   const experience = toArray(profile.experience).filter((e) => e.job_title || e.company);
@@ -30,7 +57,7 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
 
   return (
     <View style={styles.container}>
-      <View style={[styles.headerCard, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.headerCard, cardSurface(theme), { borderColor: theme.border }]}>
         {profile.avatar_url ? (
           <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
         ) : (
@@ -49,7 +76,7 @@ export function ProfileView({ profile, fullName, email, onEdit }: ProfileViewPro
         {location ? <MetaRow icon="location-dot" label={location} /> : null}
 
         <Button title="Edit Profile" icon="pen" onPress={onEdit} style={styles.editButton} />
-      </View>
+      </ThemedView>
 
       <SummaryBlock title="Video Introduction">
         <Row label="Status" value={profile.intro_video_url ? 'Recorded' : 'Not recorded yet'} />
@@ -121,10 +148,10 @@ function MetaRow({ icon, label }: { icon: React.ComponentProps<typeof FontAwesom
 function SummaryBlock({ title, children }: { title: string; children: React.ReactNode }) {
   const theme = useTheme();
   return (
-    <View style={[styles.block, { borderColor: theme.border }]}>
+    <ThemedView style={[styles.block, { borderColor: theme.border, borderLeftColor: '#f59e0b', borderLeftWidth: 4 }]}>
       <ThemedText type="smallBold">{title}</ThemedText>
       {children}
-    </View>
+    </ThemedView>
   );
 }
 

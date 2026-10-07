@@ -1,9 +1,10 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getCoinQuote, type CoinQuote, type CoinQuoteRequest } from '@/lib/api/coin-quote';
@@ -129,14 +130,14 @@ function CoinConsentModal({ state, onSettle }: { state: ModalState; onSettle: (o
             {message}
           </ThemedText>
           {rows.length ? (
-            <View style={[styles.rows, { borderColor: theme.border }]}>
+            <ThemedView style={[styles.rows, { borderColor: theme.border }]}>
               {rows.map(([k, v], i) => (
                 <View key={k} style={[styles.row, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
                   <ThemedText type="small" themeColor="textSecondary">{k}</ThemedText>
                   <ThemedText type="smallBold" style={k === 'Cost' || k === 'Short by' || k === 'Charge' ? { color: '#b45309' } : undefined}>{v}</ThemedText>
                 </View>
               ))}
-            </View>
+            </ThemedView>
           ) : null}
           <View style={styles.actions}>
             <Pressable style={[styles.button, { borderColor: theme.border, borderWidth: 1 }]} onPress={() => onSettle(false)}>

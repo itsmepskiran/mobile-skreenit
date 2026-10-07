@@ -1,7 +1,7 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { Button } from '@/components/button';
 import { LocationPicker, type LocationValue } from '@/components/location-picker';

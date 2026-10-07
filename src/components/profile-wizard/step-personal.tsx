@@ -1,6 +1,6 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { LocationPicker, type LocationValue } from '@/components/location-picker';
 import { SelectField } from '@/components/select-field';

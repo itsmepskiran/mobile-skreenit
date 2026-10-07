@@ -1,9 +1,9 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable } from '@/components/scoped';
 import { z } from 'zod';
 
 import { login, switchRole } from '@/lib/api/auth';

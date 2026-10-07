@@ -1,10 +1,10 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -327,6 +327,9 @@ export default function RecruiterProfileScreen() {
         ) : (
           <Button title="Credits" variant="secondary" icon="coins" onPress={() => router.push('/(recruiter)/credits')} />
         )}
+        <Button title="Billing & Plan" variant="secondary" icon="file-invoice-dollar" onPress={() => router.push('/(recruiter)/billing')} />
+        <Button title="Featured Jobs" variant="secondary" icon="star" onPress={() => router.push('/(recruiter)/featured-jobs')} />
+        <Button title="Notifications" variant="secondary" icon="bell" onPress={() => router.push('/(recruiter)/notifications')} />
         <Button
           title="Purchase History"
           variant="secondary"

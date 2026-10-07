@@ -1,5 +1,5 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, View } from '@/components/scoped';
 
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';

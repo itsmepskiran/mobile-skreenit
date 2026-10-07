@@ -1,5 +1,5 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Radius } from '@/constants/theme';

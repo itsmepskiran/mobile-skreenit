@@ -1,7 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { InterviewAnswer, InterviewSession } from '@/lib/api/interview';
@@ -26,7 +27,7 @@ function AnswerCard({ answer }: { answer: InterviewAnswer }) {
   ].filter(Boolean);
 
   return (
-    <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.backgroundElement, width: CARD_WIDTH }]}>
+    <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.backgroundElement, width: CARD_WIDTH }]}>
       <View style={styles.cardTop}>
         <View style={{ flex: 1, gap: 2 }}>
           <ThemedText type="small" themeColor="textSecondary">
@@ -84,7 +85,7 @@ function AnswerCard({ answer }: { answer: InterviewAnswer }) {
           ) : null}
         </>
       )}
-    </View>
+    </ThemedView>
   );
 }
 

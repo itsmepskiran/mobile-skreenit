@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { ActivityIndicator, BackHandler, FlatList, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, BackHandler, FlatList, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { listNotifications, markAllAsRead, markAsRead } from '@/lib/api/notifications';
@@ -62,7 +62,7 @@ export default function NotificationsScreen() {
           <Pressable onPress={goBackToDashboard} hitSlop={12}>
             <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
           </Pressable>
-          <ThemedText type="title">Notifications</ThemedText>
+          <ThemedText type="subtitle">Notifications</ThemedText>
         </ThemedView>
         {hasUnread ? (
           <Pressable onPress={() => markAllMutation.mutate()} disabled={markAllMutation.isPending}>

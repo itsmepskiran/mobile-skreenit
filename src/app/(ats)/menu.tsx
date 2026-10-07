@@ -1,6 +1,6 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -25,7 +25,7 @@ export default function AtsMenuScreen() {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View>
-          <ThemedText type="title">Menu</ThemedText>
+          <ThemedText type="subtitle">Menu</ThemedText>
           <ThemedText themeColor="textSecondary">
             {user?.company_name ?? 'Employer Console'} — {user?.name}
           </ThemedText>

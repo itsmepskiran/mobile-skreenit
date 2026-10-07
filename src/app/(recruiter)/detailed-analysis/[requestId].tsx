@@ -1,7 +1,7 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -61,7 +61,7 @@ export default function DetailedAnalysisStatusScreen() {
         <Pressable onPress={() => router.replace('/(recruiter)/resume-analysis')} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
-        <ThemedText type="title">Detailed Analysis</ThemedText>
+        <ThemedText type="subtitle">Detailed Analysis</ThemedText>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -151,7 +151,7 @@ function HireRecommendationCard({ recommendation }: { recommendation?: DetailedA
   if (!recommendation || !recommendation.available) return null;
   const style = VERDICT_STYLE[recommendation.verdict] ?? VERDICT_STYLE.fit;
   return (
-    <View style={[styles.card, { borderColor: style.color, backgroundColor: style.bg }]}>
+    <ThemedView style={[styles.card, { borderColor: style.color, backgroundColor: style.bg }]}>
       <View style={styles.statusRow}>
         <FontAwesome6 name={style.icon} size={16} color={style.color} />
         <ThemedText type="subtitle" style={{ color: style.color }}>
@@ -165,7 +165,7 @@ function HireRecommendationCard({ recommendation }: { recommendation?: DetailedA
           {recommendation.suggested_next_step}
         </ThemedText>
       ) : null}
-    </View>
+    </ThemedView>
   );
 }
 

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View } from '@/components/scoped';
 
 import { AnalysisCards } from '@/components/analysis-cards';
 import { Button } from '@/components/button';

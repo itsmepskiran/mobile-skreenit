@@ -1,15 +1,17 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Switch } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { BarChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -63,12 +65,7 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Reports</ThemedText>
-      </View>
+      <PageHeader title="Reports" subtitle="Hiring metrics at a glance" icon="chart-column" backTo="/(recruiter)/ats-services" colors={['#8b5cf6', '#4f46e5']} />
 
       {accessQuery.isLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 40 }} />
@@ -190,7 +187,7 @@ function OverviewTab({ jobId }: { jobId: string }) {
         />
       </View>
 
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
           Funnel Conversion
         </ThemedText>
@@ -222,9 +219,9 @@ function OverviewTab({ jobId }: { jobId: string }) {
             style={{ borderRadius: Radius.md }}
           />
         )}
-      </View>
+      </ThemedView>
 
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
           Time in Stage (Bottleneck View)
         </ThemedText>
@@ -244,7 +241,7 @@ function OverviewTab({ jobId }: { jobId: string }) {
             </View>
           ))
         )}
-      </View>
+      </ThemedView>
     </View>
   );
 }
@@ -259,11 +256,11 @@ function InsightsTab({ jobId }: { jobId: string }) {
 
   if (!jobId) {
     return (
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="small" themeColor="textSecondary">
           Select a job above to see AI insights for its applicant pool.
         </ThemedText>
-      </View>
+      </ThemedView>
     );
   }
 
@@ -278,7 +275,7 @@ function InsightsTab({ jobId }: { jobId: string }) {
 
   return (
     <View style={{ gap: 16 }}>
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
           Common Missing Skills
         </ThemedText>
@@ -296,7 +293,7 @@ function InsightsTab({ jobId }: { jobId: string }) {
             </View>
           ))
         )}
-      </View>
+      </ThemedView>
 
       <View style={styles.statsGrid}>
         <StatTile label="Avg. Communication Score" value={insights?.avg_communication_score != null ? String(insights.avg_communication_score) : '–'} />
@@ -318,11 +315,11 @@ function BenchmarkTab({ jobId }: { jobId: string }) {
 
   if (!jobId) {
     return (
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="small" themeColor="textSecondary">
           Select a job above to compare it against similar closed jobs.
         </ThemedText>
-      </View>
+      </ThemedView>
     );
   }
 
@@ -335,7 +332,7 @@ function BenchmarkTab({ jobId }: { jobId: string }) {
   const deptAvg = benchmark?.department_average;
 
   return (
-    <View style={[styles.card, { borderColor: theme.border }]}>
+    <ThemedView style={[styles.card, { borderColor: theme.border }]}>
       <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
         This Job vs. Department Average
       </ThemedText>
@@ -373,7 +370,7 @@ function BenchmarkTab({ jobId }: { jobId: string }) {
           {benchmark.message}
         </ThemedText>
       ) : null}
-    </View>
+    </ThemedView>
   );
 }
 
@@ -402,7 +399,7 @@ function ScheduledTab() {
   };
 
   return (
-    <View style={[styles.card, { borderColor: theme.border }]}>
+    <ThemedView style={[styles.card, { borderColor: theme.border }]}>
       <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
         Scheduled Digest
       </ThemedText>
@@ -443,7 +440,7 @@ function ScheduledTab() {
         onPress={handleSave}
         style={{ marginTop: 16 }}
       />
-    </View>
+    </ThemedView>
   );
 }
 
@@ -482,7 +479,7 @@ function AlertsTab() {
 
   return (
     <View style={{ gap: 16 }}>
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
           Stale Applications
         </ThemedText>
@@ -502,9 +499,9 @@ function AlertsTab() {
             </View>
           ))
         )}
-      </View>
+      </ThemedView>
 
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
           Low-Conversion Jobs
         </ThemedText>
@@ -524,9 +521,9 @@ function AlertsTab() {
             </View>
           ))
         )}
-      </View>
+      </ThemedView>
 
-      <View style={[styles.card, { borderColor: theme.border }]}>
+      <ThemedView style={[styles.card, { borderColor: theme.border }]}>
         <ThemedText type="smallBold" style={{ marginBottom: 8 }}>
           Alert Settings
         </ThemedText>
@@ -552,7 +549,7 @@ function AlertsTab() {
           onPress={handleSave}
           style={{ marginTop: 12 }}
         />
-      </View>
+      </ThemedView>
     </View>
   );
 }

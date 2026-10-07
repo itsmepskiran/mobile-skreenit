@@ -1,17 +1,17 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
-import { Radius } from '@/constants/theme';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLatestAnalysisReports, gradeFromScore, reanalyzeApplication, type CandidateAnalysisReport } from '@/lib/api/analytics';
 import { listMyJobs } from '@/lib/api/recruiter';
@@ -53,12 +53,7 @@ export default function AnalysisReportsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Video Analysis Reports</ThemedText>
-      </View>
+      <PageHeader title="Video Analysis Reports" subtitle="AI analysis of candidate videos" icon="video" backTo="/(recruiter)/ats-services" colors={['#ec4899', '#8b5cf6']} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.statsGrid}>
@@ -120,7 +115,7 @@ function ReportCard({ report, onPress }: { report: CandidateAnalysisReport; onPr
   const theme = useTheme();
   const grade = gradeFromScore(report.avg_score);
   return (
-    <Pressable style={[styles.card, { borderColor: theme.border }]} onPress={onPress}>
+    <Pressable style={[styles.card, cardSurface(theme), { borderColor: theme.border }]} onPress={onPress}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <ThemedText type="smallBold">{report.candidate_name}</ThemedText>

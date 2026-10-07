@@ -1,9 +1,9 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnalysisCards } from '@/components/analysis-cards';
@@ -43,7 +43,14 @@ export default function IntroVideoAnalysisScreen() {
 
   const statusQuery = useQuery({ queryKey: ['candidate', 'intro-status'], queryFn: getIntroStatus });
   const status = statusQuery.data?.data;
-  const session = local === undefined ? (status?.current ?? status?.latest ?? null) : local;
+  const { session: sessionParam } = useLocalSearchParams<{ session?: string }>();
+  const paramSession = useQuery({
+    queryKey: ['candidate', 'intro-session', sessionParam],
+    queryFn: () => getIntroSession(sessionParam as string),
+    enabled: !!sessionParam,
+  });
+  const session =
+    local === undefined ? (sessionParam ? (paramSession.data?.data ?? null) : (status?.current ?? status?.latest ?? null)) : local;
 
   // While answers are being analysed, poll the session until it completes.
   useEffect(() => {
@@ -144,7 +151,7 @@ export default function IntroVideoAnalysisScreen() {
       <Pressable onPress={() => router.replace('/(candidate)/premium-services')} hitSlop={12}>
         <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
       </Pressable>
-      <ThemedText type="title">Intro Video Analysis</ThemedText>
+      <ThemedText type="subtitle">Intro Video Analysis</ThemedText>
     </View>
   );
 

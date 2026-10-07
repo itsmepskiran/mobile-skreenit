@@ -1,9 +1,12 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientScreen } from '@/components/on-gradient';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -19,6 +22,16 @@ type Service = {
   rate?: keyof CandidateRates;
   href: string;
   note?: string;
+};
+
+const COLORS: Record<string, readonly [string, string]> = {
+  'pen-nib': ['#6366f1', '#8b5cf6'],
+  'file-contract': ['#0ea5e9', '#06b6d4'],
+  'brain': ['#ec4899', '#f43f5e'],
+  'video': ['#f59e0b', '#f97316'],
+  'chart-line': ['#10b981', '#14b8a6'],
+  'tags': ['#8b5cf6', '#d946ef'],
+  'coins': ['#eab308', '#f59e0b'],
 };
 
 const SERVICES: Service[] = [
@@ -56,6 +69,18 @@ const SERVICES: Service[] = [
     href: '/(candidate)/mock-interview',
   },
   {
+    icon: 'chart-line',
+    title: 'Practice',
+    description: 'Every mock interview and intro analysis in one place, with your score trend.',
+    href: '/(candidate)/practice',
+  },
+  {
+    icon: 'tags',
+    title: 'Plans',
+    description: 'Compare Career Pass and the Mock Interview plans side by side.',
+    href: '/(candidate)/plans',
+  },
+  {
     icon: 'coins',
     title: 'My Purchases',
     description: 'See your Career Pass status, coin balance and purchase history — and top up coins or get Career Pass.',
@@ -69,14 +94,9 @@ export default function PremiumServicesScreen() {
   const rates = ratesQuery.data?.data;
 
   return (
+    <GradientScreen>
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(candidate)/profile')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <FontAwesome6 name="crown" size={15} color={theme.primary} />
-        <ThemedText type="title">Premium Services</ThemedText>
-      </View>
+      <PageHeader title="Premium Services" subtitle="Boost your profile" icon="crown" backTo="/(candidate)/profile" colors={['#f59e0b', '#ef4444']} />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="small" themeColor="textSecondary">
           Paid add-ons that boost your profile — pay with coins as you go, or go unlimited with Career Pass.
@@ -85,14 +105,12 @@ export default function PremiumServicesScreen() {
           const rate = svc.rate ? describeRate(rates?.[svc.rate]) : '';
           return (
             <Pressable key={svc.title} onPress={() => router.push(svc.href as never)}>
-              <ThemedView style={[styles.card, { borderColor: theme.border }]}>
+              <ThemedView style={[styles.card, { borderColor: theme.border, borderLeftColor: COLORS[svc.icon][0], borderLeftWidth: 4 }]}>
                 <View style={styles.cardTitleRow}>
-                  <View style={styles.icon}>
-                    <FontAwesome6 name={svc.icon} size={16} color="#4338ca" />
-                  </View>
-                  <ThemedText type="subtitle" style={{ flex: 1 }}>
-                    {svc.title}
-                  </ThemedText>
+                  <LinearGradient colors={COLORS[svc.icon]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.icon}>
+                    <FontAwesome6 name={svc.icon} size={16} color="#fff" />
+                  </LinearGradient>
+                  <ThemedText style={{ flex: 1, fontWeight: '700' }}>{svc.title}</ThemedText>
                   <FontAwesome6 name="chevron-right" size={12} color={theme.textSecondary} />
                 </View>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -110,6 +128,7 @@ export default function PremiumServicesScreen() {
         })}
       </ScrollView>
     </SafeAreaView>
+    </GradientScreen>
   );
 }
 
@@ -119,5 +138,5 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 14 },
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 16, gap: 8 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  icon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });

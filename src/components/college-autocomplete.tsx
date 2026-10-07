@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { Pressable, TextInput, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -77,7 +78,7 @@ export function CollegeAutocomplete({ label, value, onChange }: CollegeAutocompl
       </View>
 
       {open && results.length > 0 ? (
-        <View style={[styles.dropdown, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+        <ThemedView style={[styles.dropdown, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           {results.map((college) => (
             <Pressable key={college.id} style={styles.optionRow} onPress={() => select(college)}>
               <ThemedText numberOfLines={1}>{college.name}</ThemedText>
@@ -88,7 +89,7 @@ export function CollegeAutocomplete({ label, value, onChange }: CollegeAutocompl
               ) : null}
             </Pressable>
           ))}
-        </View>
+        </ThemedView>
       ) : null}
     </ThemedView>
   );

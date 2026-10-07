@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AtsBanner } from '@/components/ats-banner';

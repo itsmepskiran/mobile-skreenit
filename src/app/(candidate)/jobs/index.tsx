@@ -1,13 +1,14 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, TextInput, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { JobCard } from '@/components/job-card';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -209,8 +210,9 @@ export default function JobsListScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <PageHeader title="Jobs" subtitle="Find your next opportunity" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
       <View style={styles.searchWrap}>
-        <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} style={styles.searchIcon} />
+        <FontAwesome6 name="magnifying-glass" size={14} color="#6B7280" style={styles.searchIcon} />
         <TextInput
           value={searchInput}
           onChangeText={setSearchInput}

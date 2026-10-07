@@ -1,6 +1,8 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
+import { GradientScreen } from '@/components/on-gradient';
+
 import { useTheme } from '@/hooks/use-theme';
 
 // 2 visible tabs: Dashboard, and a Menu hub (mirrors (recruiter)/ats-services.tsx's
@@ -10,9 +12,11 @@ export default function AtsLayout() {
   const theme = useTheme();
 
   return (
+    <GradientScreen>
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: 'transparent' },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
       }}
@@ -34,5 +38,6 @@ export default function AtsLayout() {
       <Tabs.Screen name="users" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
     </Tabs>
+    </GradientScreen>
   );
 }

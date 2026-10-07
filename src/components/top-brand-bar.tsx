@@ -1,4 +1,5 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
+import { View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Matches sql-skreenit's `.mobile-header-brand` (assets/assets/css/mobile.css)

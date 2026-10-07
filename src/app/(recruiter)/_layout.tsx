@@ -1,6 +1,8 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
+import { GradientScreen } from '@/components/on-gradient';
+
 import { useTheme } from '@/hooks/use-theme';
 
 // 6 tabs: ATS Services, Dashboard, Job Posts, Applications Received, Pending
@@ -11,9 +13,11 @@ export default function RecruiterLayout() {
   const theme = useTheme();
 
   return (
+    <GradientScreen>
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: 'transparent' },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
       }}
@@ -69,6 +73,9 @@ export default function RecruiterLayout() {
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="credits" options={{ href: null }} />
       <Tabs.Screen name="company-quota" options={{ href: null }} />
+      <Tabs.Screen name="billing" options={{ href: null }} />
+      <Tabs.Screen name="featured-jobs" options={{ href: null }} />
     </Tabs>
+    </GradientScreen>
   );
 }

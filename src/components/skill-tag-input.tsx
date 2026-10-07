@@ -1,6 +1,6 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, TextInput, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';

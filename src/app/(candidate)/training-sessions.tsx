@@ -1,10 +1,11 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -20,11 +21,8 @@ export default function TrainingSessionsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <PageHeader title="Training Sessions" subtitle="Watch past training sessions any time" icon="graduation-cap" colors={['#14b8a6', '#2563eb']} />
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText type="title">Training Sessions</ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          Watch past training sessions any time.
-        </ThemedText>
 
         {selected ? (
           <View style={styles.playerSection}>

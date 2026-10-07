@@ -1,15 +1,12 @@
 import { Stack } from 'expo-router';
 
-import { useTheme } from '@/hooks/use-theme';
-
 export default function AssessmentsStackLayout() {
-  const theme = useTheme();
-
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: theme.background },
-        headerTintColor: theme.text,
+        contentStyle: { backgroundColor: 'transparent' },
+        headerStyle: { backgroundColor: '#4338ca' },
+        headerTintColor: '#ffffff',
         headerShadowVisible: false,
       }}
     >

@@ -1,9 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CandidateProfileModal } from '@/components/candidate-profile-modal';
@@ -14,6 +13,7 @@ import {
 } from '@/components/schedule-interview-modal';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -75,13 +75,8 @@ export default function InterviewsCalendarScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Interview Schedules</ThemedText>
-        <Pressable
-          style={[styles.newButton, { backgroundColor: theme.primary }]}
+      <PageHeader title="Interview Schedules" subtitle="Plan and track candidate interviews" icon="calendar-days" backTo="/(recruiter)/ats-services" colors={['#0ea5e9', '#6366f1']} right={<Pressable
+          style={[styles.newButton, { backgroundColor: 'rgba(255,255,255,0.25)' }]}
           onPress={() => {
             setNewName('');
             setNewEmail('');
@@ -89,8 +84,7 @@ export default function InterviewsCalendarScreen() {
           }}
         >
           <FontAwesome6 name="plus" size={13} color="#fff" />
-        </Pressable>
-      </View>
+        </Pressable>} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.filterRow}>

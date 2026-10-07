@@ -1,9 +1,9 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -25,12 +25,7 @@ export default function CompanyQuotaScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/profile')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Company Quota</ThemedText>
-      </View>
+      <PageHeader title="Company Quota" subtitle="Your company bundle and usage" icon="building" backTo="/(recruiter)/profile" colors={['#14b8a6', '#2563eb']} />
 
       {quotaQuery.isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />

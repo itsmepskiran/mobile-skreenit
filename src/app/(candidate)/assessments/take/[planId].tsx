@@ -1,7 +1,7 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, TextInput, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { VideoIntroAssessment } from '@/components/assessment-taking/video-intro-assessment';
@@ -375,9 +375,9 @@ function GenericAssessment({ planId, jobId, linkId }: { planId: string; jobId?: 
                   setTimeout(() => setMcqRevealed(true), 300);
                 }}
               >
-                <View style={[styles.mcqLetter, { borderColor }]}>
+                <ThemedView style={[styles.mcqLetter, { borderColor }]}>
                   <ThemedText type="small">{letters[i]}</ThemedText>
-                </View>
+                </ThemedView>
                 <ThemedText type="small" style={styles.mcqOptionText}>
                   {opt}
                 </ThemedText>

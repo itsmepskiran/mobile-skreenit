@@ -1,11 +1,11 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -105,12 +105,7 @@ export default function CreditsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/profile')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Credits</ThemedText>
-      </View>
+      <PageHeader title="Credits" subtitle="Coins for AI-powered actions" icon="coins" backTo="/(recruiter)/profile" colors={['#f59e0b', '#f97316']} />
 
       {summaryQuery.isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />

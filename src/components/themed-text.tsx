@@ -1,5 +1,6 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
+import { useOnGradient } from '@/components/on-gradient';
 import { Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -10,11 +11,15 @@ export type ThemedTextProps = TextProps & {
 
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  const onGradient = useOnGradient();
+  const color = onGradient
+    ? themeColor === 'textSecondary' ? 'rgba(255,255,255,0.82)' : themeColor === 'primary' ? '#fde68a' : '#ffffff'
+    : theme[themeColor ?? 'text'];
 
   return (
     <Text
       style={[
-        { color: theme[themeColor ?? 'text'] },
+        { color },
         type === 'default' && styles.default,
         type === 'title' && styles.title,
         type === 'small' && styles.small,

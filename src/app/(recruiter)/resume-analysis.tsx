@@ -1,9 +1,9 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -11,6 +11,7 @@ import {
   type ScheduleInterviewContext,
 } from '@/components/schedule-interview-modal';
 import { SelectField } from '@/components/select-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { useCoinConsent } from '@/components/coin-consent-modal';
 import { ThemedView } from '@/components/themed-view';
@@ -156,12 +157,7 @@ export default function ResumeAnalysisScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       {consentModal}
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Resume Analysis</ThemedText>
-      </View>
+      <PageHeader title="Resume Analysis" subtitle="Score resumes against your job" icon="file-circle-check" backTo="/(recruiter)/ats-services" colors={['#06b6d4', '#4f46e5']} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="small" themeColor="textSecondary">

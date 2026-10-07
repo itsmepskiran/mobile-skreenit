@@ -1,15 +1,17 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCoinConsent } from '@/components/coin-consent-modal';
 import { JobShareModal, jobUrl } from '@/components/job-share-modal';
+import { PageHeader } from '@/components/page-header';
+import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { deleteJob, featureJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
 import { formatSalaryRange } from '@/lib/format';
@@ -96,16 +98,8 @@ export default function MyJobsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={[styles.searchRow, { borderColor: theme.border }]}>
-        <FontAwesome6 name="magnifying-glass" size={14} color={theme.textSecondary} />
-        <TextInput
-          value={searchInput}
-          onChangeText={setSearchInput}
-          placeholder="Search by title, JRF, or Ref No..."
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
-        />
-      </View>
+      <PageHeader title="Job Posts" subtitle="Manage and promote your openings" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
+      <SearchBar value={searchInput} onChangeText={setSearchInput} placeholder="Search by title, JRF or Ref No" />
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -117,11 +111,11 @@ export default function MyJobsScreen() {
                 onPress={() => setStatusFilter(filter.value)}
                 style={[
                   styles.filterChip,
-                  { borderColor: theme.border },
+                  { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: '#ffffff' },
                   active && { backgroundColor: theme.primary, borderColor: theme.primary },
                 ]}
               >
-                <ThemedText type="small" style={{ color: active ? '#ffffff' : theme.text }}>
+                <ThemedText type="small" style={{ color: active ? '#ffffff' : '#1F2937', fontWeight: '600' }}>
                   {filter.label}
                 </ThemedText>
               </Pressable>
@@ -142,7 +136,7 @@ export default function MyJobsScreen() {
             const salary = formatSalaryRange(job.salary_min, job.salary_max, 'INR');
 
             return (
-              <View key={job.id} style={[styles.card, { borderColor: theme.border }]}>
+              <View key={job.id} style={[styles.card, cardSurface(theme), { borderColor: theme.border }]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitle}>
                     <ThemedText type="smallBold" numberOfLines={2}>

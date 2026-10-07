@@ -1,12 +1,14 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StatusBadge } from '@/components/status-badge';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { ThemedView } from '@/components/themed-view';
+import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { listApplications, type ApplicationListItem } from '@/lib/api/applicant';
 import { getJobsMatchScores } from '@/lib/api/jobs';
@@ -38,9 +40,7 @@ export default function ApplicationsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.header}>
-        <ThemedText type="title">Applications</ThemedText>
-      </View>
+      <PageHeader title="Applications" subtitle="Track every job you've applied to" icon="file-lines" colors={['#0ea5e9', '#4f46e5']} />
 
       {isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />
@@ -97,6 +97,7 @@ function ApplicationRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
+        cardSurface(theme),
         { borderColor: theme.border },
         pressed && styles.pressed,
       ]}
@@ -109,11 +110,11 @@ function ApplicationRow({
         {item.location}
       </ThemedText>
       {matchScore !== undefined ? (
-        <View style={[styles.matchBadge, { borderColor: matchColor }]}>
+        <ThemedView style={[styles.matchBadge, { borderColor: matchColor }]}>
           <ThemedText type="small" style={{ color: matchColor, fontWeight: '600' }}>
             {matchScore}% Match
           </ThemedText>
-        </View>
+        </ThemedView>
       ) : null}
       <View style={styles.statusRow}>
         <StatusBadge status={item.status} />

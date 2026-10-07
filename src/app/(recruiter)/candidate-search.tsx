@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AssessmentInviteModal, type AssessmentInviteContext } from '@/components/assessment-invite-modal';
@@ -12,6 +12,7 @@ import {
 } from '@/components/schedule-interview-modal';
 import { SelectField } from '@/components/select-field';
 import { TextField } from '@/components/text-field';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -92,12 +93,7 @@ export default function CandidateSearchScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <ThemedText type="title">Candidate Search</ThemedText>
-      </View>
+      <PageHeader title="Candidate Search" subtitle="Find candidates that match your roles" icon="magnifying-glass" backTo="/(recruiter)/ats-services" colors={['#0ea5e9', '#4f46e5']} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <TextField

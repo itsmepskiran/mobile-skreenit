@@ -1,5 +1,5 @@
-import { FontAwesome6 } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { FontAwesome6, View } from '@/components/scoped';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';

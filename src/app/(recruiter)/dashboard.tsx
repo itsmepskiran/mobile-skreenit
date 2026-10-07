@@ -1,16 +1,20 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { QuickActions } from '@/components/quick-actions';
+import { RecruiterWalletCard } from '@/components/recruiter-wallet-card';
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
+import { cardSurface } from '@/constants/theme';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelativeTime } from '@/lib/format';
-import { getRecruiterStats, listRecentApplications, listRecentJobs } from '@/lib/api/recruiter';
+import { getRecruiterStats, listRecentJobs, listRecruiterApplications } from '@/lib/api/recruiter';
 import { getUnreadCount } from '@/lib/api/notifications';
 import type { ApplicationStatus } from '@/lib/api/applicant';
 import { withBackTo } from '@/lib/navigation/smart-back';
@@ -24,8 +28,8 @@ export default function RecruiterDashboardScreen() {
     queryFn: () => listRecentJobs({ pageSize: 4 }),
   });
   const applicationsQuery = useQuery({
-    queryKey: ['recruiter', 'dashboard-applications'],
-    queryFn: () => listRecentApplications({ pageSize: 4 }),
+    queryKey: ['recruiter', 'dashboard-recent-applications'],
+    queryFn: () => listRecruiterApplications(),
   });
   const unreadQuery = useQuery({
     queryKey: ['notifications', 'unread-count'],
@@ -35,7 +39,10 @@ export default function RecruiterDashboardScreen() {
 
   const stats = statsQuery.data?.data;
   const jobs = jobsQuery.data?.data.jobs ?? [];
-  const applications = applicationsQuery.data?.data.applications ?? [];
+  const rawApplications = applicationsQuery.data?.data;
+  const applications = [...(Array.isArray(rawApplications) ? rawApplications : [])]
+    .sort((a, b) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime())
+    .slice(0, 4);
   const unreadCount = unreadQuery.data?.data.unread_count ?? 0;
 
   if (statsQuery.isLoading) {
@@ -48,12 +55,9 @@ export default function RecruiterDashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <ThemedView style={styles.headerRow}>
-          <ThemedText type="title">Dashboard</ThemedText>
-          <ThemedView style={styles.headerActions}>
+      <PageHeader title="Dashboard" subtitle="Your hiring at a glance" icon="house" right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Pressable style={styles.bellButton} onPress={() => router.push('/(recruiter)/notifications')}>
-              <FontAwesome6 name="bell" size={20} color={theme.text} />
+              <FontAwesome6 name="bell" size={20} color="#fff" />
               {unreadCount > 0 ? (
                 <View style={[styles.badge, { backgroundColor: theme.danger }]}>
                   <ThemedText type="small" style={styles.badgeText}>
@@ -62,22 +66,25 @@ export default function RecruiterDashboardScreen() {
                 </View>
               ) : null}
             </Pressable>
-            <Pressable style={[styles.postButton, { backgroundColor: theme.primary }]} onPress={() => router.push('/(recruiter)/jobs/create')}>
+            <Pressable style={[styles.postButton, { backgroundColor: 'rgba(255,255,255,0.22)' }]} onPress={() => router.push('/(recruiter)/jobs/create')}>
               <FontAwesome6 name="plus" size={13} color="#ffffff" />
               <ThemedText type="smallBold" style={styles.postButtonText}>
                 Post Job
               </ThemedText>
             </Pressable>
-          </ThemedView>
-        </ThemedView>
+          </View>} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <RecruiterWalletCard />
+        <QuickActions />
 
         <ThemedView style={styles.statsGrid}>
-          <HighlightTile icon="briefcase" label="Total Jobs" value={String(stats?.total_jobs ?? 0)} colors={['#667eea', '#764ba2']} />
-          <HighlightTile icon="circle-check" label="Active Jobs" value={String(stats?.active_jobs ?? 0)} colors={['#4facfe', '#00f2fe']} />
-          <HighlightTile icon="users" label="Applications" value={String(stats?.total_applications ?? 0)} colors={['#43e97b', '#38f9d7']} />
-          <HighlightTile icon="star" label="Shortlisted" value={String(stats?.shortlisted ?? 0)} colors={['#f093fb', '#f5576c']} />
-          <HighlightTile icon="video" label="Interviews" value={String(stats?.interviews ?? 0)} colors={['#fa709a', '#fee140']} />
+          <HighlightTile card icon="briefcase" label="Total Jobs" value={String(stats?.total_jobs ?? 0)} colors={['#667eea', '#764ba2']} />
+          <HighlightTile card icon="circle-check" label="Active Jobs" value={String(stats?.active_jobs ?? 0)} colors={['#4facfe', '#00f2fe']} />
+          <HighlightTile card icon="users" label="Applications" value={String(stats?.total_applications ?? 0)} colors={['#43e97b', '#38f9d7']} />
+          <HighlightTile card icon="star" label="Shortlisted" value={String(stats?.shortlisted ?? 0)} colors={['#f093fb', '#f5576c']} />
+          <HighlightTile card icon="video" label="Interviews" value={String(stats?.interviews ?? 0)} colors={['#fa709a', '#fee140']} />
           <HighlightTile
+            card
             icon="trophy"
             label="Hired"
             value={String(stats?.hired ?? 0)}
@@ -101,7 +108,7 @@ export default function RecruiterDashboardScreen() {
             jobs.map((job) => (
               <Pressable
                 key={job.id}
-                style={[styles.row, { borderColor: theme.border }]}
+                style={[styles.row, cardSurface(theme), { borderColor: theme.border }]}
                 onPress={() => router.push(withBackTo(`/(recruiter)/jobs/${job.id}/edit`, '/(recruiter)/dashboard'))}
               >
                 <View style={styles.rowText}>
@@ -133,12 +140,15 @@ export default function RecruiterDashboardScreen() {
             applications.map((app) => (
               <Pressable
                 key={app.id}
-                style={[styles.row, { borderColor: theme.border }]}
+                style={[styles.row, cardSurface(theme), { borderColor: theme.border }]}
                 onPress={() => router.push(withBackTo(`/(recruiter)/applications/${app.id}`, '/(recruiter)/dashboard'))}
               >
                 <View style={styles.rowText}>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Applied {formatRelativeTime(app.applied_at)}
+                  <ThemedText type="smallBold" numberOfLines={1}>
+                    {app.candidate_name || 'Candidate'}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                    {app.job_title} · Applied {formatRelativeTime(app.applied_at)}
                   </ThemedText>
                 </View>
                 <StatusBadge status={app.status as ApplicationStatus} />

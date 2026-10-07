@@ -5,11 +5,15 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Slot, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { AppState, StyleSheet, useColorScheme } from 'react-native';
+import { View } from '@/components/scoped';
 
+import { IntroSlides } from '@/components/intro-slides';
 import { TopBrandBar } from '@/components/top-brand-bar';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { applyUpdateIfAvailable, prefetchUpdate } from '@/lib/app-refresh';
+import { hasSeenIntro, markIntroSeen } from '@/lib/intro-seen';
 import { useAtsStore } from '@/lib/auth/ats-store';
 import { useAuthStore } from '@/lib/auth/store';
 
@@ -18,6 +22,10 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1 } },
 });
+
+// Coming back to the app after this long in the background counts as "reopening": show the logo
+// welcome screen again and refresh everything on screen.
+const RESUME_REFRESH_AFTER_MS = 5 * 60 * 1000;
 
 // The ATS Employer Console is a fully separate auth domain (its own JWT, its
 // own store — see lib/auth/ats-store.ts) from the candidate/recruiter session
@@ -93,7 +101,11 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
   const [isHydrated, setIsHydrated] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [welcomeAnimationDone, setWelcomeAnimationDone] = useState(false);
+  const [updateChecked, setUpdateChecked] = useState(false);
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  const authStatus = useAuthStore((state) => state.status);
+  const [resumeKey, setResumeKey] = useState(0); // >0 while the resume welcome overlay is showing
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -107,6 +119,38 @@ export default function RootLayout() {
   }, []);
 
   const isReady = isHydrated && fontsLoaded;
+  // The launch welcome screen stays up until its animation has played AND the update check is done
+  // (capped at a few seconds), so a new release is picked up on this launch, not the next one.
+  const showWelcome = !(welcomeAnimationDone && updateChecked);
+
+  useEffect(() => {
+    hasSeenIntro().then(setIntroSeen);
+  }, []);
+
+  useEffect(() => {
+    applyUpdateIfAvailable().finally(() => setUpdateChecked(true));
+  }, []);
+
+  // Reopening after a while in the background: refresh the data on screen, fetch any new update
+  // (applied next launch — never restarting mid-task), and show the welcome screen as a brief
+  // overlay. The app underneath stays mounted, so the user keeps their place.
+  useEffect(() => {
+    let leftAt: number | null = null;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'background') {
+        leftAt = Date.now();
+      } else if (next === 'active' && leftAt !== null) {
+        const away = Date.now() - leftAt;
+        leftAt = null;
+        if (away >= RESUME_REFRESH_AFTER_MS) {
+          queryClient.invalidateQueries();
+          prefetchUpdate();
+          setResumeKey((k) => k + 1);
+        }
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (isReady) SplashScreen.hideAsync();
@@ -118,7 +162,20 @@ export default function RootLayout() {
   if (!isReady) return null;
 
   if (showWelcome) {
-    return <WelcomeScreen onFinish={() => setShowWelcome(false)} />;
+    return <WelcomeScreen onFinish={() => setWelcomeAnimationDone(true)} />;
+  }
+
+  // First launch on this device, before anyone has signed in: a short walkthrough. Existing
+  // signed-in users who update the app never see it.
+  if (introSeen === false && authStatus === 'signedOut') {
+    return (
+      <IntroSlides
+        onDone={() => {
+          markIntroSeen();
+          setIntroSeen(true);
+        }}
+      />
+    );
   }
 
   // The (auth) and (ats-auth) screens (login/register/etc.) already carry
@@ -135,6 +192,11 @@ export default function RootLayout() {
             <Slot />
           </View>
         </View>
+        {resumeKey > 0 ? (
+          <View key={resumeKey} style={StyleSheet.absoluteFill} pointerEvents="auto">
+            <WelcomeScreen onFinish={() => setResumeKey(0)} />
+          </View>
+        ) : null}
       </ThemeProvider>
     </QueryClientProvider>
   );

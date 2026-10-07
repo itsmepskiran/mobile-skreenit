@@ -1,6 +1,6 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Modal, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, TextInput, View } from '@/components/scoped';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';

@@ -1,8 +1,8 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PurchaseHistoryRow } from '@/components/purchase-history-row';
@@ -97,7 +97,7 @@ export function PurchaseHistoryScreen({ backTo }: { backTo: Href }) {
         <Pressable onPress={() => router.replace(backTo)} hitSlop={12}>
           <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
         </Pressable>
-        <ThemedText type="title">Purchase History</ThemedText>
+        <ThemedText type="subtitle">Purchase History</ThemedText>
       </ThemedView>
 
       {error ? (

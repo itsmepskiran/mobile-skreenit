@@ -1,12 +1,13 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { ActivityIndicator, BackHandler, FlatList, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, BackHandler, FlatList, StyleSheet } from 'react-native';
+import { Pressable } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { listNotifications, markAllAsRead, markAsRead } from '@/lib/api/notifications';
 import { NotificationRow } from '@/components/notification-row';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
@@ -58,21 +59,11 @@ export default function RecruiterNotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <ThemedView style={styles.header}>
-        <ThemedView style={styles.headerLeft}>
-          <Pressable onPress={goBackToDashboard} hitSlop={12}>
-            <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-          </Pressable>
-          <ThemedText type="title">Notifications</ThemedText>
-        </ThemedView>
-        {hasUnread ? (
-          <Pressable onPress={() => markAllMutation.mutate()} disabled={markAllMutation.isPending}>
-            <ThemedText type="link" themeColor="primary">
+      <PageHeader title="Notifications" subtitle="Updates on your hiring" icon="bell" backTo="/(recruiter)/dashboard" colors={['#6366f1', '#ec4899']} right={hasUnread ? (<Pressable onPress={() => markAllMutation.mutate()} disabled={markAllMutation.isPending}>
+            <ThemedText type="smallBold" style={{ color: '#fff' }}>
               Mark all read
             </ThemedText>
-          </Pressable>
-        ) : null}
-      </ThemedView>
+          </Pressable>) : null} />
 
       {isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />

@@ -113,6 +113,7 @@ export interface IntroStatus {
 }
 
 export const getIntroStatus = () => apiGet<Api<IntroStatus>>('/candidate/intro-analysis/status');
+export const listIntroSessions = () => apiGet<Api<SessionSummary[]>>('/candidate/intro-analysis');
 export const getLatestIntroAnalysis = () => apiGet<Api<InterviewSession | null>>('/candidate/intro-analysis/latest');
 export const startIntroSession = () => apiPostJson<Api<InterviewSession>>('/candidate/intro-analysis/start', {});
 export const getIntroSession = (id: string) => apiGet<Api<InterviewSession>>(`/candidate/intro-analysis/${id}`);

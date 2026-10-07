@@ -97,6 +97,8 @@ export interface RecruiterJobListItem {
   is_remote: boolean;
   // Featured Job boost: pinned first on the jobs board until this time (null = not featured).
   featured_until?: string | null;
+  applications_count?: number;
+  views?: number;
   created_at: string;
   updated_at: string;
 }

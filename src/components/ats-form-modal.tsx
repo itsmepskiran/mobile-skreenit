@@ -1,6 +1,6 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';

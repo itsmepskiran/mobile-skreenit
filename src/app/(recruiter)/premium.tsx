@@ -1,12 +1,13 @@
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AssessmentWizardModal } from '@/components/assessment-wizard-modal';
 import { RazorpayCheckout, type RazorpaySuccess } from '@/components/razorpay-checkout';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
@@ -110,13 +111,7 @@ export default function RecruiterPremiumScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.replace('/(recruiter)/ats-services')} hitSlop={12}>
-          <FontAwesome6 name="chevron-left" size={16} color={theme.text} />
-        </Pressable>
-        <FontAwesome6 name="crown" size={15} color={theme.primary} />
-        <ThemedText type="title">ATS Services</ThemedText>
-      </View>
+      <PageHeader title="ATS Services" subtitle="Assessments and premium hiring tools" icon="crown" backTo="/(recruiter)/ats-services" colors={['#f59e0b', '#ef4444']} />
 
       {activeSubsQuery.isLoading ? (
         <ActivityIndicator style={styles.loader} color={theme.primary} />

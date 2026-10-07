@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -54,7 +55,7 @@ export default function AtsReportsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText type="title">Reports</ThemedText>
+        <ThemedText type="subtitle">Reports</ThemedText>
 
         <ReportCard title="Departmental Hiring" rows={departmentalHiring} theme={theme} />
         <ReportCard title="Employee Headcount" rows={headcount} theme={theme} />
