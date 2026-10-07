@@ -69,6 +69,14 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
 const INDIGOS = new Set(['#4f46e5', '#6366f1', '#4338ca', '#7c3aed', '#6d28d9', '#818cf8']);
 export function FontAwesome6(props: React.ComponentProps<typeof VectorFontAwesome6>) {
   const onGradient = useOnGradient();
-  const color = typeof props.color === 'string' && onGradient && INDIGOS.has(props.color.toLowerCase()) ? '#fde68a' : props.color;
+  const base = useBaseTheme();
+  let color = props.color;
+  if (typeof color === 'string') {
+    if (onGradient && INDIGOS.has(color.toLowerCase())) color = '#fde68a';
+    // On-gradient tokens read from outside a card: flip back when the icon actually sits inside one.
+    else if (!onGradient && color === '#fffffe') color = base.text;
+    else if (!onGradient && color === 'rgba(255,255,255,0.8)') color = base.textSecondary;
+    else if (onGradient && color === '#fffffe') color = '#ffffff';
+  }
   return <VectorFontAwesome6 {...props} color={color} />;
 }

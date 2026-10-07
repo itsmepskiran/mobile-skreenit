@@ -2,7 +2,7 @@ import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useOnGradient } from '@/components/on-gradient';
 import { Fonts, ThemeColor } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useBaseTheme, useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
@@ -12,6 +12,10 @@ export type ThemedTextProps = TextProps & {
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
   const onGradient = useOnGradient();
+  const base = useBaseTheme();
+  // Colours read from useTheme() outside a card are the on-gradient (white-ish) tokens; inside a card flip them back.
+  const flatColor = StyleSheet.flatten(style)?.color;
+  const fixed = !onGradient && flatColor === '#fffffe' ? base.text : !onGradient && flatColor === 'rgba(255,255,255,0.8)' ? base.textSecondary : undefined;
   const color = onGradient
     ? themeColor === 'textSecondary' ? 'rgba(255,255,255,0.82)' : themeColor === 'primary' ? '#fde68a' : '#ffffff'
     : theme[themeColor ?? 'text'];
@@ -29,6 +33,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         type === 'linkPrimary' && styles.linkPrimary,
         type === 'code' && styles.code,
         style,
+        fixed ? { color: fixed } : null,
       ]}
       {...rest}
     />

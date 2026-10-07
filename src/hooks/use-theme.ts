@@ -29,5 +29,5 @@ export function useTheme() {
   const base = useBaseTheme();
   const onGradient = useOnGradient();
   if (!onGradient) return base;
-  return { ...base, text: '#ffffff', textSecondary: 'rgba(255,255,255,0.8)', border: 'rgba(255,255,255,0.35)', primary: '#d97706', primaryDark: '#b45309', primaryLight: '#f59e0b' } as unknown as typeof base;
+  return { ...base, text: '#fffffe', textSecondary: 'rgba(255,255,255,0.8)', border: 'rgba(255,255,255,0.35)', primary: '#d97706', primaryDark: '#b45309', primaryLight: '#f59e0b' } as unknown as typeof base;
 }

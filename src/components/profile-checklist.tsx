@@ -6,7 +6,7 @@ import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useBaseTheme } from '@/hooks/use-theme';
 import { getProfile } from '@/lib/api/applicant';
 import { listMyAssessments } from '@/lib/api/assessments';
 import { getOwnResumeAnalysis } from '@/lib/api/employability-report';
@@ -17,7 +17,7 @@ import { getLatestIntroAnalysis } from '@/lib/api/interview';
 type Item = { key: string; label: string; done: boolean; href: string };
 
 export function ProfileChecklist() {
-  const theme = useTheme();
+  const theme = useBaseTheme();
   const profileQuery = useQuery({ queryKey: ['candidate', 'profile'], queryFn: getProfile });
   const resumeQuery = useQuery({ queryKey: ['candidate', 'resume-analysis'], queryFn: getOwnResumeAnalysis });
   const assessmentsQuery = useQuery({ queryKey: ['candidate', 'my-assessments'], queryFn: listMyAssessments });
