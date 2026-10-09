@@ -12,6 +12,7 @@ import { IntroSlides } from '@/components/intro-slides';
 import { TopBrandBar } from '@/components/top-brand-bar';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { candidateHomeRoute } from '@/lib/api/features';
 import { applyUpdateIfAvailable, prefetchUpdate } from '@/lib/app-refresh';
 import { hasSeenIntro, markIntroSeen } from '@/lib/intro-seen';
 import { useAtsStore } from '@/lib/auth/ats-store';
@@ -69,7 +70,9 @@ function useProtectedRoute() {
     // are opened by people who, by definition, have no Skreenit account —
     // never force them through login.
     const isPublicRoute = inAuthGroup || group === 'assessment-invite';
-    const roleHome = role === 'recruiter' ? '/(recruiter)/ats-services' : '/(candidate)/jobs';
+    const goHome = async () => {
+      router.replace(role === 'recruiter' ? '/(recruiter)/ats-services' : await candidateHomeRoute());
+    };
 
     if (status === 'signedOut' && !isPublicRoute) {
       router.replace('/(auth)/login');
@@ -82,7 +85,7 @@ function useProtectedRoute() {
       if (role === 'recruiter' && onboarded === false) {
         router.replace('/(recruiter)/profile?edit=true');
       } else {
-        router.replace(roleHome);
+        void goHome();
       }
     } else if (status === 'signedIn' && !inAuthGroup) {
       // Guard against a stale route group left over from role-switching, a
@@ -91,7 +94,7 @@ function useProtectedRoute() {
       const inRecruiterGroup = group === '(recruiter)';
       const inCandidateGroup = group === '(candidate)';
       if ((role === 'recruiter' && inCandidateGroup) || (role !== 'recruiter' && inRecruiterGroup)) {
-        router.replace(roleHome);
+        void goHome();
       }
     }
   }, [status, role, onboarded, group, inAtsWorld, router]);

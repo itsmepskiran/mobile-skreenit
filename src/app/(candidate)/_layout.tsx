@@ -1,9 +1,11 @@
 import { FontAwesome6 } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Tabs } from 'expo-router';
 
 import { GradientScreen } from '@/components/on-gradient';
 
 import { useTheme } from '@/hooks/use-theme';
+import { getFeatures } from '@/lib/api/features';
 
 // 6 tabs per product spec: Jobs, Dashboard, My Applications, My Assessments,
 // Training Sessions, Profile. Jobs leads since it's also the post-login landing route (see
@@ -12,6 +14,9 @@ import { useTheme } from '@/hooks/use-theme';
 // pattern) but is hidden from the tab bar via href: null.
 export default function CandidateLayout() {
   const theme = useTheme();
+  // The Jobs tab is hidden while candidate job search is switched off server-side (app_settings).
+  const features = useQuery({ queryKey: ['features'], queryFn: getFeatures, staleTime: 60_000 });
+  const jobsEnabled = features.data?.data.candidate_job_search !== false;
 
   return (
     <GradientScreen>
@@ -25,7 +30,11 @@ export default function CandidateLayout() {
     >
       <Tabs.Screen
         name="jobs"
-        options={{ title: 'Jobs', tabBarIcon: ({ color, size }) => <FontAwesome6 name="briefcase" size={size * 0.8} color={color} /> }}
+        options={{
+          title: 'Jobs',
+          href: jobsEnabled ? undefined : null,
+          tabBarIcon: ({ color, size }) => <FontAwesome6 name="briefcase" size={size * 0.8} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="dashboard"
