@@ -208,6 +208,26 @@ export default function JobsListScreen() {
   });
   const matchScores = matchScoresQuery.data?.data ?? {};
 
+  // Candidate job search is switched off server-side for now (app_settings.candidate_job_search_enabled).
+  const firstPage = infiniteQuery.data?.pages[0]?.data ?? filteredQuery.data?.data;
+  if (firstPage?.job_search_enabled === false) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <PageHeader title="Jobs" subtitle="Coming soon" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 }}>
+          <FontAwesome6 name="briefcase" size={40} color={theme.primary} />
+          <ThemedText type="subtitle" style={{ textAlign: 'center' }}>Job search is coming soon</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+            {firstPage.message ?? "We'll open job search as soon as real openings are posted by recruiters."}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+            Meanwhile, complete your profile and try the free skill assessments — recruiters will find you.
+          </ThemedText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <PageHeader title="Jobs" subtitle="Find your next opportunity" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />

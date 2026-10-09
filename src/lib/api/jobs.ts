@@ -46,6 +46,10 @@ export interface JobDetail extends Omit<JobListItem, 'skills'> {
 export interface JobsPage {
   jobs: JobListItem[];
   pagination: { page: number; page_size: number; total: number };
+  // Set to false by the server while candidate job search is switched off (app_settings); older
+  // servers omit it, which means "on".
+  job_search_enabled?: boolean;
+  message?: string;
 }
 
 export function listJobs(params: { search?: string; page?: number; pageSize?: number }) {
