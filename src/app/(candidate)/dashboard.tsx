@@ -5,7 +5,9 @@ import { ActivityIndicator, Modal, ScrollView, StyleSheet } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DashboardPremium } from '@/components/dashboard-premium';
 import { HighlightTile } from '@/components/highlight-tile';
+import { LatestIntroAnalysis } from '@/components/latest-intro-analysis';
 import { ProfileChecklist } from '@/components/profile-checklist';
 import { WalletCard } from '@/components/wallet-card';
 import { CardScope, GradientScreen } from '@/components/on-gradient';
@@ -124,6 +126,10 @@ export default function CandidateDashboardScreen() {
             <FontAwesome6 name="chevron-right" size={14} color={theme.textSecondary} />
           </CardScope></Pressable>
         ) : null}
+
+        <DashboardPremium />
+
+        <LatestIntroAnalysis compact />
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

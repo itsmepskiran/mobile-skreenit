@@ -89,7 +89,9 @@ function AnswerCard({ answer }: { answer: InterviewAnswer }) {
   );
 }
 
-export function AnalysisCards({ session }: { session: InterviewSession }) {
+// compact: overall score + one score pill per question, for the Dashboard (the full per-question
+// cards are on Profile and the analysis screens).
+export function AnalysisCards({ session, compact = false }: { session: InterviewSession; compact?: boolean }) {
   const done = session.status === 'completed';
   const date = session.created_at
     ? new Date(session.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -108,11 +110,23 @@ export function AnalysisCards({ session }: { session: InterviewSession }) {
         </View>
         {!done ? <FontAwesome6 name="spinner" size={16} color="#4338ca" /> : null}
       </View>
+      {compact ? (
+        <View style={styles.chips}>
+          {session.answers.map((a) => (
+            <View key={a.question_index} style={styles.chip}>
+              <ThemedText type="small">
+                {`Q${a.question_index + 1}: ${a.status === 'completed' ? (a.overall_score ?? 0) : a.status === 'analyzing' ? '…' : '–'}`}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+      ) : (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={CARD_WIDTH + 12} decelerationRate="fast" contentContainerStyle={{ gap: 12 }}>
         {session.answers.map((a) => (
           <AnswerCard key={a.question_index} answer={a} />
         ))}
       </ScrollView>
+      )}
     </View>
   );
 }

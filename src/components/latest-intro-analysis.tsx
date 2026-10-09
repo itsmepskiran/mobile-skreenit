@@ -11,9 +11,10 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLatestIntroAnalysis } from '@/lib/api/interview';
 
-// Profile screen panel: the latest completed Intro Video Analysis report as a row of cards.
+// Profile / Dashboard panel: the latest completed Intro Video Analysis report as a row of cards
+// (compact = just the scores, used on the Dashboard).
 // Read-only here — the analysis itself is run from Premium Services -> Intro Video Analysis.
-export function LatestIntroAnalysis() {
+export function LatestIntroAnalysis({ compact = false }: { compact?: boolean }) {
   const theme = useTheme();
   const query = useQuery({ queryKey: ['candidate', 'intro-latest'], queryFn: getLatestIntroAnalysis });
   const session = query.data?.data;
@@ -22,7 +23,7 @@ export function LatestIntroAnalysis() {
     <ThemedView style={[styles.card, { borderColor: theme.border }]}>
       <ThemedText type="subtitle">Latest Intro Video Analysis</ThemedText>
       {query.isLoading ? null : session ? (
-        <AnalysisCards session={session} />
+        <AnalysisCards session={session} compact={compact} />
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
           You haven&apos;t analysed your introduction yet. Answer a few questions on video and get feedback on your speaking,
