@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Image, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { View } from '@/components/scoped';
 
-// Same lockup as sql-skreenit's .auth-header.has-image: the transparent logo-banner.webp,
+// Same lockup as sql-skreenit's .auth-header.has-image: the transparent logo-banner-transparent.webp,
 // full card width, sitting directly on the white card (no coloured strip behind it). The
 // older logobanner.webp has an opaque near-black background baked in and is no longer used
-// on the auth pages.
+// on the auth pages. Never name two images so they differ only by dashes (logo-banner vs logobanner):
+// Android drops the dashes when it names the file, the two collide, and the build keeps only one.
 //
 // The height is computed from the measured width instead of relying on `aspectRatio` +
 // `width: '100%'`: on Android that combination left the 2520x678 image at its intrinsic pixel
@@ -21,7 +22,7 @@ export function BrandHeader() {
       <View style={styles.inner} onLayout={onLayout}>
       {width > 0 ? (
         <Image
-          source={require('@/assets/images/logo-banner.webp')}
+          source={require('@/assets/images/logo-banner-transparent.webp')}
           style={{ width, height: width / ASPECT }}
           resizeMode="contain"
           accessibilityLabel="Skreenit"
