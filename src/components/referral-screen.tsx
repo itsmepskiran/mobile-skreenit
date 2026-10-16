@@ -11,6 +11,17 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getMyReferrals } from '@/lib/api/referrals';
 
+// Keep in step with the terms on sql-skreenit's applicant/refer.html and recruiter/refer.html.
+const TERMS = (coins: number) => [
+  'The referral scheme is open to all registered Skreenit users. Your referral code is personal to you.',
+  `You earn ${coins} coins when a new member signs up using your code and confirms their email address. Until the email is confirmed, the referral shows as waiting.`,
+  'A referral counts once per person. The code must be entered at sign-up; it cannot be added to an existing account.',
+  'You cannot refer yourself. Accounts that share your phone number, and more than one account on the same phone number, do not earn coins.',
+  'Referral coins are added to your coin balance and shown in your transaction history. They follow the same usage rules as other Skreenit coins.',
+  'Skreenit may change, pause or end the scheme at any time. This page shows what applies today. Coins already credited are not taken back for a change in the scheme.',
+  'Skreenit may withhold or reverse coins earned through misuse, fake or duplicate accounts, or anything that goes against the Terms & Conditions of the platform.',
+];
+
 function formatDate(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
@@ -92,6 +103,13 @@ export function ReferralScreen({ backTo }: { backTo: string }) {
               </ThemedView>
             ))
           )}
+
+          <ThemedText type="smallBold" style={styles.sectionTitle}>Terms and conditions</ThemedText>
+          <ThemedView style={[styles.terms, { borderColor: theme.border }]}>
+            {TERMS(d.reward_coins).map((t, i) => (
+              <ThemedText key={i} type="small" themeColor="textSecondary">{`${i + 1}. ${t}`}</ThemedText>
+            ))}
+          </ThemedView>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -111,5 +129,6 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: 12 },
   stat: { flex: 1, borderWidth: 1, borderRadius: Radius.md, padding: 14, gap: 2 },
   sectionTitle: { marginTop: 8 },
+  terms: { borderWidth: 1, borderRadius: Radius.md, padding: 12, gap: 8 },
   refRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: Radius.md, padding: 12 },
 });
