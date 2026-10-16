@@ -72,6 +72,7 @@ export default function CandidateLayout() {
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="purchase-history" options={{ href: null }} />
       <Tabs.Screen name="my-purchases" options={{ href: null }} />
+      <Tabs.Screen name="refer" options={{ href: null }} />
       <Tabs.Screen name="employability-report" options={{ href: null }} />
       <Tabs.Screen name="premium-services" options={{ href: null }} />
       <Tabs.Screen name="mock-interview" options={{ href: null }} />

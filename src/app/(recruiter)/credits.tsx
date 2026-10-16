@@ -36,6 +36,7 @@ const EVENT_LABELS: Record<string, { label: string; icon: React.ComponentProps<t
   unused_conversion: { label: 'Unused Balance Refunded', icon: 'rotate-left', kind: 'grant' },
   consume: { label: 'Coins Spent', icon: 'minus', kind: 'spend' },
   welcome_grant: { label: 'Welcome Offer', icon: 'gift', kind: 'grant' },
+  referral_reward: { label: 'Referral Reward', icon: 'user-plus', kind: 'grant' },
   expiry: { label: 'Welcome Coins Expired', icon: 'hourglass-end', kind: 'spend' },
 };
 

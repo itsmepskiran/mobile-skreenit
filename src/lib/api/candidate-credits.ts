@@ -4,7 +4,7 @@ import type { WelcomeExpiring } from '@/lib/api/credits';
 // Candidate-side equivalent of the recruiter Credits page — backs the My Purchases screen.
 // See mac-skreenit routers/applicant_new.py's get_candidate_credits_summary().
 export interface CandidateCoinTransaction {
-  event_type: 'purchase' | 'welcome_grant' | 'expiry' | 'consume';
+  event_type: 'purchase' | 'welcome_grant' | 'expiry' | 'consume' | 'referral_reward';
   feature_key: string;
   // Which service a 'consume' row paid for; null on purchases/grants.
   reference_type: 'resume_writing' | 'employability_report' | 'video_analysis' | 'mock_interview' | null;

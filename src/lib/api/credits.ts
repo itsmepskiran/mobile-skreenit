@@ -38,7 +38,7 @@ export interface CoinFeatureUsage {
 }
 
 export interface CoinTransaction {
-  event_type: 'purchase' | 'recruiter_pro_grant' | 'unused_conversion' | 'consume' | 'welcome_grant' | 'expiry';
+  event_type: 'purchase' | 'recruiter_pro_grant' | 'unused_conversion' | 'consume' | 'welcome_grant' | 'expiry' | 'referral_reward';
   amount_coins: number;
   balance_after: number;
   amount_inr: number | null;

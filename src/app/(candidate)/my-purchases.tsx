@@ -27,6 +27,7 @@ import { useAuthStore } from '@/lib/auth/store';
 const EVENT_LABELS: Record<string, string> = {
   purchase: 'Purchase',
   welcome_grant: 'Welcome Offer',
+  referral_reward: 'Referral Reward',
   expiry: 'Welcome Coins Expired',
   consume: 'Used',
 };
@@ -364,7 +365,7 @@ function TransactionRow({ tx }: { tx: CandidateCoinTransaction }) {
   return (
     <View style={[styles.historyRow, { borderColor: theme.border, backgroundColor: theme.backgroundElement, borderRadius: 12, borderTopWidth: 0, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 8 }]}>
       <View style={styles.historyMain}>
-        <FontAwesome6 name={isUse ? 'receipt' : tx.event_type === 'welcome_grant' ? 'gift' : tx.event_type === 'expiry' ? 'hourglass-end' : 'cart-shopping'} size={14} color={tx.event_type === 'expiry' || isUse ? '#c53030' : '#2f855a'} />
+        <FontAwesome6 name={isUse ? 'receipt' : tx.event_type === 'welcome_grant' || tx.event_type === 'referral_reward' ? 'gift' : tx.event_type === 'expiry' ? 'hourglass-end' : 'cart-shopping'} size={14} color={tx.event_type === 'expiry' || isUse ? '#c53030' : '#2f855a'} />
         <View>
           <ThemedText type="small">
             {subject} — {eventLabel}{paidWith}

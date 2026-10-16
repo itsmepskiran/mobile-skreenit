@@ -72,6 +72,7 @@ export default function RecruiterLayout() {
       <Tabs.Screen name="analysis-reports" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="credits" options={{ href: null }} />
+      <Tabs.Screen name="refer" options={{ href: null }} />
       <Tabs.Screen name="company-quota" options={{ href: null }} />
       <Tabs.Screen name="billing" options={{ href: null }} />
       <Tabs.Screen name="featured-jobs" options={{ href: null }} />

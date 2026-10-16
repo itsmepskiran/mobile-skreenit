@@ -313,6 +313,7 @@ export default function ProfileScreen() {
             icon="receipt"
             onPress={() => router.push('/(candidate)/purchase-history')}
           />
+          <Button title="Refer & Earn" variant="secondary" icon="gift" onPress={() => router.push('/(candidate)/refer')} />
           <Button title="Sign out" variant="secondary" onPress={() => signOut()} style={styles.signOutButton} />
           <Button
             title="Delete Account"

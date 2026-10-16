@@ -1,12 +1,14 @@
 import { FontAwesome6 } from '@/components/scoped';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet } from 'react-native';
 import { z } from 'zod';
 
 import { register as registerUser, resendConfirmation } from '@/lib/api/auth';
+import { validateReferralCode } from '@/lib/api/referrals';
 import { ApiError } from '@/lib/api/client';
 import { AuthFooter } from '@/components/auth-footer';
 import { AuthScreenLayout } from '@/components/auth-screen-layout';
@@ -26,6 +28,7 @@ const schema = z
     mobile: z.string().min(6, 'Enter a valid mobile number'),
     location: z.string().min(1, 'Enter your city'),
     role: z.enum(['candidate', 'recruiter']),
+    referralCode: z.string().max(40).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -39,6 +42,7 @@ export default function RegisterScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const params = useLocalSearchParams<{ ref?: string }>();
 
   const {
     control,
@@ -54,8 +58,23 @@ export default function RegisterScreen() {
       mobile: '',
       location: '',
       role: 'candidate',
+      referralCode: typeof params.ref === 'string' ? params.ref.trim().toUpperCase() : '',
     },
   });
+
+  // The code to look up: starts as the ?ref= link value and follows the field when it loses focus.
+  const [refCode, setRefCode] = useState(typeof params.ref === 'string' ? params.ref.trim().toUpperCase() : '');
+  const refQuery = useQuery({
+    queryKey: ['referral-validate', refCode],
+    queryFn: () => validateReferralCode(refCode),
+    enabled: refCode.length >= 3,
+    staleTime: 60_000,
+  });
+  const refHint = refCode.length < 3 || !refQuery.data
+    ? null
+    : refQuery.data.data.valid
+      ? { ok: true, text: `Invited by ${refQuery.data.data.referrer_first_name ?? 'a Skreenit member'}. Welcome!` }
+      : { ok: false, text: 'We could not find that code. You can still sign up without it.' };
 
   const onSubmit = async (values: FormValues) => {
     setFormError(null);
@@ -182,6 +201,25 @@ export default function RegisterScreen() {
           />
         )}
       />
+      <Controller
+        control={control}
+        name="referralCode"
+        render={({ field }) => (
+          <TextField
+            label="Referral code (optional)"
+            placeholder="Have a code? Enter it here"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            value={field.value ?? ''}
+            onChangeText={(t) => field.onChange(t.toUpperCase())}
+            onBlur={() => setRefCode((field.value ?? '').trim())}
+            error={refHint && !refHint.ok ? refHint.text : undefined}
+          />
+        )}
+      />
+      {refHint?.ok ? (
+        <ThemedText type="small" style={{ color: '#16a34a' }}>{refHint.text}</ThemedText>
+      ) : null}
       <Controller
         control={control}
         name="password"

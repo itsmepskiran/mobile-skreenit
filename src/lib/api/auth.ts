@@ -23,6 +23,8 @@ export interface RegisterInput {
   mobile: string;
   location: string;
   role: 'candidate' | 'recruiter';
+  // Referral scheme: optional code of the member who invited this user.
+  referralCode?: string;
 }
 
 export function register(input: RegisterInput) {
@@ -35,6 +37,7 @@ export function register(input: RegisterInput) {
       mobile: input.mobile,
       location: input.location,
       role: input.role,
+      referral_code: input.referralCode?.trim() || undefined,
       email_redirect_to: DEEP_LINK_CONFIRM_EMAIL,
     },
     { auth: false },

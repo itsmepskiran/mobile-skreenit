@@ -336,6 +336,7 @@ export default function RecruiterProfileScreen() {
           icon="receipt"
           onPress={() => router.push('/(recruiter)/purchase-history')}
         />
+        <Button title="Refer & Earn" variant="secondary" icon="gift" onPress={() => router.push('/(recruiter)/refer')} />
         <Button title="Sign out" variant="secondary" onPress={() => signOut()} />
         <Button
           title="Delete Account"
