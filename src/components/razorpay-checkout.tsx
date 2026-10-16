@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, NativeModules, StyleSheet, TurboModuleRegistry } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
@@ -28,10 +28,25 @@ interface RazorpayCheckoutProps {
   onDismiss: () => void;
 }
 
-// Embeds Razorpay's hosted checkout.js in a WebView, mirroring sql-skreenit's
-// Payments/js/payments.js invokeRazorpayGatewayInstance() options exactly —
-// keeps checkout entirely within Expo Go (no native module / dev-client rebuild
-// like react-native-razorpay would require).
+// Two ways to take the payment, same props and callbacks either way:
+//  - Native Razorpay SDK (react-native-razorpay) in a real build: UPI apps open directly and the
+//    app is told the result straight away.
+//  - Razorpay's hosted checkout.js in a WebView, mirroring sql-skreenit's Payments/js/payments.js
+//    invokeRazorpayGatewayInstance() options: used where the native module is missing (Expo Go).
+type NativeRazorpay = { open: (options: Record<string, unknown>) => Promise<RazorpaySuccess> };
+
+function loadNativeRazorpay(): NativeRazorpay | null {
+  try {
+    const present = TurboModuleRegistry.get('RNRazorpayCheckout') ?? NativeModules.RNRazorpayCheckout;
+    if (!present) return null;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return (require('react-native-razorpay') as { default: NativeRazorpay }).default;
+  } catch {
+    return null;
+  }
+}
+const nativeRazorpay = loadNativeRazorpay();
+
 function buildHtml(props: Omit<RazorpayCheckoutProps, 'visible' | 'onSuccess' | 'onDismiss'>): string {
   const options = {
     key: props.keyId,
@@ -86,16 +101,16 @@ function buildHtml(props: Omit<RazorpayCheckoutProps, 'visible' | 'onSuccess' | 
 </html>`;
 }
 
-export function RazorpayCheckout({ visible, onSuccess, onDismiss: onDismissProp, ...rest }: RazorpayCheckoutProps) {
-  const theme = useTheme();
+export function RazorpayCheckout(props: RazorpayCheckoutProps) {
+  if (!props.visible) return null;
+  return nativeRazorpay ? <NativeCheckout {...props} native={nativeRazorpay} /> : <WebViewCheckout {...props} />;
+}
+
+// Closing without a success message doesn't prove nothing was paid (the redirect/handler can be
+// missed after a UPI/card/OTP step), so ask the server to settle anything Razorpay says is paid.
+function useSettleOnDismiss(onDismissProp: () => void) {
   const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(true);
-
-  if (!visible) return null;
-
-  // Closing without a success message doesn't prove nothing was paid (the redirect/handler can be
-  // missed after a UPI/card/OTP step), so ask the server to settle anything Razorpay says is paid.
-  const onDismiss = () => {
+  return () => {
     onDismissProp();
     reconcilePayments()
       .then((res) => {
@@ -106,6 +121,35 @@ export function RazorpayCheckout({ visible, onSuccess, onDismiss: onDismissProp,
       })
       .catch(() => {});
   };
+}
+
+function NativeCheckout({ onSuccess, onDismiss: onDismissProp, native, keyId, orderId, amount, currency, name, description, prefill }: RazorpayCheckoutProps & { native: NativeRazorpay }) {
+  const onDismiss = useSettleOnDismiss(onDismissProp);
+  const started = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (started.current === orderId) return; // one sheet per order, even if the screen re-renders
+    started.current = orderId;
+    native
+      .open({ key: keyId, order_id: orderId, amount, currency, name, description, prefill, theme: { color: '#6366f1' } })
+      .then((result) => onSuccess(result))
+      .catch((error: { code?: number; description?: string }) => {
+        // code 2: the person closed the sheet. Anything else is a real failure worth saying.
+        if (error?.code !== 2) {
+          Alert.alert('Payment not completed', error?.description || 'The payment could not be completed. You have not been charged.');
+        }
+        onDismiss();
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
+
+  return null;
+}
+
+function WebViewCheckout({ visible: _visible, onSuccess, onDismiss: onDismissProp, ...rest }: RazorpayCheckoutProps) {
+  const theme = useTheme();
+  const [loading, setLoading] = useState(true);
+  const onDismiss = useSettleOnDismiss(onDismissProp);
 
   const onMessage = (event: WebViewMessageEvent) => {
     let payload: { type: string; [key: string]: unknown };
@@ -126,7 +170,7 @@ export function RazorpayCheckout({ visible, onSuccess, onDismiss: onDismissProp,
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onDismiss}>
+    <Modal visible animationType="slide" onRequestClose={onDismiss}>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Pressable style={styles.closeButton} onPress={onDismiss} hitSlop={12}>
           <FontAwesome6 name="xmark" size={18} color={theme.text} />
