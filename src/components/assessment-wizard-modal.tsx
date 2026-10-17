@@ -35,13 +35,15 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSaved: () => void;
+  // Preselects this job in step 1 each time the wizard opens (e.g. from a job's "Assessments" button).
+  initialJobId?: string;
 }
 
 // Ported from sql-skreenit's AI Assessment Wizard (dashboard/js/recruiter-dashboard.js).
 // Step 1: pick job. Step 2: optionally upload a JD for AI recommendations (skippable).
 // Step 3: select assessments — Recommended, Browse All, and Upload Your Own tabs
 // all share one selection set. Step 4: confirm and save.
-export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
+export function AssessmentWizardModal({ visible, onClose, onSaved, initialJobId }: Props) {
   const theme = useTheme();
   const [step, setStep] = useState<Step>(1);
   const [tab, setTab] = useState<Tab>('recommended');
@@ -52,6 +54,13 @@ export function AssessmentWizardModal({ visible, onClose, onSaved }: Props) {
   const [selections, setSelections] = useState<Map<string, string>>(new Map()); // mapKey -> label
   const [error, setError] = useState<string | null>(null);
   const [customTitle, setCustomTitle] = useState('');
+
+  // Preselect initialJobId each time the wizard opens (state adjusted during render, not in an effect).
+  const [wasVisible, setWasVisible] = useState(false);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible && initialJobId) setJobId(initialJobId);
+  }
 
   const jobsQuery = useQuery({ queryKey: ['recruiter', 'jobs', 'all'], queryFn: () => listMyJobs({ pageSize: 200 }), enabled: visible });
   const jobOptions = useMemo(

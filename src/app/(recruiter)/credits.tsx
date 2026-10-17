@@ -18,14 +18,14 @@ import { useAuthStore } from '@/lib/auth/store';
 // Mirrors sql-skreenit's recruiter/js/credits.js FEATURE_LABELS — every feature that can spend
 // coins, shown even at zero usage so "item-wise" is a complete picture.
 const FEATURE_LABELS: Record<string, { label: string; icon: React.ComponentProps<typeof FontAwesome6>['name'] }> = {
-  assessment_invite: { label: 'Assessment Invites', icon: 'clipboard-check' },
+  assessment_invite: { label: 'Completed Assessments', icon: 'clipboard-check' },
   detailed_analysis: { label: 'Detailed Analysis Reports', icon: 'magnifying-glass-chart' },
   ai_interview_analysis: { label: 'AI Interview Analyses', icon: 'video' },
 };
 
 // Names the service a 'consume' ledger row paid for (its reference_type).
 const SPEND_LABELS: Record<string, string> = {
-  assessment_invite: 'Assessment Invite',
+  assessment_invite: 'Completed Assessment',
   detailed_analysis: 'Detailed Analysis',
   ai_interview_analysis: 'AI Interview Analysis',
 };
