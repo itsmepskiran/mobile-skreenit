@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
@@ -34,6 +34,14 @@ export default function RecruiterPremiumScreen() {
   const { reviewOrder, reviewElement, showReceipt } = useOrderReview();
   const authUser = useAuthStore((state) => state.user);
   const [wizardOpen, setWizardOpen] = useState(false);
+  // Set when a job's "Assessments" button on the Job Posts screen sends the recruiter here
+  // for a job that has no assessments yet: open the setup wizard straight away for that job.
+  const { jobId: initialJobId } = useLocalSearchParams<{ jobId?: string }>();
+  const [handledJobId, setHandledJobId] = useState<string | undefined>(undefined);
+  if (initialJobId !== handledJobId) {
+    setHandledJobId(initialJobId);
+    if (initialJobId) setWizardOpen(true);
+  }
   const [checkoutOrder, setCheckoutOrder] = useState<{
     keyId: string;
     orderId: string;
@@ -59,7 +67,6 @@ export default function RecruiterPremiumScreen() {
   const configsQuery = useQuery({
     queryKey: ['recruiter', 'assessment-configs'],
     queryFn: listAssessmentConfigs,
-    enabled: subscribed,
   });
 
   const startCheckoutMutation = useMutation({
@@ -134,7 +141,9 @@ export default function RecruiterPremiumScreen() {
             </ThemedText>
           ) : null}
 
-          {subscribed ? (
+          {/* Assessments are free per job, then paid in coins; they never needed a subscription
+              (the backend's assessment-link endpoint has no subscription check). So every
+              recruiter sees the setup card and the Configured Assessments list. */}
             <>
               <ThemedView style={[styles.card, { borderColor: theme.border }]}>
                 <View style={styles.cardHeaderRow}>
@@ -193,15 +202,15 @@ export default function RecruiterPremiumScreen() {
                 ))
               )}
             </>
-          ) : (
+
+          {!subscribed ? (
             <>
-              <ThemedView style={[styles.card, { borderColor: theme.border }]}>
-                <ThemedText type="subtitle">AI-Recommended or Hand-Picked Assessments</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Upload a job description and get AI-recommended assessments from 60+ tests across 12 industries, or
-                  browse and hand-pick the ones you want for each job.
-                </ThemedText>
-              </ThemedView>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Recruiter Pro
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Optional: a subscription adds monthly coins for invites and analyses beyond the free quota on each job.
+              </ThemedText>
 
               {plansQuery.isLoading ? (
                 <ActivityIndicator color={theme.primary} />
@@ -246,12 +255,13 @@ export default function RecruiterPremiumScreen() {
                 ))
               )}
             </>
-          )}
+          ) : null}
         </ScrollView>
       )}
 
       <AssessmentWizardModal
         visible={wizardOpen}
+        initialJobId={initialJobId}
         onClose={() => setWizardOpen(false)}
         onSaved={() => {
           setWizardOpen(false);

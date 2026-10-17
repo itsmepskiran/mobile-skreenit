@@ -49,8 +49,8 @@ export default function AssessmentLinksScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const { id: jobId, jobTitle } = useLocalSearchParams<{ id: string; jobTitle?: string }>();
-  // Pushed here only from Premium (a hidden tab outside this stack) today —
-  // see src/lib/navigation/smart-back.ts.
+  // Pushed here from Premium (a hidden tab outside this stack, which passes backTo —
+  // see src/lib/navigation/smart-back.ts) and from Job Posts (same stack, plain back).
   const { goBack } = useSmartBack();
   const [activeTab, setActiveTab] = useState<AssessmentLinkMode>('open');
   const [rows, setRows] = useState<InviteeRow[]>([{ ...EMPTY_ROW }]);

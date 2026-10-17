@@ -13,6 +13,7 @@ import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { listAssessmentConfigs } from '@/lib/api/position-assessments';
 import { deleteJob, featureJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
 import { formatSalaryRange } from '@/lib/format';
 
@@ -56,6 +57,24 @@ export default function MyJobsScreen() {
     // blanking the whole screen (incl. the search box) back to a full-page spinner on every keystroke.
     placeholderData: keepPreviousData,
   });
+
+  // Same query key as ATS Services, so both screens share one cached list of which jobs
+  // already have assessments set up.
+  const configsQuery = useQuery({ queryKey: ['recruiter', 'assessment-configs'], queryFn: listAssessmentConfigs });
+  const configuredJobIds = useMemo(
+    () => new Set((configsQuery.data?.data ?? []).map((row) => row.job_id)),
+    [configsQuery.data],
+  );
+
+  // A job with assessments goes straight to its invite screen; one without goes to the
+  // setup wizard with that job already picked.
+  const openAssessments = (job: RecruiterJobListItem) => {
+    if (configuredJobIds.has(job.id)) {
+      router.push({ pathname: '/(recruiter)/jobs/[id]/assessment-links', params: { id: job.id, jobTitle: job.job_title } });
+    } else {
+      router.push({ pathname: '/(recruiter)/premium', params: { jobId: job.id } });
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: deleteJob,
@@ -216,6 +235,12 @@ export default function MyJobsScreen() {
                     <FontAwesome6 name="users" size={13} color={theme.primary} />
                     <ThemedText type="small" themeColor="primary">
                       Applicants
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable style={[styles.actionButton, { borderColor: theme.border }]} onPress={() => openAssessments(job)}>
+                    <FontAwesome6 name="clipboard-check" size={13} color={theme.primary} />
+                    <ThemedText type="small" themeColor="primary">
+                      Assessments
                     </ThemedText>
                   </Pressable>
                   <Pressable
