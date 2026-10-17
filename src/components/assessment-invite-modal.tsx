@@ -5,7 +5,6 @@ import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import QRCode from 'react-native-qrcode-svg';
 
 import { ThemedText } from '@/components/themed-text';
-import { useCoinConsent } from '@/components/coin-consent-modal';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api/client';
@@ -28,26 +27,16 @@ interface Props {
 // from Applications review and Candidate Search on web.
 export function AssessmentInviteModal({ context, onClose }: Props) {
   const theme = useTheme();
-  const { confirmSpend, consentModal } = useCoinConsent();
 
   const mutation = useMutation({
     mutationFn: (ctx: AssessmentInviteContext) =>
       generateAssessmentInviteLink(ctx.jobId, { fullName: ctx.candidateName, email: ctx.candidateEmail }),
   });
 
-  // Opening this modal creates the invite (and charges coins past the job's free quota), so
-  // get consent first; declining closes the modal without creating anything.
+  // Opening this modal creates the invite. Invites are free; the recruiter is only billed
+  // when a candidate completes the job's assessments (10 free per job, then coins).
   useEffect(() => {
-    if (!context) return;
-    let cancelled = false;
-    confirmSpend({ action: 'assessment_invite', jobId: context.jobId }).then((ok) => {
-      if (cancelled) return;
-      if (ok) mutation.mutate(context);
-      else onClose();
-    });
-    return () => {
-      cancelled = true;
-    };
+    if (context) mutation.mutate(context);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context]);
 
@@ -55,9 +44,6 @@ export function AssessmentInviteModal({ context, onClose }: Props) {
 
   const token = mutation.data?.data.invitees[0]?.token;
   const applyUrl = token ? `${ASSESSMENT_INVITE_APPLY_URL}?token=${encodeURIComponent(token)}` : null;
-
-  // Until the user has consented the invite hasn't been requested -- show only the consent prompt.
-  if (!mutation.isPending && !mutation.isError && !mutation.data) return <>{consentModal}</>;
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
