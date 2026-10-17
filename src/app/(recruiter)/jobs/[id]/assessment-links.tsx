@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Share, StyleSheet } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,9 +27,9 @@ function applyUrl(token: string) {
 }
 
 const TABS: { mode: AssessmentLinkMode; label: string; linkType: string }[] = [
-  { mode: 'open', label: 'Open', linkType: 'reusable' },
   { mode: 'per_candidate', label: 'Per Candidate', linkType: 'single_use' },
   { mode: 'shared_gated', label: 'Shared (Gated)', linkType: 'gated' },
+  { mode: 'open', label: 'Open', linkType: 'reusable' },
 ];
 
 interface InviteeRow {
@@ -51,7 +51,7 @@ export default function AssessmentLinksScreen() {
   // Pushed here from Premium (a hidden tab outside this stack, which passes backTo —
   // see src/lib/navigation/smart-back.ts) and from Job Posts (same stack, plain back).
   const { goBack } = useSmartBack();
-  const [activeTab, setActiveTab] = useState<AssessmentLinkMode>('open');
+  const [activeTab, setActiveTab] = useState<AssessmentLinkMode>('per_candidate');
   const [rows, setRows] = useState<InviteeRow[]>([{ ...EMPTY_ROW }]);
   const [sharedToken, setSharedToken] = useState<string | null>(null);
 
@@ -63,16 +63,6 @@ export default function AssessmentLinksScreen() {
   const openLinkMutation = useMutation({
     mutationFn: () => generateAssessmentLink(jobId, { mode: 'open' }),
   });
-
-  // Web auto-generates (or reuses the existing) open link the moment that tab is
-  // opened, rather than requiring an explicit button press.
-  useEffect(() => {
-    if (activeTab === 'open' && !openLinkMutation.data && !openLinkMutation.isPending) {
-      openLinkMutation.mutate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
 
   const inviteMutation = useMutation({
     mutationFn: (mode: AssessmentLinkMode) =>
@@ -134,6 +124,20 @@ export default function AssessmentLinksScreen() {
               One stable link anyone can use to apply and take this job&apos;s assessments — no invite needed per
               candidate.
             </ThemedText>
+            <ThemedText type="small" style={{ color: theme.danger }}>
+              You don&apos;t choose who takes it: everyone who completes it counts toward this job&apos;s 10 free
+              assessments, then costs coins. To control spend, invite chosen candidates instead.
+            </ThemedText>
+            {!openLinkMutation.data && !openLinkMutation.isPending && !openLinkMutation.isError ? (
+              <Pressable
+                style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                onPress={() => openLinkMutation.mutate()}
+              >
+                <ThemedText type="smallBold" style={{ color: '#fff' }}>
+                  Create Open Link
+                </ThemedText>
+              </Pressable>
+            ) : null}
             {openLinkMutation.isPending ? (
               <ActivityIndicator color={theme.primary} style={styles.centerPad} />
             ) : openLinkMutation.isError ? (
@@ -152,7 +156,7 @@ export default function AssessmentLinksScreen() {
           <ThemedView style={[styles.card, { borderColor: theme.border }]}>
             <ThemedText type="small" themeColor="textSecondary">
               {activeTab === 'per_candidate'
-                ? 'Each candidate below gets their own one-time link.'
+                ? 'Each candidate below gets their own one-time link. Only candidates you invite can take it; you pay only when one completes it (10 free per job, then coins).'
                 : 'Everyone below shares one link, but must verify their identity before starting.'}
             </ThemedText>
             {rows.map((row, i) => (
