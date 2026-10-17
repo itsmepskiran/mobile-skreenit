@@ -56,7 +56,6 @@ function useProtectedRoute() {
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
   const role = useAuthStore((state) => state.user?.role);
-  const onboarded = useAuthStore((state) => state.user?.onboarded);
   const group = segments[0];
   const inAtsWorld = group === '(ats-auth)' || group === '(ats)';
 
@@ -77,16 +76,8 @@ function useProtectedRoute() {
     if (status === 'signedOut' && !isPublicRoute) {
       router.replace('/(auth)/login');
     } else if (status === 'signedIn' && inAuthGroup) {
-      // Mirrors web's login-time redirect: an un-onboarded recruiter goes
-      // straight to completing their profile instead of the ATS Services
-      // landing tab. Only fires on this login-moment transition (leaving the
-      // auth group), not on every navigation, so it doesn't trap a recruiter
-      // who deliberately backs out of editing.
-      if (role === 'recruiter' && onboarded === false) {
-        router.replace('/(recruiter)/profile?edit=true');
-      } else {
-        void goHome();
-      }
+      // Profile completion is optional now (web matches): everyone goes straight home.
+      void goHome();
     } else if (status === 'signedIn' && !inAuthGroup) {
       // Guard against a stale route group left over from role-switching, a
       // deep link, or navigation state surviving a fast-refresh — the active
@@ -97,7 +88,7 @@ function useProtectedRoute() {
         void goHome();
       }
     }
-  }, [status, role, onboarded, group, inAtsWorld, router]);
+  }, [status, role, group, inAtsWorld, router]);
 }
 
 export default function RootLayout() {

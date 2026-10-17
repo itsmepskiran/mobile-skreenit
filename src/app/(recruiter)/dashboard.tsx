@@ -5,6 +5,7 @@ import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { QuickActions } from '@/components/quick-actions';
+import { RecruiterProfileCard } from '@/components/recruiter-profile-card';
 import { RecruiterWalletCard } from '@/components/recruiter-wallet-card';
 import { HighlightTile } from '@/components/highlight-tile';
 import { StatusBadge } from '@/components/status-badge';
@@ -74,6 +75,7 @@ export default function RecruiterDashboardScreen() {
             </Pressable>
           </View>} />
       <ScrollView contentContainerStyle={styles.content}>
+        <RecruiterProfileCard />
         <RecruiterWalletCard />
         <QuickActions />
 

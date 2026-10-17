@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
@@ -10,16 +10,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { LatestIntroAnalysis } from '@/components/latest-intro-analysis';
 import { ProfileView } from '@/components/profile-wizard/profile-view';
-import { StepEducation } from '@/components/profile-wizard/step-education';
-import { StepExperience } from '@/components/profile-wizard/step-experience';
 import { StepPersonal } from '@/components/profile-wizard/step-personal';
-import { StepProfessional } from '@/components/profile-wizard/step-professional';
-import { StepReview } from '@/components/profile-wizard/step-review';
-import { StepSkills } from '@/components/profile-wizard/step-skills';
-import { StepVideoIntro } from '@/components/profile-wizard/step-video-intro';
 import { EMPTY_WIZARD_VALUES, type WizardValues } from '@/components/profile-wizard/types';
 import { RoleSwitcher } from '@/components/role-switcher';
-import { Stepper, type StepDefinition } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -34,18 +27,6 @@ import { deleteAccount } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/auth/store';
 import { toArray } from '@/lib/format';
-
-const STEPS: StepDefinition[] = [
-  { label: 'Personal', icon: 'user' },
-  { label: 'Professional', icon: 'briefcase' },
-  { label: 'Education', icon: 'graduation-cap' },
-  { label: 'Skills', icon: 'code' },
-  { label: 'Experience', icon: 'clock-rotate-left' },
-  { label: 'Review', icon: 'check' },
-  { label: 'Video Intro', icon: 'video' },
-];
-const REVIEW_STEP = 5;
-const VIDEO_STEP = 6;
 
 function toStr(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -123,12 +104,13 @@ export default function ProfileScreen() {
   // Mirrors the real web app: landing on Profile shows a read-only view
   // (candidate-profile.html) with an "Edit Profile" button — the multi-step
   // wizard below only opens once that's tapped, not by default.
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
-  const [stepIndex, setStepIndex] = useState(0);
+  // Registration is a single screen now (resume, photo, personal details); the dashboard's
+  // "Update Profile" button opens it directly via ?edit=true.
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const [mode, setMode] = useState<'view' | 'edit'>(edit === 'true' ? 'edit' : 'view');
   const [values, setValues] = useState<WizardValues>(EMPTY_WIZARD_VALUES);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [declarationAgreed, setDeclarationAgreed] = useState(false);
 
   const profileQuery = useQuery({ queryKey: ['profile'], queryFn: getProfile });
   const profile = profileQuery.data?.data;
@@ -151,7 +133,6 @@ export default function ProfileScreen() {
       await invalidateProfile();
       setSaved(true);
       setMode('view');
-      setDeclarationAgreed(false);
       setTimeout(() => setSaved(false), 2000);
     },
     onError: (err) => {
@@ -288,10 +269,7 @@ export default function ProfileScreen() {
             profile={profile}
             fullName={authUser?.full_name ?? ''}
             email={authUser?.email ?? ''}
-            onEdit={() => {
-              setStepIndex(0);
-              setMode('edit');
-            }}
+            onEdit={() => setMode('edit')}
           />
           <RoleSwitcher />
           <LatestIntroAnalysis />
@@ -326,18 +304,10 @@ export default function ProfileScreen() {
     );
   }
 
-  const isLastStep = stepIndex === STEPS.length - 1;
-  const isFirstStep = stepIndex === 0;
-
   const stepProps = { values, setValue };
 
-  // Mirrors web's validateStep(7): the profile can't be finalized without a
-  // resume, a completed video introduction, and the declaration checkbox.
-  const missingRequirements: string[] = [];
-  if (!profile?.resume_url) missingRequirements.push('Upload your resume in the Personal step');
-  if (!profile?.intro_video_url) missingRequirements.push('Complete your video introduction above');
-  if (!declarationAgreed) missingRequirements.push('Agree to the declaration below');
-  const canSave = missingRequirements.length === 0;
+  // The only hard requirement is a resume; everything else is optional.
+  const canSave = !!profile?.resume_url;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -354,65 +324,32 @@ export default function ProfileScreen() {
           <ThemedText>Cancel</ThemedText>
         </Pressable>
       </View>
-      <Stepper steps={STEPS} activeIndex={stepIndex} />
       <ScrollView contentContainerStyle={styles.content}>
-        {stepIndex === 0 ? (
-          <StepPersonal
-            {...stepProps}
-            fullName={authUser?.full_name ?? ''}
-            email={authUser?.email ?? ''}
-            avatarUrl={profile?.avatar_url ?? null}
-            resumeUrl={profile?.resume_url ?? null}
-            avatarUploading={avatarMutation.isPending}
-            resumeUploading={resumeMutation.isPending}
-            onPickAvatar={onPickAvatar}
-            onPickResume={onPickResume}
-          />
-        ) : null}
-        {stepIndex === 1 ? <StepProfessional {...stepProps} /> : null}
-        {stepIndex === 2 ? <StepEducation {...stepProps} /> : null}
-        {stepIndex === 3 ? <StepSkills {...stepProps} /> : null}
-        {stepIndex === 4 ? <StepExperience {...stepProps} /> : null}
-        {stepIndex === REVIEW_STEP ? (
-          <StepReview values={values} fullName={authUser?.full_name ?? ''} email={authUser?.email ?? ''} />
-        ) : null}
-        {stepIndex === VIDEO_STEP ? (
-          <>
-            <StepVideoIntro
-              resumeUrl={profile?.resume_url ?? null}
-              existingIntroVideoUrl={profile?.intro_video_url ?? null}
-              onRecorded={invalidateProfile}
-            />
+        <StepPersonal
+          {...stepProps}
+          fullName={authUser?.full_name ?? ''}
+          email={authUser?.email ?? ''}
+          avatarUrl={profile?.avatar_url ?? null}
+          resumeUrl={profile?.resume_url ?? null}
+          avatarUploading={avatarMutation.isPending}
+          resumeUploading={resumeMutation.isPending}
+          onPickAvatar={onPickAvatar}
+          onPickResume={onPickResume}
+        />
 
-            <Pressable style={styles.checkboxRow} onPress={() => setDeclarationAgreed((v) => !v)}>
-              <FontAwesome6
-                name={declarationAgreed ? 'square-check' : 'square'}
-                size={18}
-                color={declarationAgreed ? theme.primary : theme.textSecondary}
-              />
-              <ThemedText style={styles.declarationText}>
-                I declare that the information provided in this application is true and accurate to the best of my
-                knowledge.
-              </ThemedText>
-            </Pressable>
-
-            {!canSave
-              ? missingRequirements.map((reason) => (
-                  <ThemedText key={reason} type="small" style={{ color: theme.danger }}>
-                    {reason}
-                  </ThemedText>
-                ))
-              : null}
-
-            <Button
-              title={saved ? 'Saved' : 'Save Profile'}
-              icon={saved ? 'check' : undefined}
-              loading={saveMutation.isPending}
-              disabled={!canSave}
-              onPress={onSave}
-            />
-          </>
+        {!canSave ? (
+          <ThemedText type="small" style={{ color: theme.danger }}>
+            Upload your resume to save your profile.
+          </ThemedText>
         ) : null}
+
+        <Button
+          title={saved ? 'Saved' : 'Save Profile'}
+          icon={saved ? 'check' : undefined}
+          loading={saveMutation.isPending}
+          disabled={!canSave}
+          onPress={onSave}
+        />
 
         {saveError ? (
           <ThemedText type="small" style={{ color: theme.danger }}>
@@ -421,23 +358,6 @@ export default function ProfileScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={[styles.footer, { borderColor: theme.border }]}>
-        <Pressable
-          disabled={isFirstStep}
-          onPress={() => setStepIndex((i) => Math.max(0, i - 1))}
-          style={[styles.navButton, isFirstStep && styles.navButtonDisabled]}
-        >
-          <FontAwesome6 name="chevron-left" size={13} color={isFirstStep ? theme.border : theme.text} />
-          <ThemedText style={isFirstStep ? { color: theme.border } : undefined}>Back</ThemedText>
-        </Pressable>
-
-        {isLastStep ? null : (
-          <Pressable style={styles.navButton} onPress={() => setStepIndex((i) => Math.min(STEPS.length - 1, i + 1))}>
-            <ThemedText themeColor="primary">Next</ThemedText>
-            <FontAwesome6 name="chevron-right" size={13} color={theme.primary} />
-          </Pressable>
-        )}
-      </View>
     </SafeAreaView>
   );
 }
@@ -447,6 +367,7 @@ const styles = StyleSheet.create({
   loader: { marginTop: 40 },
   content: { padding: 20, gap: 20, paddingBottom: 40 },
   signOutButton: { marginTop: -6 },
+  navButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 4 },
   editHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
@@ -454,16 +375,4 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  navButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 4 },
-  navButtonDisabled: { opacity: 0.4 },
-  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  declarationText: { flex: 1 },
 });

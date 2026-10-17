@@ -35,9 +35,7 @@ export default function RecruiterProfileScreen() {
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  // Un-onboarded recruiters land here straight from login (see useProtectedRoute
-  // in app/_layout.tsx) with ?edit=true, so open directly into the edit form
-  // instead of the read-only view they'd otherwise see first.
+  // The dashboard's "Update Profile" button opens here with ?edit=true, straight into the edit form.
   const [isEditing, setIsEditing] = useState(edit === 'true');
 
   const profileQuery = useQuery({ queryKey: ['recruiter', 'profile'], queryFn: getRecruiterProfile });

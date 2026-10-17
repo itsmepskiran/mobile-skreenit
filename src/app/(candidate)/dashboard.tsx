@@ -9,6 +9,7 @@ import { DashboardPremium } from '@/components/dashboard-premium';
 import { HighlightTile } from '@/components/highlight-tile';
 import { LatestIntroAnalysis } from '@/components/latest-intro-analysis';
 import { ProfileChecklist } from '@/components/profile-checklist';
+import { ProfileCompletenessCard } from '@/components/profile-completeness-card';
 import { WalletCard } from '@/components/wallet-card';
 import { CardScope, GradientScreen } from '@/components/on-gradient';
 import { cardSurface } from '@/constants/theme';
@@ -108,6 +109,7 @@ export default function CandidateDashboardScreen() {
           />
         </View>
 
+        <ProfileCompletenessCard />
         <ProfileChecklist />
 
         {assignedJobs.length > 0 ? (
