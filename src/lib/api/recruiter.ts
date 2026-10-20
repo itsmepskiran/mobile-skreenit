@@ -266,7 +266,8 @@ export type RecruiterApplicationStatus =
   | 'interview_scheduled'
   | 'interviewing'
   | 'hired'
-  | 'rejected';
+  | 'rejected'
+  | 'assessment';
 
 export function updateApplicationStatus(
   id: string,
