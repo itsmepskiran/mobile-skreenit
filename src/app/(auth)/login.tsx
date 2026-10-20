@@ -12,6 +12,7 @@ import { useAuthStore, type AuthTokens, type AuthUser } from '@/lib/auth/store';
 import { AuthFooter } from '@/components/auth-footer';
 import { AuthScreenLayout } from '@/components/auth-screen-layout';
 import { Button } from '@/components/button';
+import { ProviderSignIn } from '@/components/provider-sign-in';
 import { RoleChoiceModal, type Role } from '@/components/role-choice-modal';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
@@ -209,6 +210,8 @@ export default function LoginScreen() {
               </ThemedText>
             </Link>
           </ThemedView>
+
+          <ProviderSignIn onError={setFormError} />
         </>
       ) : (
         <>

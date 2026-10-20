@@ -15,15 +15,28 @@ const API_BASE_URL = process.env.API_BASE_URL ?? 'https://api.skreenit.com';
 // mismatches that failed every Android production build.
 const skipIOSPush = process.env.SKIP_IOS_PUSH === '1';
 
+// Google sign-in client IDs from Google Cloud Console (APIs & Services > Credentials). Kept as
+// constants, not env vars, because the plugin entry below feeds the fingerprint runtimeVersion
+// (see the SKIP_IOS_PUSH note). Until they are filled in, the Google button stays hidden.
+// The backend's GOOGLE_CLIENT_IDS must include the Web client ID.
+const GOOGLE_WEB_CLIENT_ID: string = '';
+const GOOGLE_IOS_CLIENT_ID: string = '';
+// The iOS client ID reversed, e.g. com.googleusercontent.apps.1234-abcd.
+const GOOGLE_IOS_URL_SCHEME = GOOGLE_IOS_CLIENT_ID
+  ? GOOGLE_IOS_CLIENT_ID.split('.').reverse().join('.')
+  : 'com.googleusercontent.apps.not-configured';
+
 // @expo/prebuild-config auto-discovers expo-notifications/app.plugin.js via
 // withVersionedExpoSDKPlugins → createLegacyPlugin → withStaticPlugin, which
 // fires regardless of what's in the plugins array. aps-environment ends up in
 // the entitlements even when SKIP_IOS_PUSH=1 removes the explicit plugin.
 // Applying this at the export level ensures it runs last and strips the
 // entitlement so Personal Team local iOS builds can sign successfully.
+// Sign in with Apple is a paid-membership capability too, so it goes the same way.
 function withoutPushEntitlement(appConfig: ExpoConfig): ExpoConfig {
   return withEntitlementsPlist(appConfig, (c) => {
     delete c.modResults['aps-environment'];
+    delete c.modResults['com.apple.developer.applesignin'];
     return c;
   });
 }
@@ -40,6 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     userInterfaceStyle: 'automatic',
     ios: {
       bundleIdentifier: 'com.skreenit.app',
+      usesAppleSignIn: true,
     },
     android: {
       package: 'com.skreenit.app',
@@ -88,6 +102,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       'expo-web-browser',
       'expo-video',
       ['expo-notifications', { color: '#4F46E5' }],
+      'expo-apple-authentication',
+      ['@react-native-google-signin/google-signin', { iosUrlScheme: GOOGLE_IOS_URL_SCHEME }],
     ],
     experiments: {
       typedRoutes: true,
@@ -95,6 +111,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     extra: {
       apiBaseUrl: API_BASE_URL,
+      googleWebClientId: GOOGLE_WEB_CLIENT_ID,
+      googleIosClientId: GOOGLE_IOS_CLIENT_ID,
       eas: {
         projectId: '3b5ea64f-e099-43c3-a9b2-3ce8603602a3',
       },

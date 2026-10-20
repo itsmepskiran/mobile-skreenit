@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { StyleSheet } from 'react-native';
 import { z } from 'zod';
 
@@ -13,6 +13,7 @@ import { ApiError } from '@/lib/api/client';
 import { AuthFooter } from '@/components/auth-footer';
 import { AuthScreenLayout } from '@/components/auth-screen-layout';
 import { Button } from '@/components/button';
+import { ProviderSignIn } from '@/components/provider-sign-in';
 import { RoleToggle } from '@/components/role-toggle';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
@@ -61,6 +62,9 @@ export default function RegisterScreen() {
       referralCode: typeof params.ref === 'string' ? params.ref.trim().toUpperCase() : '',
     },
   });
+
+  const chosenRole = useWatch({ control, name: 'role' });
+  const typedReferral = useWatch({ control, name: 'referralCode' });
 
   // The code to look up: starts as the ?ref= link value and follows the field when it loses focus.
   const [refCode, setRefCode] = useState(typeof params.ref === 'string' ? params.ref.trim().toUpperCase() : '');
@@ -259,6 +263,9 @@ export default function RegisterScreen() {
       ) : null}
 
       <Button title="Create Account & Get 100 Coins" icon="gift" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
+
+      {/* Google/Apple sign-up skips the password and email confirmation; uses "Register as" above. */}
+      <ProviderSignIn role={chosenRole} referralCode={typedReferral} onError={setFormError} />
 
       <ThemedText style={styles.link}>
         Already have an account?{' '}
