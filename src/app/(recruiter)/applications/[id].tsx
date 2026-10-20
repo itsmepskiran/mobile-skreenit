@@ -22,6 +22,7 @@ import { formatRelativeTime } from '@/lib/format';
 import { ApiError } from '@/lib/api/client';
 import {
   getApplicationAiScore,
+  getSuggestedInterviewQuestions,
   listRecruiterApplications,
   updateApplicationStatus,
   type AiApplicationScore,
@@ -86,6 +87,33 @@ export default function ApplicationReviewScreen() {
     mutationFn: () => getApplicationAiScore(id),
     onSuccess: (res) => setAiScore(res.data.score),
   });
+
+  const [suggestNote, setSuggestNote] = useState<string | null>(null);
+  // Moving to Interview pre-fills the box with the job's saved questions and AI questions for this
+  // candidate, unless the recruiter already typed some.
+  const suggestMutation = useMutation({
+    mutationFn: () => getSuggestedInterviewQuestions(id),
+    onSuccess: (res) => {
+      const list = res.data.questions;
+      setQuestionsText((current) => current.trim() ? current : list.map((q) => q.question).join('\n'));
+      const saved = list.filter((q) => q.source === 'job').length;
+      const ai = list.length - saved;
+      setSuggestNote(
+        list.length
+          ? `Added ${[saved ? `${saved} saved for this job` : '', ai ? `${ai} suggested for this candidate` : ''].filter(Boolean).join(' and ')}. Edit, remove or add your own.`
+          : 'No suggestions right now. Type your questions, one per line.',
+      );
+    },
+    onError: () => setSuggestNote('Could not load suggestions. Type your questions, one per line.'),
+  });
+
+  const onStatusChange = (value: RecruiterApplicationStatus) => {
+    setStatus(value);
+    if ((value === 'interviewing' || value === 'interview_scheduled') && !questionsText.trim() && !suggestMutation.isPending) {
+      setSuggestNote(null);
+      suggestMutation.mutate();
+    }
+  };
 
   const updateMutation = useMutation({
     mutationFn: () => {
@@ -279,7 +307,7 @@ export default function ApplicationReviewScreen() {
             label="New Status"
             value={status || undefined}
             options={STATUS_OPTIONS}
-            onChange={(value) => setStatus(value as RecruiterApplicationStatus)}
+            onChange={(value) => onStatusChange(value as RecruiterApplicationStatus)}
             placeholder="Select a status"
           />
 
@@ -296,14 +324,24 @@ export default function ApplicationReviewScreen() {
           ) : null}
 
           {status === 'interviewing' || status === 'interview_scheduled' ? (
-            <TextField
-              label="Interview questions (one per line)"
-              multiline
-              numberOfLines={4}
-              style={styles.multiline}
-              value={questionsText}
-              onChangeText={setQuestionsText}
-            />
+            <>
+              <TextField
+                label="Interview questions (one per line)"
+                multiline
+                numberOfLines={6}
+                style={styles.multiline}
+                value={questionsText}
+                onChangeText={setQuestionsText}
+                placeholder={suggestMutation.isPending ? 'Suggesting questions for this candidate…' : undefined}
+              />
+              {suggestMutation.isPending ? (
+                <ActivityIndicator color={theme.primary} />
+              ) : suggestNote ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {suggestNote}
+                </ThemedText>
+              ) : null}
+            </>
           ) : null}
 
           {error ? (

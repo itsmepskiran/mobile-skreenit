@@ -282,6 +282,19 @@ export function updateApplicationStatus(
   });
 }
 
+// Questions to pre-fill when moving an applicant to Interview: the job's saved questions plus AI
+// questions written for this candidate and job. The recruiter edits the list before sending.
+export interface SuggestedInterviewQuestion {
+  question: string;
+  source: 'job' | 'ai';
+}
+
+export function getSuggestedInterviewQuestions(applicationId: string) {
+  return apiGet<{ ok: boolean; data: { questions: SuggestedInterviewQuestion[]; ai_available: boolean; max_questions: number } }>(
+    `/recruiter/applications/${applicationId}/suggested-questions`,
+  );
+}
+
 // --- Candidate Search ---------------------------------------------------------
 // Ported from sql-skreenit/dashboard/js/candidate-search.js. Free feature (RBAC
 // only, no recruiter_plan gate). One row per application, not per candidate — a
