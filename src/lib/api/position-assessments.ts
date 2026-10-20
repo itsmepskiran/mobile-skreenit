@@ -141,10 +141,24 @@ export interface AssessmentLinkInviteeInput {
   phone?: string;
 }
 
+// Invitees the backend didn't invite again: a repeat in the same list, or someone already
+// invited to this job (sent/skipped arrive only from backends with bulk invites).
+export interface SkippedInvitee {
+  email?: string | null;
+  phone?: string | null;
+  full_name?: string | null;
+  reason: 'duplicate_in_list' | 'already_invited' | 'already_completed';
+}
+
 export type GenerateAssessmentLinkResult =
   | { mode: 'open'; token: string }
-  | { mode: 'shared_gated'; token: string }
-  | { mode: 'per_candidate'; invitees: { email?: string; phone?: string; full_name?: string; token: string }[] };
+  | { mode: 'shared_gated'; token: string; sent?: number; skipped?: SkippedInvitee[] }
+  | {
+      mode: 'per_candidate';
+      invitees: { email?: string; phone?: string; full_name?: string; token: string; already_invited?: boolean }[];
+      sent?: number;
+      skipped?: SkippedInvitee[];
+    };
 
 export function generateAssessmentLink(
   jobId: string,
