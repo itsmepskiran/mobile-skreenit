@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import {
   saveInterviewResponse,
   uploadIntroVideoResponse,
 } from '@/lib/api/applicant';
+import { readAloud, stopReading } from '@/lib/read-aloud';
 
 const MAX_DURATION_SECONDS = 120;
 
@@ -41,6 +42,8 @@ export default function InterviewRoomScreen() {
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const [readAloudOn, setReadAloudOn] = useState(true);
+
   const cameraRef = useRef<CameraView>(null);
 
   const interviewQuery = useQuery({
@@ -51,6 +54,19 @@ export default function InterviewRoomScreen() {
   const player = useVideoPlayer(videoUri ?? null, (p) => {
     p.loop = false;
   });
+
+  const questionList = interviewQuery.data?.data.interview_questions;
+  const currentQuestion = questionList?.[questionIndex];
+  const permissionsGranted = !!cameraPermission?.granted && !!micPermission?.granted;
+
+  // Read each new question aloud once the camera screen is showing it.
+  useEffect(() => {
+    if (phase === 'recording' && permissionsGranted && readAloudOn && currentQuestion) readAloud(currentQuestion);
+    // readAloudOn is left out on purpose: switching it on shouldn't re-read the question.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, permissionsGranted, currentQuestion]);
+
+  useEffect(() => stopReading, []);
 
   if (interviewQuery.isLoading) {
     return (
@@ -147,6 +163,7 @@ export default function InterviewRoomScreen() {
 
   const startRecording = async () => {
     if (!cameraRef.current) return;
+    stopReading();
     setState('recording');
     try {
       const video = await cameraRef.current.recordAsync({ maxDuration: MAX_DURATION_SECONDS });
@@ -209,6 +226,35 @@ export default function InterviewRoomScreen() {
             Question {questionIndex + 1} of {questions.length}
           </ThemedText>
           <ThemedText type="smallBold">{question}</ThemedText>
+          <View style={styles.readAloudRow}>
+            <Pressable
+              onPress={() => readAloud(question)}
+              style={[styles.readAloudButton, { borderColor: theme.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Read question aloud"
+            >
+              <FontAwesome6 name="volume-high" size={13} color={theme.text} />
+              <ThemedText type="small">Read aloud</ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (readAloudOn) stopReading();
+                setReadAloudOn(!readAloudOn);
+              }}
+              style={styles.readAloudToggle}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: readAloudOn }}
+            >
+              <FontAwesome6
+                name={readAloudOn ? 'square-check' : 'square'}
+                size={15}
+                color={readAloudOn ? theme.primary : theme.textSecondary}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                Read each question aloud
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
 
         <View style={[styles.videoBox, { borderColor: theme.border }]}>
@@ -256,6 +302,17 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 16, gap: 8 },
   container: { flex: 1, padding: 20, gap: 14 },
   questionHeader: { gap: 4 },
+  readAloudRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginTop: 6 },
+  readAloudButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  readAloudToggle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   videoBox: { flex: 1, borderWidth: 1, borderRadius: Radius.md, overflow: 'hidden', backgroundColor: '#000' },
   video: { flex: 1 },
   recordButton: {
