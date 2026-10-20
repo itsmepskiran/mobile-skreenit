@@ -19,7 +19,7 @@ const skipIOSPush = process.env.SKIP_IOS_PUSH === '1';
 // constants, not env vars, because the plugin entry below feeds the fingerprint runtimeVersion
 // (see the SKIP_IOS_PUSH note). Until they are filled in, the Google button stays hidden.
 // The backend's GOOGLE_CLIENT_IDS must include the Web client ID.
-const GOOGLE_WEB_CLIENT_ID: string = '';
+const GOOGLE_WEB_CLIENT_ID: string = '175582289225-paknm5e9np1v4ci4hu3q80uug6bvl5i0.apps.googleusercontent.com';
 const GOOGLE_IOS_CLIENT_ID: string = '';
 // The iOS client ID reversed, e.g. com.googleusercontent.apps.1234-abcd.
 const GOOGLE_IOS_URL_SCHEME = GOOGLE_IOS_CLIENT_ID
