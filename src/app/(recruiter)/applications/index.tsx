@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { bulkAnalyzeResponses } from '@/lib/api/analytics';
 import { generateAssessmentLink } from '@/lib/api/position-assessments';
+import { formatExpiry, linkExpiryDate } from '@/lib/link-expiry';
 import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
 import { PageHeader } from '@/components/page-header';
@@ -145,6 +146,7 @@ export default function RecruiterApplicationsScreen() {
           const res = await generateAssessmentLink(jobIdKey, {
             mode: 'per_candidate',
             invitees: jobApps.map((app) => ({ fullName: app.candidate_name || undefined, email: app.candidate_email })),
+            expiresOn: linkExpiryDate(),
           });
           if (res.data.mode !== 'per_candidate') continue;
           const result = res.data;
@@ -192,7 +194,7 @@ export default function RecruiterApplicationsScreen() {
     const left = selected.length - eligible.length;
     Alert.alert(
       'Send assessment?',
-      `Send the job assessment to ${eligible.length} candidate(s)?${left ? ` ${left} rejected or hired candidate(s) will be left out.` : ''}\n\nInvites are free. Each job's first 10 completed assessments are free, then 4 coins each.`,
+      `Send the job assessment to ${eligible.length} candidate(s)?${left ? ` ${left} rejected or hired candidate(s) will be left out.` : ''}\n\nTheir links will work until ${formatExpiry(linkExpiryDate())}. Invites are free. Each job's first 10 completed assessments are free, then 4 coins each.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Send', onPress: () => bulkAssessmentMutation.mutate() },

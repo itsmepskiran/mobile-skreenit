@@ -162,11 +162,13 @@ export type GenerateAssessmentLinkResult =
 
 export function generateAssessmentLink(
   jobId: string,
-  input: { mode: AssessmentLinkMode; invitees?: AssessmentLinkInviteeInput[] },
+  // expiresOn: last day the link works (YYYY-MM-DD); older backends ignore it.
+  input: { mode: AssessmentLinkMode; invitees?: AssessmentLinkInviteeInput[]; expiresOn?: string },
 ) {
   return apiPostJson<{ ok: boolean; data: GenerateAssessmentLinkResult }>(`/recruiter/jobs/${jobId}/assessment-link`, {
     mode: input.mode,
     invitees: input.invitees?.map((i) => ({ full_name: i.fullName, email: i.email, phone: i.phone })),
+    expires_on: input.expiresOn,
   });
 }
 
@@ -180,6 +182,8 @@ export interface AssessmentInvitee {
   used_at: string | null;
   token: string;
   link_type: string; // 'reusable' (open) | 'single_use' (per_candidate) | 'gated' (shared_gated)
+  expires_at?: string | null;
+  expired?: boolean;
 }
 
 export function listAssessmentInvitees(jobId: string) {

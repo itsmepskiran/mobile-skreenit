@@ -23,6 +23,7 @@ import {
   type AssessmentLinkMode,
 } from '@/lib/api/position-assessments';
 import { csvToCandidates, describeSkipped } from '@/lib/candidate-list';
+import { DEFAULT_LINK_VALID_DAYS, formatExpiry, LINK_VALID_DAY_CHOICES, linkExpiryDate } from '@/lib/link-expiry';
 import { useSmartBack } from '@/lib/navigation/smart-back';
 
 function applyUrl(token: string) {
@@ -63,6 +64,8 @@ export default function AssessmentLinksScreen() {
   const [rows, setRows] = useState<InviteeRow[]>([{ ...EMPTY_ROW }]);
   const [sharedToken, setSharedToken] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<{ text: string; error?: boolean } | null>(null);
+  const [validDays, setValidDays] = useState(DEFAULT_LINK_VALID_DAYS);
+  const expiresOn = linkExpiryDate(validDays);
 
   const inviteesQuery = useQuery({
     queryKey: ['recruiter', 'assessment-invitees', jobId],
@@ -70,7 +73,7 @@ export default function AssessmentLinksScreen() {
   });
 
   const openLinkMutation = useMutation({
-    mutationFn: () => generateAssessmentLink(jobId, { mode: 'open' }),
+    mutationFn: () => generateAssessmentLink(jobId, { mode: 'open', expiresOn }),
   });
 
   const inviteMutation = useMutation({
@@ -80,6 +83,7 @@ export default function AssessmentLinksScreen() {
         invitees: rows
           .filter((r) => r.email.trim() || r.phone.trim())
           .map((r) => ({ fullName: r.fullName.trim() || undefined, email: r.email.trim() || undefined, phone: r.phone.trim() || undefined })),
+        expiresOn,
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['recruiter', 'assessment-invitees', jobId] });
@@ -167,6 +171,33 @@ export default function AssessmentLinksScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.expiryRow}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Link works for
+          </ThemedText>
+          {LINK_VALID_DAY_CHOICES.map((days) => (
+            <Pressable
+              key={days}
+              onPress={() => {
+                setValidDays(days);
+                // A new date means a new open link, so the one shown isn't mistaken for it.
+                openLinkMutation.reset();
+              }}
+              style={[
+                styles.expiryChip,
+                { borderColor: validDays === days ? theme.primary : theme.border },
+                validDays === days && { backgroundColor: theme.primary },
+              ]}
+            >
+              <ThemedText type="small" style={validDays === days ? { color: '#fff' } : undefined}>
+                {days} days
+              </ThemedText>
+            </Pressable>
+          ))}
+        </View>
+        <ThemedText type="small" themeColor="textSecondary">
+          New links stop working after {formatExpiry(expiresOn)}. The invite email tells candidates this date.
+        </ThemedText>
         {activeTab === 'open' ? (
           <ThemedView style={[styles.card, { borderColor: theme.border }]}>
             <ThemedText type="small" themeColor="textSecondary">
@@ -328,17 +359,20 @@ function LinkShare({ token, label }: { token: string; label?: string | null }) {
 function InviteeRowCard({ invitee, onRevoke }: { invitee: AssessmentInvitee; onRevoke: () => void }) {
   const theme = useTheme();
   const used = invitee.status === 'used';
+  const expired = !used && !!invitee.expired;
+  const until = !used && !expired ? formatExpiry(invitee.expires_at) : '';
   return (
     <ThemedView style={[styles.inviteeCard, { borderColor: theme.border }]}>
       <View style={{ flex: 1 }}>
         <ThemedText type="smallBold">{invitee.full_name || invitee.email || 'Invitee'}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {invitee.email ?? '—'}
+          {until ? ` · until ${until}` : ''}
         </ThemedText>
       </View>
-      <View style={[styles.statusBadge, { backgroundColor: used ? '#f0fff4' : theme.backgroundElement }]}>
-        <ThemedText type="small" style={{ color: used ? '#2f855a' : theme.textSecondary, fontWeight: '600' }}>
-          {used ? 'Used' : 'Invited'}
+      <View style={[styles.statusBadge, { backgroundColor: used ? '#f0fff4' : expired ? '#fff5f5' : theme.backgroundElement }]}>
+        <ThemedText type="small" style={{ color: used ? '#2f855a' : expired ? theme.danger : theme.textSecondary, fontWeight: '600' }}>
+          {used ? 'Used' : expired ? 'Expired' : 'Invited'}
         </ThemedText>
       </View>
       {!used ? (
@@ -371,4 +405,6 @@ const styles = StyleSheet.create({
   inviteeCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: Radius.md, padding: 12 },
   statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   revokeButton: { padding: 4 },
+  expiryRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  expiryChip: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
 });
