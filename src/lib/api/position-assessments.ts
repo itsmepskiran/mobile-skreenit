@@ -141,18 +141,34 @@ export interface AssessmentLinkInviteeInput {
   phone?: string;
 }
 
+// Invitees the backend didn't invite again: a repeat in the same list, or someone already
+// invited to this job (sent/skipped arrive only from backends with bulk invites).
+export interface SkippedInvitee {
+  email?: string | null;
+  phone?: string | null;
+  full_name?: string | null;
+  reason: 'duplicate_in_list' | 'already_invited' | 'already_completed';
+}
+
 export type GenerateAssessmentLinkResult =
   | { mode: 'open'; token: string }
-  | { mode: 'shared_gated'; token: string }
-  | { mode: 'per_candidate'; invitees: { email?: string; phone?: string; full_name?: string; token: string }[] };
+  | { mode: 'shared_gated'; token: string; sent?: number; skipped?: SkippedInvitee[] }
+  | {
+      mode: 'per_candidate';
+      invitees: { email?: string; phone?: string; full_name?: string; token: string; already_invited?: boolean }[];
+      sent?: number;
+      skipped?: SkippedInvitee[];
+    };
 
 export function generateAssessmentLink(
   jobId: string,
-  input: { mode: AssessmentLinkMode; invitees?: AssessmentLinkInviteeInput[] },
+  // expiresOn: last day the link works (YYYY-MM-DD); older backends ignore it.
+  input: { mode: AssessmentLinkMode; invitees?: AssessmentLinkInviteeInput[]; expiresOn?: string },
 ) {
   return apiPostJson<{ ok: boolean; data: GenerateAssessmentLinkResult }>(`/recruiter/jobs/${jobId}/assessment-link`, {
     mode: input.mode,
     invitees: input.invitees?.map((i) => ({ full_name: i.fullName, email: i.email, phone: i.phone })),
+    expires_on: input.expiresOn,
   });
 }
 
@@ -166,6 +182,8 @@ export interface AssessmentInvitee {
   used_at: string | null;
   token: string;
   link_type: string; // 'reusable' (open) | 'single_use' (per_candidate) | 'gated' (shared_gated)
+  expires_at?: string | null;
+  expired?: boolean;
 }
 
 export function listAssessmentInvitees(jobId: string) {

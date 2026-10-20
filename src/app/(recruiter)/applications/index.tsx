@@ -6,6 +6,8 @@ import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { bulkAnalyzeResponses } from '@/lib/api/analytics';
+import { generateAssessmentLink } from '@/lib/api/position-assessments';
+import { formatExpiry, linkExpiryDate } from '@/lib/link-expiry';
 import { SelectField } from '@/components/select-field';
 import { StatusBadge } from '@/components/status-badge';
 import { PageHeader } from '@/components/page-header';
@@ -123,6 +125,82 @@ export default function RecruiterApplicationsScreen() {
       Alert.alert('Could not update all selected applications', 'Please try again.');
     },
   });
+
+  // Bulk Send Assessment: the same per-candidate invite as a single application's
+  // assessment invite, one call per job, then each invited application moves to the
+  // "assessment" stage (which also notifies the candidate), as on web.
+  const bulkAssessmentMutation = useMutation({
+    mutationFn: async () => {
+      const apps = allApplications.filter(
+        (app) => selectedIds.has(app.id) && app.candidate_email && !['rejected', 'hired'].includes(app.status),
+      );
+      const byJob = new Map<string, typeof apps>();
+      apps.forEach((app) => byJob.set(app.job_id, [...(byJob.get(app.job_id) ?? []), app]));
+      let sent = 0;
+      let alreadyInvited = 0;
+      let alreadyTaken = 0;
+      let moveFailed = 0;
+      const jobProblems: string[] = [];
+      for (const [jobIdKey, jobApps] of byJob) {
+        try {
+          const res = await generateAssessmentLink(jobIdKey, {
+            mode: 'per_candidate',
+            invitees: jobApps.map((app) => ({ fullName: app.candidate_name || undefined, email: app.candidate_email })),
+            expiresOn: linkExpiryDate(),
+          });
+          if (res.data.mode !== 'per_candidate') continue;
+          const result = res.data;
+          const invited = new Set(result.invitees.map((i) => (i.email ?? '').toLowerCase()));
+          sent += result.sent ?? result.invitees.length;
+          alreadyInvited += result.invitees.filter((i) => i.already_invited).length;
+          alreadyTaken += (result.skipped ?? []).filter((x) => x.reason === 'already_completed').length;
+          for (const app of jobApps) {
+            if (!invited.has(app.candidate_email.toLowerCase())) continue;
+            if (app.status === 'assessment' || app.status === 'assessment_submitted') continue;
+            try {
+              await updateApplicationStatus(app.id, { status: 'assessment', questions: [] });
+            } catch {
+              moveFailed++;
+            }
+          }
+        } catch (err) {
+          jobProblems.push(`${jobApps[0].job_title || 'A job'}: ${err instanceof Error ? err.message : 'could not send'}`);
+        }
+      }
+      const lines = [`Assessment sent to ${sent} candidate(s).`];
+      if (alreadyInvited) lines.push(`${alreadyInvited} were already invited, so they were not emailed again.`);
+      if (alreadyTaken) lines.push(`${alreadyTaken} have already taken this job's assessment.`);
+      if (moveFailed) lines.push(`${moveFailed} application status(es) could not be updated; please try again.`);
+      if (jobProblems.length) lines.push(`Not sent for:\n${jobProblems.join('\n')}`);
+      return lines.join('\n');
+    },
+    onSuccess: async (summary) => {
+      await queryClient.invalidateQueries({ queryKey: ['recruiter', 'applications'] });
+      Alert.alert('Assessments', summary);
+      exitSelectMode();
+    },
+    onError: () => {
+      Alert.alert('Could not send assessments', 'Please try again.');
+    },
+  });
+
+  const confirmBulkAssessment = () => {
+    const selected = allApplications.filter((app) => selectedIds.has(app.id));
+    const eligible = selected.filter((app) => app.candidate_email && !['rejected', 'hired'].includes(app.status));
+    if (!eligible.length) {
+      Alert.alert('Nothing to send', 'The selected candidates are rejected, hired, or have no email.');
+      return;
+    }
+    const left = selected.length - eligible.length;
+    Alert.alert(
+      'Send assessment?',
+      `Send the job assessment to ${eligible.length} candidate(s)?${left ? ` ${left} rejected or hired candidate(s) will be left out.` : ''}\n\nTheir links will work until ${formatExpiry(linkExpiryDate())}. Invites are free. Each job's first 10 completed assessments are free, then 4 coins each.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Send', onPress: () => bulkAssessmentMutation.mutate() },
+      ],
+    );
+  };
 
   const { confirmSpend, consentModal } = useCoinConsent();
   const bulkAnalyzeMutation = useMutation({
@@ -250,6 +328,17 @@ export default function RecruiterApplicationsScreen() {
               <ThemedText type="small">Update Status</ThemedText>
             </Pressable>
             <Pressable
+              style={[styles.bulkButton, { borderColor: theme.border }]}
+              onPress={confirmBulkAssessment}
+              disabled={bulkAssessmentMutation.isPending}
+            >
+              {bulkAssessmentMutation.isPending ? (
+                <ActivityIndicator size="small" color={theme.primary} />
+              ) : (
+                <ThemedText type="small">Send Assessment</ThemedText>
+              )}
+            </Pressable>
+            <Pressable
               style={[styles.bulkButton, { backgroundColor: theme.primary }]}
               onPress={async () => {
                 if (await confirmSpend({ action: 'ai_interview_analysis', applicationId: Array.from(selectedIds)[0], jobId, count: selectedIds.size })) {
@@ -348,7 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  bulkActions: { flexDirection: 'row', gap: 10 },
+  bulkActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1, gap: 10 },
   bulkButton: { borderWidth: 1, borderRadius: Radius.md, paddingHorizontal: 14, paddingVertical: 9, borderColor: 'transparent' },
   modalScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
   modalCard: { borderRadius: Radius.lg, padding: 20, gap: 8 },

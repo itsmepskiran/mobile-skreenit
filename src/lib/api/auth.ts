@@ -16,6 +16,26 @@ export function login(loginId: string, password: string) {
   );
 }
 
+// Sign in with Google / Apple. A person new to Skreenit gets { needs_role: true } and no session
+// until the same ID token is sent again with a role.
+export type ProviderLoginResult = AuthSession | { needs_role: true; email: string; full_name?: string };
+
+export function providerLogin(
+  provider: 'google' | 'apple',
+  input: { idToken: string; role?: 'candidate' | 'recruiter'; fullName?: string; referralCode?: string },
+) {
+  return apiPostJson<{ ok: boolean; data: ProviderLoginResult }>(
+    `/${provider}-login`,
+    {
+      id_token: input.idToken,
+      role: input.role,
+      full_name: input.fullName,
+      referral_code: input.referralCode?.trim() || undefined,
+    },
+    { auth: false },
+  );
+}
+
 export interface RegisterInput {
   fullName: string;
   email: string;

@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Share, StyleSheet } from 'react-native';
@@ -20,6 +22,8 @@ import {
   type AssessmentInvitee,
   type AssessmentLinkMode,
 } from '@/lib/api/position-assessments';
+import { csvToCandidates, describeSkipped } from '@/lib/candidate-list';
+import { DEFAULT_LINK_VALID_DAYS, formatExpiry, LINK_VALID_DAY_CHOICES, linkExpiryDate } from '@/lib/link-expiry';
 import { useSmartBack } from '@/lib/navigation/smart-back';
 
 function applyUrl(token: string) {
@@ -40,6 +44,11 @@ interface InviteeRow {
 
 const EMPTY_ROW: InviteeRow = { fullName: '', email: '', phone: '' };
 
+// Past this many new links, list a summary instead of a QR code per candidate.
+const MAX_LINKS_SHOWN = 5;
+// Past this many rows (an uploaded list), show each candidate as one line.
+const COMPACT_AFTER = 10;
+
 // Fuller sibling of assessment-invite-modal.tsx's single-candidate quick invite —
 // ported from web's "Configured Assessments" share-link modal
 // (dashboard/js/recruiter-dashboard.js openLinkShareModal), which supports three
@@ -54,6 +63,9 @@ export default function AssessmentLinksScreen() {
   const [activeTab, setActiveTab] = useState<AssessmentLinkMode>('per_candidate');
   const [rows, setRows] = useState<InviteeRow[]>([{ ...EMPTY_ROW }]);
   const [sharedToken, setSharedToken] = useState<string | null>(null);
+  const [importNote, setImportNote] = useState<{ text: string; error?: boolean } | null>(null);
+  const [validDays, setValidDays] = useState(DEFAULT_LINK_VALID_DAYS);
+  const expiresOn = linkExpiryDate(validDays);
 
   const inviteesQuery = useQuery({
     queryKey: ['recruiter', 'assessment-invitees', jobId],
@@ -61,7 +73,7 @@ export default function AssessmentLinksScreen() {
   });
 
   const openLinkMutation = useMutation({
-    mutationFn: () => generateAssessmentLink(jobId, { mode: 'open' }),
+    mutationFn: () => generateAssessmentLink(jobId, { mode: 'open', expiresOn }),
   });
 
   const inviteMutation = useMutation({
@@ -69,15 +81,56 @@ export default function AssessmentLinksScreen() {
       generateAssessmentLink(jobId, {
         mode,
         invitees: rows
-          .filter((r) => r.fullName.trim() || r.email.trim())
+          .filter((r) => r.email.trim() || r.phone.trim())
           .map((r) => ({ fullName: r.fullName.trim() || undefined, email: r.email.trim() || undefined, phone: r.phone.trim() || undefined })),
+        expiresOn,
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['recruiter', 'assessment-invitees', jobId] });
       setRows([{ ...EMPTY_ROW }]);
+      setImportNote(null);
       if (res.data.mode === 'shared_gated') setSharedToken(res.data.token);
     },
   });
+
+  // Bulk upload: the CSV only fills the rows below, so the recruiter can check them before
+  // sending. Each candidate still gets their own link and email from the backend.
+  const pickCandidateList = async () => {
+    const picked = await DocumentPicker.getDocumentAsync({
+      type: ['text/csv', 'text/comma-separated-values', 'text/plain', 'application/csv'],
+      copyToCacheDirectory: true,
+    });
+    if (picked.canceled) return;
+    const asset = picked.assets[0];
+    if (!/\.(csv|txt)$/i.test(asset.name)) {
+      setImportNote({ text: 'Please choose a .csv file. In Excel, use Save As > CSV first.', error: true });
+      return;
+    }
+    try {
+      const { candidates, problems } = csvToCandidates(await new File(asset.uri).text());
+      if (!candidates.length) {
+        setImportNote({ text: `No candidates found in ${asset.name}. ${problems.slice(0, 3).join('; ')}`, error: true });
+        return;
+      }
+      setRows((prev) => [...prev.filter((r) => r.fullName.trim() || r.email.trim() || r.phone.trim()), ...candidates]);
+      const leftOut = problems.length
+        ? `\n${problems.length} row${problems.length === 1 ? '' : 's'} left out: ${problems.slice(0, 3).join('; ')}${problems.length > 3 ? '…' : ''}`
+        : '';
+      setImportNote({ text: `Loaded ${candidates.length} candidate${candidates.length === 1 ? '' : 's'} from ${asset.name}. Check the list, then send.${leftOut}` });
+    } catch {
+      setImportNote({ text: 'Could not read that file.', error: true });
+    }
+  };
+
+  const inviteResult = inviteMutation.data?.data;
+  const sentSummary = (() => {
+    if (!inviteResult || inviteResult.mode === 'open' || inviteResult.sent === undefined) return null;
+    const reused = inviteResult.mode === 'per_candidate' ? inviteResult.invitees.filter((i) => i.already_invited).length : 0;
+    const extra = [describeSkipped(inviteResult.skipped), reused ? `${reused} already invited (their existing link still works)` : '']
+      .filter(Boolean)
+      .join(', ');
+    return `Sent ${inviteResult.sent} invite${inviteResult.sent === 1 ? '' : 's'}.${extra ? ` Not sent again: ${extra}.` : ''}`;
+  })();
 
   const revokeMutation = useMutation({
     mutationFn: (inviteeId: string) => revokeAssessmentInvitee(jobId, inviteeId),
@@ -118,6 +171,33 @@ export default function AssessmentLinksScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.expiryRow}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Link works for
+          </ThemedText>
+          {LINK_VALID_DAY_CHOICES.map((days) => (
+            <Pressable
+              key={days}
+              onPress={() => {
+                setValidDays(days);
+                // A new date means a new open link, so the one shown isn't mistaken for it.
+                openLinkMutation.reset();
+              }}
+              style={[
+                styles.expiryChip,
+                { borderColor: validDays === days ? theme.primary : theme.border },
+                validDays === days && { backgroundColor: theme.primary },
+              ]}
+            >
+              <ThemedText type="small" style={validDays === days ? { color: '#fff' } : undefined}>
+                {days} days
+              </ThemedText>
+            </Pressable>
+          ))}
+        </View>
+        <ThemedText type="small" themeColor="textSecondary">
+          New links stop working after {formatExpiry(expiresOn)}. The invite email tells candidates this date.
+        </ThemedText>
         {activeTab === 'open' ? (
           <ThemedView style={[styles.card, { borderColor: theme.border }]}>
             <ThemedText type="small" themeColor="textSecondary">
@@ -159,7 +239,33 @@ export default function AssessmentLinksScreen() {
                 ? 'Each candidate below gets their own one-time link. Only candidates you invite can take it; you pay only when one completes it (10 free per job, then coins).'
                 : 'Everyone below shares one link, but must verify their identity before starting.'}
             </ThemedText>
-            {rows.map((row, i) => (
+            <Pressable onPress={pickCandidateList} style={[styles.shareButton, { borderColor: theme.border, alignSelf: 'flex-start' }]}>
+              <FontAwesome6 name="file-arrow-up" size={12} color={theme.primary} />
+              <ThemedText type="small" themeColor="primary">
+                Upload list (CSV)
+              </ThemedText>
+            </Pressable>
+            <ThemedText type="small" themeColor="textSecondary">
+              Columns: Name, Email, Mobile. Up to 500 at a time; anyone already invited to this job is skipped.
+            </ThemedText>
+            {importNote ? (
+              <ThemedText type="small" style={importNote.error ? { color: theme.danger } : undefined} themeColor={importNote.error ? undefined : 'textSecondary'}>
+                {importNote.text}
+              </ThemedText>
+            ) : null}
+            {rows.length > COMPACT_AFTER
+              ? rows.map((row, i) => (
+                  // A long uploaded list shows one line per candidate instead of three inputs each.
+                  <View key={i} style={[styles.compactRow, { borderColor: theme.border }]}>
+                    <ThemedText type="small" style={{ flex: 1 }} numberOfLines={1}>
+                      {[row.fullName, row.email, row.phone].filter((v) => v.trim()).join(' · ')}
+                    </ThemedText>
+                    <Pressable onPress={() => setRows((prev) => prev.filter((_, idx) => idx !== i))} hitSlop={10}>
+                      <FontAwesome6 name="xmark" size={14} color={theme.danger} />
+                    </Pressable>
+                  </View>
+                ))
+              : rows.map((row, i) => (
               <View key={i} style={[styles.inviteeRow, { borderColor: theme.border }]}>
                 <TextField label="Name" value={row.fullName} onChangeText={(v) => updateRow(i, { fullName: v })} />
                 <TextField label="Email" value={row.email} onChangeText={(v) => updateRow(i, { email: v })} autoCapitalize="none" keyboardType="email-address" />
@@ -174,7 +280,7 @@ export default function AssessmentLinksScreen() {
                 ) : null}
               </View>
             ))}
-            {activeTab === 'shared_gated' ? (
+            {(activeTab === 'shared_gated' || rows.length > 1) && rows.length <= COMPACT_AFTER ? (
               <Pressable onPress={() => setRows((prev) => [...prev, { ...EMPTY_ROW }])} style={styles.addRowButton}>
                 <FontAwesome6 name="plus" size={12} color={theme.primary} />
                 <ThemedText type="small" themeColor="primary">
@@ -192,7 +298,7 @@ export default function AssessmentLinksScreen() {
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <ThemedText type="small" style={{ color: '#fff', fontWeight: '600' }}>
-                  {activeTab === 'per_candidate' ? 'Generate Link' : 'Generate Invites'}
+                  {activeTab === 'per_candidate' ? (rows.length > 1 ? `Send ${rows.length} Invites` : 'Generate Link') : 'Generate Invites'}
                 </ThemedText>
               )}
             </Pressable>
@@ -201,8 +307,9 @@ export default function AssessmentLinksScreen() {
                 {inviteMutation.error instanceof ApiError ? inviteMutation.error.message : 'Could not generate invites.'}
               </ThemedText>
             ) : null}
-            {activeTab === 'per_candidate' && inviteMutation.data?.data.mode === 'per_candidate' ? (
-              inviteMutation.data.data.invitees.map((inv) => (
+            {sentSummary ? <ThemedText type="small">{sentSummary}</ThemedText> : null}
+            {activeTab === 'per_candidate' && inviteResult?.mode === 'per_candidate' && inviteResult.invitees.length <= MAX_LINKS_SHOWN ? (
+              inviteResult.invitees.map((inv) => (
                 <LinkShare key={inv.token} token={inv.token} label={inv.full_name} />
               ))
             ) : null}
@@ -252,17 +359,20 @@ function LinkShare({ token, label }: { token: string; label?: string | null }) {
 function InviteeRowCard({ invitee, onRevoke }: { invitee: AssessmentInvitee; onRevoke: () => void }) {
   const theme = useTheme();
   const used = invitee.status === 'used';
+  const expired = !used && !!invitee.expired;
+  const until = !used && !expired ? formatExpiry(invitee.expires_at) : '';
   return (
     <ThemedView style={[styles.inviteeCard, { borderColor: theme.border }]}>
       <View style={{ flex: 1 }}>
         <ThemedText type="smallBold">{invitee.full_name || invitee.email || 'Invitee'}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {invitee.email ?? '—'}
+          {until ? ` · until ${until}` : ''}
         </ThemedText>
       </View>
-      <View style={[styles.statusBadge, { backgroundColor: used ? '#f0fff4' : theme.backgroundElement }]}>
-        <ThemedText type="small" style={{ color: used ? '#2f855a' : theme.textSecondary, fontWeight: '600' }}>
-          {used ? 'Used' : 'Invited'}
+      <View style={[styles.statusBadge, { backgroundColor: used ? '#f0fff4' : expired ? '#fff5f5' : theme.backgroundElement }]}>
+        <ThemedText type="small" style={{ color: used ? '#2f855a' : expired ? theme.danger : theme.textSecondary, fontWeight: '600' }}>
+          {used ? 'Used' : expired ? 'Expired' : 'Invited'}
         </ThemedText>
       </View>
       {!used ? (
@@ -283,6 +393,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: 16, gap: 12 },
   centerPad: { marginVertical: 12 },
   inviteeRow: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12, gap: 10 },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 8 },
   removeRowButton: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
   addRowButton: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
   actionButton: { borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center' },
@@ -294,4 +405,6 @@ const styles = StyleSheet.create({
   inviteeCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: Radius.md, padding: 12 },
   statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   revokeButton: { padding: 4 },
+  expiryRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  expiryChip: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
 });

@@ -11,18 +11,20 @@ export interface RoleChoiceModalProps {
   onClose: () => void;
   onSelect: (role: Role) => void;
   loadingRole?: Role | null;
+  // A new Google/Apple sign-up picks which side they're joining rather than a dashboard.
+  joining?: boolean;
 }
 
 // Shown once, right after credentials are verified, for accounts that have
 // both a candidate and a recruiter profile — picks which dashboard to land on.
-export function RoleChoiceModal({ visible, onClose, onSelect, loadingRole }: RoleChoiceModalProps) {
+export function RoleChoiceModal({ visible, onClose, onSelect, loadingRole, joining }: RoleChoiceModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.scrim}>
         <View style={styles.card}>
           <View style={styles.header}>
             <ThemedText type="subtitle" themeColor="text">
-              Choose Your Role
+              {joining ? 'How will you use Skreenit?' : 'Choose Your Role'}
             </ThemedText>
             <Pressable onPress={onClose} hitSlop={10}>
               <FontAwesome6 name="xmark" size={20} color={Colors.light.textSecondary} />
@@ -31,7 +33,7 @@ export function RoleChoiceModal({ visible, onClose, onSelect, loadingRole }: Rol
 
           <View style={styles.optionsRow}>
             <RoleCard
-              label="Candidate Dashboard"
+              label={joining ? "I'm looking for a job" : 'Candidate Dashboard'}
               icon="user"
               color={Colors.light.primary}
               loading={loadingRole === 'candidate'}
@@ -39,7 +41,7 @@ export function RoleChoiceModal({ visible, onClose, onSelect, loadingRole }: Rol
               onPress={() => onSelect('candidate')}
             />
             <RoleCard
-              label="Recruiter Dashboard"
+              label={joining ? "I'm hiring" : 'Recruiter Dashboard'}
               icon="building"
               color={Colors.light.secondary}
               loading={loadingRole === 'recruiter'}
