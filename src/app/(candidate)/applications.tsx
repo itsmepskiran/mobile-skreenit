@@ -88,7 +88,10 @@ function ApplicationRow({
   onRecordInterview: () => void;
 }) {
   const theme = useTheme();
-  const canRecordInterview = item.status === 'interview_scheduled' || item.status === 'interviewing';
+  // Only `interviewing` is the self-recorded video interview. `interview_scheduled`
+  // is a live interview the recruiter booked, so there is nothing to record here.
+  const canRecordInterview = item.status === 'interviewing';
+  const interviewScheduled = item.status === 'interview_scheduled';
   const matchColor =
     matchScore === undefined ? undefined : matchScore >= 70 ? '#16a34a' : matchScore >= 40 ? '#d97706' : '#dc2626';
 
@@ -125,6 +128,11 @@ function ApplicationRow({
       {item.feedback ? (
         <ThemedText type="small" style={styles.feedback}>
           {item.feedback}
+        </ThemedText>
+      ) : null}
+      {interviewScheduled ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Interview scheduled – check your email for the date, time and joining link.
         </ThemedText>
       ) : null}
       {canRecordInterview ? (
