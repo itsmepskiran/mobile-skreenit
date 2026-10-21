@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { ApiError } from '@/lib/api/client';
 import {
   finishInterview,
   getApplicationInterview,
@@ -41,6 +42,15 @@ export default function InterviewRoomScreen() {
   const [state, setState] = useState<RecordingState>('idle');
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Question indexes already saved on the server (seeded from the interview
+  // call, so a dropped connection resumes instead of restarting at question 1).
+  const [answered, setAnswered] = useState<Set<number>>(new Set());
+  // Every answer is saved but the finish call hasn't succeeded yet — retrying
+  // only repeats the finish call, never the upload.
+  const [finishPending, setFinishPending] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const [positioned, setPositioned] = useState(false);
 
   const [readAloudOn, setReadAloudOn] = useState(true);
 
@@ -49,7 +59,25 @@ export default function InterviewRoomScreen() {
   const interviewQuery = useQuery({
     queryKey: ['applicant', 'application-interview', applicationId],
     queryFn: () => getApplicationInterview(applicationId),
+    retry: (count, err) => !(err instanceof ApiError && err.status === 404) && count < 3,
   });
+
+  // Once the questions arrive, jump to the first one not answered yet (done
+  // once, during render, rather than in an effect).
+  const loaded = interviewQuery.data?.data;
+  if (loaded && !positioned) {
+    const data = loaded;
+    setPositioned(true);
+    const saved = new Set(data.answered_question_indexes ?? []);
+    setAnswered(saved);
+    const first = data.interview_questions.findIndex((_, i) => !saved.has(i));
+    if (first === -1) {
+      setQuestionIndex(Math.max(data.interview_questions.length - 1, 0));
+      setFinishPending(true);
+    } else {
+      setQuestionIndex(first);
+    }
+  }
 
   const player = useVideoPlayer(videoUri ?? null, (p) => {
     p.loop = false;
@@ -77,12 +105,17 @@ export default function InterviewRoomScreen() {
   }
 
   if (interviewQuery.isError || !interviewQuery.data?.data.interview_questions.length) {
+    const notFound = interviewQuery.error instanceof ApiError && interviewQuery.error.status === 404;
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          <ThemedText type="subtitle">Could not load your interview</ThemedText>
+          <ThemedText type="subtitle">
+            {notFound ? "This interview isn't available for your account" : 'Could not load your interview'}
+          </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            No interview questions are available for this application yet.
+            {notFound
+              ? 'Please open the interview from your own Applications list.'
+              : 'No interview questions are available for this application yet.'}
           </ThemedText>
           <Button title="Back to Applications" onPress={() => router.replace('/(candidate)/applications')} />
         </View>
@@ -93,7 +126,23 @@ export default function InterviewRoomScreen() {
   const interview = interviewQuery.data.data;
   const questions = interview.interview_questions;
   const question = questions[questionIndex];
-  const isLastQuestion = questionIndex === questions.length - 1;
+  // The next question still to answer after this one (skipping saved ones), if any.
+  const nextUnanswered = questions.findIndex((_, i) => i !== questionIndex && !answered.has(i));
+  const isLastQuestion = nextUnanswered === -1;
+
+  const finish = async () => {
+    setFinishing(true);
+    setFinishError(null);
+    try {
+      await finishInterview(applicationId);
+      setFinishPending(false);
+      setPhase('done');
+    } catch {
+      setFinishError("Couldn't finish your interview. Your answers are saved — please try again.");
+    } finally {
+      setFinishing(false);
+    }
+  };
 
   if (phase === 'intro') {
     return (
@@ -111,8 +160,31 @@ export default function InterviewRoomScreen() {
               time. Find a quiet, well-lit spot. Each answer can be up to 2 minutes — take a breath and speak
               naturally.
             </ThemedText>
+            {answered.size > 0 && !finishPending ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                You&apos;ve already answered {answered.size} — you&apos;ll continue from question {questionIndex + 1}.
+              </ThemedText>
+            ) : null}
           </ThemedView>
-          <Button title="Begin Interview" onPress={() => setPhase('recording')} />
+          {finishPending ? (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                All your answers are saved. Tap below to finish and send them to the recruiter.
+              </ThemedText>
+              {finishError ? (
+                <ThemedText type="small" style={{ color: theme.danger }}>
+                  {finishError}
+                </ThemedText>
+              ) : null}
+              <Button
+                title={finishError ? "Couldn't finish – Try again" : 'Finish interview'}
+                loading={finishing}
+                onPress={finish}
+              />
+            </>
+          ) : (
+            <Button title="Begin Interview" onPress={() => setPhase('recording')} />
+          )}
         </View>
       </SafeAreaView>
     );
@@ -190,6 +262,7 @@ export default function InterviewRoomScreen() {
     if (!videoUri) return;
     setState('uploading');
     setUploadError(null);
+    let saved = false;
     try {
       const uploadRes = await uploadIntroVideoResponse(
         { uri: videoUri, name: `interview_q${questionIndex}.mp4`, type: 'video/mp4' },
@@ -203,18 +276,23 @@ export default function InterviewRoomScreen() {
         videoUrl: uploadRes.data.url,
         videoPath: uploadRes.data.path,
       });
-
-      if (isLastQuestion) {
-        await finishInterview(applicationId);
-        setPhase('done');
-      } else {
-        setQuestionIndex((i) => i + 1);
-        setVideoUri(null);
-        setState('idle');
-      }
+      saved = true;
     } catch {
       setUploadError('Upload failed. Please check your connection and try again.');
       setState('recorded');
+    }
+    if (!saved) return;
+
+    setAnswered((prev) => new Set(prev).add(questionIndex));
+    if (isLastQuestion) {
+      // The answer is saved; from here on a retry only repeats the finish call.
+      setFinishPending(true);
+      setState('recorded');
+      await finish();
+    } else {
+      setQuestionIndex(nextUnanswered);
+      setVideoUri(null);
+      setState('idle');
     }
   };
 
@@ -271,7 +349,20 @@ export default function InterviewRoomScreen() {
           </ThemedText>
         ) : null}
 
-        {state === 'idle' || state === 'recording' ? (
+        {finishPending ? (
+          <>
+            {finishError ? (
+              <ThemedText type="small" style={{ color: theme.danger }}>
+                {finishError}
+              </ThemedText>
+            ) : null}
+            <Button
+              title={finishError ? "Couldn't finish – Try again" : 'Finishing…'}
+              loading={finishing}
+              onPress={finish}
+            />
+          </>
+        ) : state === 'idle' || state === 'recording' ? (
           <Pressable
             onPress={state === 'recording' ? stopRecording : startRecording}
             style={[styles.recordButton, { borderColor: theme.danger }]}
