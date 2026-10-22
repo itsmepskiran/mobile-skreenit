@@ -46,7 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'Skreenit',
     slug: 'mobile-skreenit',
-    version: '1.0.0',
+    version: '2.0.1',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'skreenit',
@@ -71,6 +71,23 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       'expo-router',
+      [
+        'expo-build-properties',
+        {
+          android: {
+            enableMinifyInReleaseBuilds: true,
+            enableShrinkResourcesInReleaseBuilds: true,
+            extraProguardRules: `-keep class com.razorpay.** {*;}
+-dontwarn com.razorpay.**
+-keepattributes *Annotation*
+-optimizations !method/inlining/*
+-keepclasseswithmembers class * {
+  public void onPayment*(...);
+}
+-dontwarn com.google.android.apps.nbu.paisa.inapp.client.api.**`,
+          },
+        },
+      ],
       'expo-secure-store',
       'expo-font',
       'expo-sharing',
