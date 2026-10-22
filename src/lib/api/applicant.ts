@@ -316,6 +316,9 @@ export interface ApplicationInterview {
   company_name: string;
   location: string | null;
   job_type: string | null;
+  // Indexes of questions already saved, so a dropped connection resumes
+  // instead of restarting. Optional: older backends don't send it.
+  answered_question_indexes?: number[];
 }
 
 export function getApplicationInterview(applicationId: string) {

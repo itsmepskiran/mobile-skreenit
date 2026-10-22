@@ -93,6 +93,10 @@ function GenericAssessment({ planId, jobId, linkId }: { planId: string; jobId?: 
   const [startTime, setStartTime] = useState<number | null>(null);
   const [textDraft, setTextDraft] = useState('');
   const [mcqRevealed, setMcqRevealed] = useState(false);
+  // Set when the final submit fails, so "Try again" resubmits the same answers
+  // (and the same time taken) instead of restarting the whole assessment.
+  const [submitFailed, setSubmitFailed] = useState(false);
+  const [finishedAt, setFinishedAt] = useState<number | null>(null);
 
   const section: AssessmentSection | null = data?.sections[sectionIdx] ?? null;
   const item: AssessmentItem | null = section?.items[itemIdx] ?? null;
@@ -144,7 +148,9 @@ function GenericAssessment({ planId, jobId, linkId }: { planId: string; jobId?: 
   const finishMutationSubmit = async () => {
     if (!data) return;
     setStage('submitting');
-    const elapsed = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
+    const endTime = finishedAt ?? Date.now();
+    setFinishedAt(endTime);
+    const elapsed = startTime ? Math.round((endTime - startTime) / 1000) : 0;
     const responsePayload: AssessmentResponseInput[] = Object.entries(responses).map(([key, val]) => ({
       questionId: key,
       type: val.type,
@@ -165,6 +171,7 @@ function GenericAssessment({ planId, jobId, linkId }: { planId: string; jobId?: 
       router.replace(`/(candidate)/assessments/result/${res.data.session_id}`);
     } catch (err) {
       setErrorMsg(err instanceof ApiError ? err.message : 'Could not submit your assessment. Please try again.');
+      setSubmitFailed(true);
       setStage('error');
     }
   };
@@ -231,7 +238,12 @@ function GenericAssessment({ planId, jobId, linkId }: { planId: string; jobId?: 
           <ThemedText type="small" style={[styles.centerText, { color: theme.danger }]}>
             {errorMsg}
           </ThemedText>
-          <Button title="Try again" onPress={() => load(platform ?? undefined)} />
+          <Button
+            title="Try again"
+            onPress={() =>
+              submitFailed && data ? finishMutationSubmit() : load(platform ?? undefined)
+            }
+          />
         </View>
       </SafeAreaView>
     );
