@@ -28,7 +28,7 @@ export function ProfileChecklist() {
 
   const hasSkills = !!profile.skills?.length;
   const items: Item[] = [
-    { key: 'profile', label: 'Complete your profile details', done: !!profile.onboarded && !!profile.summary && hasSkills, href: '/(candidate)/profile' },
+    { key: 'profile', label: 'Complete your profile details', done: !!profile.summary && hasSkills, href: '/(candidate)/profile' },
     { key: 'resume', label: 'Upload your resume', done: !!profile.resume_url, href: '/(candidate)/profile' },
     { key: 'video', label: 'Record your video introduction', done: !!profile.intro_video_url, href: '/(candidate)/profile' },
     { key: 'analysis', label: 'Analyse your resume', done: !!resumeQuery.data?.data, href: '/(candidate)/employability-report' },
