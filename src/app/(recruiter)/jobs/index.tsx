@@ -101,7 +101,7 @@ export default function MyJobsScreen() {
   }, [jobsQuery.data?.data.jobs, statusFilter]);
 
   const confirmDelete = (job: RecruiterJobListItem) => {
-    Alert.alert('Delete job posting?', `"${job.job_title}" will be permanently removed.`, [
+    Alert.alert('Delete job?', `"${job.job_title}" will be permanently removed.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(job.id) },
     ]);
@@ -117,7 +117,7 @@ export default function MyJobsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <PageHeader title="Job Posts" subtitle="Manage and promote your openings" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
+      <PageHeader title="My Jobs" subtitle="Manage and promote your openings" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
       <SearchBar value={searchInput} onChangeText={setSearchInput} placeholder="Search by title, JRF or Ref No" />
 
       <View style={styles.filterContainer}>

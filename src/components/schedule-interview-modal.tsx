@@ -167,7 +167,7 @@ export function ScheduleInterviewModal({ visible, context, onClose, onScheduled 
             </ThemedText>
 
             <SelectField
-              label="Job Post"
+              label="Job"
               value={jobId}
               options={jobOptions}
               placeholder="Select a job..."
