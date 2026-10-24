@@ -13,7 +13,6 @@ const ACTIONS: Action[] = [
   { icon: 'file-lines', label: 'Analyse resumes', href: '/(recruiter)/resume-analysis', colors: ['#6366f1', '#8b5cf6'] },
   { icon: 'magnifying-glass', label: 'Find candidates', href: '/(recruiter)/candidate-search', colors: ['#0ea5e9', '#06b6d4'] },
   { icon: 'calendar-days', label: 'Schedule interview', href: '/(recruiter)/interviews-calendar', colors: ['#10b981', '#14b8a6'] },
-  { icon: 'star', label: 'Feature a job', href: '/(recruiter)/featured-jobs', colors: ['#f97316', '#ef4444'] },
   { icon: 'pen-nib', label: 'Write a JD', href: '/(recruiter)/jd-writer', colors: ['#f59e0b', '#f97316'] },
 ];
 

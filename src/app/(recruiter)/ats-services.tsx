@@ -51,11 +51,6 @@ export default function AtsServicesScreen() {
             onPress={() => router.push('/(recruiter)/reports')}
           />
           <AtsServiceCard
-            icon="star"
-            label="Featured Jobs"
-            onPress={() => router.push('/(recruiter)/featured-jobs')}
-          />
-          <AtsServiceCard
             icon="file-invoice-dollar"
             label="Billing & Plan"
             onPress={() => router.push('/(recruiter)/billing')}
