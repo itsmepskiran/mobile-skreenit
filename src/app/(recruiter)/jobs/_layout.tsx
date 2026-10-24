@@ -19,6 +19,7 @@ export default function RecruiterJobsStackLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="create" options={{ title: 'Create Job' }} />
       <Stack.Screen name="[id]/edit" options={{ title: 'Edit Job' }} />
+      <Stack.Screen name="[id]/upload-resumes" options={{ title: 'Upload Resumes' }} />
     </Stack>
   );
 }

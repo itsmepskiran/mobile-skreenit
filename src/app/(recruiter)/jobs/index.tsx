@@ -235,6 +235,17 @@ export default function MyJobsScreen() {
                     </ThemedText>
                   </Pressable>
                 </View>
+                <Pressable
+                  style={[styles.actionButton, styles.wideButton, { borderColor: theme.border }]}
+                  onPress={() =>
+                    router.push({ pathname: '/(recruiter)/jobs/[id]/upload-resumes', params: { id: job.id, jobTitle: job.job_title } })
+                  }
+                >
+                  <FontAwesome6 name="file-arrow-up" size={13} color={theme.primary} />
+                  <ThemedText type="small" themeColor="primary">
+                    Upload Resumes &amp; Screen
+                  </ThemedText>
+                </Pressable>
               </View>
             );
           })
@@ -294,6 +305,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(79,70,229,0.1)',
   },
   actionsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  wideButton: { flex: 0 },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
