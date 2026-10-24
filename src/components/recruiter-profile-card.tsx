@@ -44,7 +44,7 @@ export function RecruiterProfileCard() {
         <View style={[styles.fill, { width: `${pct}%`, backgroundColor: color }]} />
       </View>
       <ThemedText type="small" style={{ color: theme.textSecondary }}>
-        {missing.length ? `Still missing: ${missing.join(', ')}. A company profile is needed to post jobs.` : 'Your profile is complete.'}
+        {missing.length ? `Still missing: ${missing.join(', ')}. A company profile is needed to create jobs.` : 'Your profile is complete.'}
       </ThemedText>
       <Button title="Update Profile" icon="pen" onPress={() => router.push('/(recruiter)/profile?edit=true' as never)} />
     </ThemedView>

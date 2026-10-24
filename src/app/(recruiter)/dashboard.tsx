@@ -70,7 +70,7 @@ export default function RecruiterDashboardScreen() {
             <Pressable style={[styles.postButton, { backgroundColor: 'rgba(255,255,255,0.22)' }]} onPress={() => router.push('/(recruiter)/jobs/create')}>
               <FontAwesome6 name="plus" size={13} color="#ffffff" />
               <ThemedText type="smallBold" style={styles.postButtonText}>
-                Post Job
+                Create Job
               </ThemedText>
             </Pressable>
           </View>} />

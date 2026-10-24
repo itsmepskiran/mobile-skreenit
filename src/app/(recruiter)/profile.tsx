@@ -326,7 +326,6 @@ export default function RecruiterProfileScreen() {
           <Button title="Credits" variant="secondary" icon="coins" onPress={() => router.push('/(recruiter)/credits')} />
         )}
         <Button title="Billing & Plan" variant="secondary" icon="file-invoice-dollar" onPress={() => router.push('/(recruiter)/billing')} />
-        <Button title="Featured Jobs" variant="secondary" icon="star" onPress={() => router.push('/(recruiter)/featured-jobs')} />
         <Button title="Notifications" variant="secondary" icon="bell" onPress={() => router.push('/(recruiter)/notifications')} />
         <Button
           title="Purchase History"

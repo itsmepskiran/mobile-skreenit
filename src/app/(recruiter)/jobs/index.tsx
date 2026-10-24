@@ -6,7 +6,6 @@ import { FontAwesome6, Pressable, View } from '@/components/scoped';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useCoinConsent } from '@/components/coin-consent-modal';
 import { JobShareModal, jobUrl } from '@/components/job-share-modal';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -14,7 +13,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, cardSurface } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { listAssessmentConfigs } from '@/lib/api/position-assessments';
-import { deleteJob, featureJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
+import { deleteJob, listMyJobs, parseSkills, type RecruiterJobListItem } from '@/lib/api/recruiter';
 import { formatSalaryRange } from '@/lib/format';
 
 type StatusFilter = 'all' | 'active' | 'closed' | 'draft';
@@ -39,7 +38,6 @@ export default function MyJobsScreen() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [qrJob, setQrJob] = useState<RecruiterJobListItem | null>(null);
-  const { confirmSpend, consentModal } = useCoinConsent();
 
   // Debounced, same pattern as the candidate jobs list (src/app/(candidate)/jobs/index.tsx).
   useEffect(() => {
@@ -81,19 +79,6 @@ export default function MyJobsScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recruiter', 'jobs'] }),
   });
 
-  // Featured Job boost: pinned first on the jobs board with a badge for 7 days. The price
-  // (coins for an individual, invoice for a company) is confirmed before anything is charged.
-  const featureMutation = useMutation({
-    mutationFn: async (job: RecruiterJobListItem) => {
-      if (!(await confirmSpend({ action: 'featured_job', jobId: job.id }))) return null;
-      return featureJob(job.id);
-    },
-    onSuccess: (res) => {
-      if (res) queryClient.invalidateQueries({ queryKey: ['recruiter', 'jobs'] });
-    },
-    onError: (err) => Alert.alert('Could not feature this job', err instanceof Error ? err.message : 'Please try again.'),
-  });
-
   const filtered = useMemo(() => {
     const jobs = jobsQuery.data?.data.jobs ?? [];
     if (statusFilter === 'all') return jobs;
@@ -101,7 +86,7 @@ export default function MyJobsScreen() {
   }, [jobsQuery.data?.data.jobs, statusFilter]);
 
   const confirmDelete = (job: RecruiterJobListItem) => {
-    Alert.alert('Delete job posting?', `"${job.job_title}" will be permanently removed.`, [
+    Alert.alert('Delete job?', `"${job.job_title}" will be permanently removed.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(job.id) },
     ]);
@@ -117,7 +102,7 @@ export default function MyJobsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <PageHeader title="Job Posts" subtitle="Manage and promote your openings" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
+      <PageHeader title="My Jobs" subtitle="Manage and promote your openings" icon="briefcase" colors={['#4f46e5', '#0ea5e9']} />
       <SearchBar value={searchInput} onChangeText={setSearchInput} placeholder="Search by title, JRF or Ref No" />
 
       <View style={styles.filterContainer}>
@@ -171,13 +156,6 @@ export default function MyJobsScreen() {
                         {statusStyle.label}
                       </ThemedText>
                     </View>
-                    {job.featured_until && new Date(job.featured_until) > new Date() ? (
-                      <View style={[styles.statusBadge, { backgroundColor: '#fef3c7' }]}>
-                        <ThemedText type="small" style={{ color: '#b45309', fontWeight: '700' }}>
-                          ★ Until {new Date(job.featured_until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </ThemedText>
-                      </View>
-                    ) : null}
                   </View>
                   <Pressable
                     onPress={() => setQrJob(job)}
@@ -250,18 +228,6 @@ export default function MyJobsScreen() {
                     <FontAwesome6 name="pen-to-square" size={13} color={theme.text} />
                     <ThemedText type="small">Edit</ThemedText>
                   </Pressable>
-                  {job.status === 'active' ? (
-                    <Pressable
-                      style={[styles.actionButton, { borderColor: theme.border }]}
-                      onPress={() => featureMutation.mutate(job)}
-                      disabled={featureMutation.isPending}
-                    >
-                      <FontAwesome6 name="star" size={13} color="#d97706" />
-                      <ThemedText type="small" style={{ color: '#b45309' }}>
-                        {job.featured_until && new Date(job.featured_until) > new Date() ? 'Extend' : 'Feature'}
-                      </ThemedText>
-                    </Pressable>
-                  ) : null}
                   <Pressable style={[styles.actionButton, { borderColor: theme.border }]} onPress={() => confirmDelete(job)}>
                     <FontAwesome6 name="trash" size={13} color={theme.danger} />
                     <ThemedText type="small" style={{ color: theme.danger }}>
@@ -276,7 +242,6 @@ export default function MyJobsScreen() {
       </ScrollView>
 
       <JobShareModal job={qrJob} onClose={() => setQrJob(null)} />
-      {consentModal}
     </SafeAreaView>
   );
 }

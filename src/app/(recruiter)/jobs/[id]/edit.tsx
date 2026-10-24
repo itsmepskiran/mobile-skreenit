@@ -40,7 +40,7 @@ export default function EditJobScreen() {
       goBack();
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? err.message : 'Could not save this job posting. Please try again.');
+      setError(err instanceof ApiError ? err.message : 'Could not save this job. Please try again.');
     },
   });
 
@@ -53,7 +53,7 @@ export default function EditJobScreen() {
   });
 
   const confirmDelete = () => {
-    Alert.alert('Delete job posting?', 'This will be permanently removed.', [
+    Alert.alert('Delete job?', 'This will be permanently removed.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);

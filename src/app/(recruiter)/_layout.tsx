@@ -5,7 +5,7 @@ import { GradientScreen } from '@/components/on-gradient';
 
 import { useTheme } from '@/hooks/use-theme';
 
-// 6 tabs: ATS Services, Dashboard, Job Posts, Applications Received, Pending
+// 6 tabs: ATS Services, Dashboard, My Jobs, Applications Received, Pending
 // Interviews, Profile. ATS Services leads (and is the post-login landing tab
 // — see roleHome in src/app/_layout.tsx) since it's the primary reason a
 // recruiter opens the app day-to-day, ahead of the stats-focused Dashboard.
@@ -36,7 +36,7 @@ export default function RecruiterLayout() {
       />
       <Tabs.Screen
         name="jobs"
-        options={{ title: 'Job Posts', tabBarIcon: ({ color, size }) => <FontAwesome6 name="briefcase" size={size * 0.8} color={color} /> }}
+        options={{ title: 'My Jobs', tabBarIcon: ({ color, size }) => <FontAwesome6 name="briefcase" size={size * 0.8} color={color} /> }}
       />
       <Tabs.Screen
         name="applications"
@@ -75,7 +75,6 @@ export default function RecruiterLayout() {
       <Tabs.Screen name="refer" options={{ href: null }} />
       <Tabs.Screen name="company-quota" options={{ href: null }} />
       <Tabs.Screen name="billing" options={{ href: null }} />
-      <Tabs.Screen name="featured-jobs" options={{ href: null }} />
     </Tabs>
     </GradientScreen>
   );

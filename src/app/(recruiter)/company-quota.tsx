@@ -12,7 +12,7 @@ import { getCompanyQuotaStatus, type CompanyQuota } from '@/lib/api/recruiter';
 
 // Mirrors sql-skreenit's recruiter/js/company-quota.js FEATURE_LABELS.
 const FEATURE_LABELS: Record<string, { label: string; icon: React.ComponentProps<typeof FontAwesome6>['name'] }> = {
-  job_postings: { label: 'Job Posts', icon: 'briefcase' },
+  job_postings: { label: 'Jobs', icon: 'briefcase' },
   assessment_invite: { label: 'Completed Assessments', icon: 'clipboard-check' },
   detailed_analysis: { label: 'Detailed Analyses', icon: 'magnifying-glass-chart' },
   ai_interview_analysis: { label: 'AI Interview Analyses', icon: 'video' },

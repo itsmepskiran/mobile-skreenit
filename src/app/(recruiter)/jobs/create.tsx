@@ -169,7 +169,7 @@ export default function CreateJobScreen() {
       setPublishedJob({ id: res.data.id, job_title: variables.job_title });
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? err.message : 'Could not create this job posting. Please try again.');
+      setError(err instanceof ApiError ? err.message : 'Could not create this job. Please try again.');
     },
   });
 
@@ -187,7 +187,7 @@ export default function CreateJobScreen() {
       const filledCount = countFilledFields(values);
       setParseStatus(
         filledCount > 0
-          ? `${filledCount} field(s) filled from the JD. Please review before publishing.`
+          ? `${filledCount} field(s) filled from the JD. Please review before saving.`
           : 'Extracted the document, but found nothing new to fill in — please complete the form manually.',
       );
     },
@@ -220,7 +220,7 @@ export default function CreateJobScreen() {
       const filledCount = countFilledFields(values);
       setParseStatus(
         filledCount > 0
-          ? `${filledCount} field(s) filled from "${record.job_title}". Please review before publishing.`
+          ? `${filledCount} field(s) filled from "${record.job_title}". Please review before saving.`
           : 'Loaded, but found nothing new to fill in — please complete the form manually.',
       );
     },
@@ -292,7 +292,7 @@ export default function CreateJobScreen() {
 
       <JobForm
         initialValues={initialValues}
-        submitLabel="Post Job"
+        submitLabel="Create Job"
         submitting={createMutation.isPending}
         error={error}
         onSubmit={(values: JobInput) => {
